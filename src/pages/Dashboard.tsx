@@ -30,39 +30,23 @@ const Dashboard = () => {
     }
   };
 
-  // Generate mock leaderboard data with real user data and unique names
+  // Generate leaderboard data with only real users
   const generateLeaderboardData = () => {
-    const mockUsers = [
-      { name: "Alex Johnson", department: "Computer Science", points: 285, avatar: "AJ", isCurrentUser: false },
-      { name: "Sarah Wilson", department: "Electronics", points: 267, avatar: "SW", isCurrentUser: false },
-      { name: "Mike Chen", department: "Mechanical", points: 142, avatar: "MC", isCurrentUser: false },
-      { name: "Emma Davis", department: "Civil", points: 138, avatar: "ED", isCurrentUser: false },
-      { name: "Ryan Kumar", department: "Information Technology", points: 125, avatar: "RK", isCurrentUser: false },
-      { name: "Lisa Zhang", department: "Electronics", points: 118, avatar: "LZ", isCurrentUser: false }
-    ];
-
-    // Add current user to the list
+    // For now, only show the current user until we have more real users
     const currentUser = {
       name: profile?.full_name || "You",
       department: profile?.department || "Computer Science",
       points: profile?.engagement?.activity_points || 150,
       avatar: profile?.full_name?.split(' ').map(n => n[0]).join('') || "YO",
-      isCurrentUser: true
+      isCurrentUser: true,
+      rank: 1
     };
 
-    // Combine and sort by points, ensuring no duplicates
-    const allUsers = [...mockUsers, currentUser]
-      .filter((user, index, array) => 
-        array.findIndex(u => u.name === user.name) === index
-      )
-      .sort((a, b) => b.points - a.points)
-      .map((user, index) => ({ ...user, rank: index + 1 }));
-
-    return allUsers;
+    return [currentUser];
   };
 
   const leaderboardData = generateLeaderboardData();
-  const currentUserRank = leaderboardData.find(user => user.isCurrentUser)?.rank || 3;
+  const currentUserRank = leaderboardData.find(user => user.isCurrentUser)?.rank || 1;
 
   const dashboardSections = [
     { id: "overview", label: "Dashboard", icon: TrendingUp },
@@ -117,7 +101,6 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top Navigation - Mobile Optimized */}
       <div className="border-b border-border bg-card/95 backdrop-blur-xl sticky top-0 z-50">
         <div className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3">
           <div className="flex items-center space-x-2 sm:space-x-4">
@@ -164,7 +147,6 @@ const Dashboard = () => {
       </div>
 
       <div className="flex">
-        {/* Mobile Sidebar Overlay - Improved */}
         {isSidebarOpen && (
           <div
             className="fixed inset-0 z-40 bg-black/60 lg:hidden backdrop-blur-sm"
@@ -172,9 +154,7 @@ const Dashboard = () => {
           ></div>
         )}
         
-        {/* Sidebar - Mobile Optimized with proper height */}
         <aside className={`fixed top-0 left-0 z-50 w-80 sm:w-72 h-screen bg-card/98 backdrop-blur-xl border-r border-border transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-          {/* Mobile Close Button */}
           <div className="flex items-center justify-between p-4 border-b border-border lg:hidden flex-shrink-0">
             <h2 className="text-lg font-semibold">Menu</h2>
             <Button 
@@ -188,7 +168,6 @@ const Dashboard = () => {
             </Button>
           </div>
           
-          {/* Sidebar content with proper flex layout */}
           <div className="h-full lg:h-screen flex flex-col">
             <div className="flex-1 p-4 lg:p-6 lg:pt-6 pt-0 min-h-0">
               <SidebarNav
@@ -279,42 +258,47 @@ const Dashboard = () => {
               {/* Top Rankings */}
               <Card className="shadow-lg">
                 <CardHeader>
-                  <CardTitle>Top Students</CardTitle>
+                  <CardTitle>Active Users</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {leaderboardData.slice(0, 6).map((student) => (
-                      <div key={`${student.name}-${student.rank}`} className={`flex items-center justify-between p-3 rounded-lg ${student.isCurrentUser ? 'bg-primary/10 border border-primary/20' : 'bg-card border'}`}>
-                        <div className="flex items-center space-x-4">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                            student.rank === 1 ? 'bg-yellow-500 text-white' : 
-                            student.rank === 2 ? 'bg-gray-400 text-white' : 
-                            student.rank === 3 ? 'bg-orange-500 text-white' : 
-                            'bg-muted text-muted-foreground'
-                          }`}>
-                            #{student.rank}
+                  {leaderboardData.length > 0 ? (
+                    <div className="space-y-4">
+                      {leaderboardData.map((student) => (
+                        <div key={`${student.name}-${student.rank}`} className={`flex items-center justify-between p-3 rounded-lg ${student.isCurrentUser ? 'bg-primary/10 border border-primary/20' : 'bg-card border'}`}>
+                          <div className="flex items-center space-x-4">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                              student.rank === 1 ? 'bg-yellow-500 text-white' : 
+                              'bg-muted text-muted-foreground'
+                            }`}>
+                              #{student.rank}
+                            </div>
+                            <Avatar className="h-10 w-10">
+                              <AvatarFallback className={student.isCurrentUser ? 'bg-primary text-primary-foreground' : 'bg-muted'}>
+                                {student.avatar}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className={`font-medium ${student.isCurrentUser ? 'text-primary' : ''}`}>
+                                {student.name}
+                              </p>
+                              <p className="text-sm text-muted-foreground">{student.department}</p>
+                            </div>
                           </div>
-                          <Avatar className="h-10 w-10">
-                            <AvatarFallback className={student.isCurrentUser ? 'bg-primary text-primary-foreground' : 'bg-muted'}>
-                              {student.avatar}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className={`font-medium ${student.isCurrentUser ? 'text-primary' : ''}`}>
-                              {student.name}
+                          <div className="text-right">
+                            <p className={`font-bold ${student.isCurrentUser ? 'text-primary' : ''}`}>
+                              {student.points}
                             </p>
-                            <p className="text-sm text-muted-foreground">{student.department}</p>
+                            <p className="text-xs text-muted-foreground">points</p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className={`font-bold ${student.isCurrentUser ? 'text-primary' : ''}`}>
-                            {student.points}
-                          </p>
-                          <p className="text-xs text-muted-foreground">points</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Trophy className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-muted-foreground">No active users found. Be the first to start earning points!</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -322,7 +306,6 @@ const Dashboard = () => {
           
           {activeSection === "overview" && (
             <div className="space-y-4 sm:space-y-6 lg:space-y-8 animate-fade-in">
-              {/* Welcome Section - Mobile Optimized */}
               <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 text-white">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
                   <div>
@@ -338,7 +321,6 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* Quick Stats - Mobile Responsive Grid */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
                 <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
                   <CardContent className="p-3 sm:p-4 lg:p-6">
@@ -357,7 +339,7 @@ const Dashboard = () => {
                 <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
                   <CardContent className="p-3 sm:p-4 lg:p-6">
                     <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 lg:space-x-4">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl bg-purple-500/20 flex items-center justify-center mx-auto sm:mx-0">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:w-12 rounded-xl lg:rounded-2xl bg-purple-500/20 flex items-center justify-center mx-auto sm:mx-0">
                         <Calendar className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-purple-500" />
                       </div>
                       <div className="text-center sm:text-left">
@@ -400,7 +382,6 @@ const Dashboard = () => {
                 </Card>
               </div>
 
-              {/* Quick Actions & Recent Activity - Mobile Stack */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
                 <Card className="shadow-lg">
                   <CardHeader className="pb-3 sm:pb-4">
@@ -466,7 +447,6 @@ const Dashboard = () => {
                 </Card>
               </div>
 
-              {/* Upcoming Events & Notifications - Mobile Stack */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
                 <Card className="lg:col-span-2 shadow-lg">
                   <CardHeader className="pb-3 sm:pb-4">
