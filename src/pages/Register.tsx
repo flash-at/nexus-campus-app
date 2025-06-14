@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Eye, EyeOff, Mail, User, Phone, GraduationCap } from "lucide-react";
 import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { createUserProfile } from "@/services/userService";
+import { createUserProfile, checkHallTicketExists } from "@/services/userService";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ const Register = () => {
 
   const academicYears = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
 
-  const validateForm = () => {
+  const validateForm = async () => {
     // Full Name validation
     if (!formData.fullName || formData.fullName.length < 2 || formData.fullName.length > 60) {
       toast.error("Full name must be between 2-60 characters");
@@ -50,6 +51,13 @@ const Register = () => {
     const hallTicketRegex = /^[0-9A-Z]{10}$/;
     if (!hallTicketRegex.test(formData.hallTicket)) {
       toast.error("Hall ticket must be exactly 10 characters (numbers and uppercase letters only)");
+      return false;
+    }
+
+    // Check if hall ticket already exists
+    const hallTicketExists = await checkHallTicketExists(formData.hallTicket);
+    if (hallTicketExists) {
+      toast.error("This hall ticket number is already registered. Please check your hall ticket number.");
       return false;
     }
 
@@ -91,7 +99,8 @@ const Register = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    const isValid = await validateForm();
+    if (!isValid) return;
 
     setIsLoading(true);
     

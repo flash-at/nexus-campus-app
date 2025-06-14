@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "firebase/auth";
 
@@ -16,6 +15,26 @@ export interface UserProfile {
   created_at: string;
   updated_at: string;
 }
+
+export const checkHallTicketExists = async (hallTicket: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .select("hall_ticket")
+      .eq("hall_ticket", hallTicket)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
+      console.error("Error checking hall ticket:", error);
+      return false;
+    }
+
+    return data !== null;
+  } catch (error) {
+    console.error("Error checking hall ticket:", error);
+    return false;
+  }
+};
 
 export const createUserProfile = async (
   firebaseUser: User,
