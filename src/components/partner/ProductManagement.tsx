@@ -60,6 +60,29 @@ export const ProductManagement = () => {
     is_active: true
   });
 
+  // Helper: Try to sync Supabase session with Firebase current user if missing
+  const ensureSupabaseSession = async () => {
+    const sessionResult = await supabase.auth.getSession();
+    if (!sessionResult?.data?.session || !sessionResult.data.session.user) {
+      // Try to restore session from Firebase
+      if (user) {
+        console.log("[VendorDebug] Missing Supabase session, attempting to restore using Firebase ID token...");
+        const idToken = await user.getIdToken();
+        const { error: supaAuthError, data } = await supabase.auth.signInWithIdToken({
+          provider: 'firebase',
+          token: idToken,
+        });
+        if (supaAuthError) {
+          console.error("[VendorDebug] Failed to re-auth Supabase:", supaAuthError);
+        } else {
+          console.log("[VendorDebug] Supabase session restored successfully!");
+        }
+      } else {
+        console.warn("[VendorDebug] No Firebase user available for re-authentication.");
+      }
+    }
+  };
+
   useEffect(() => {
     if (user) {
       fetchCurrentVendor();
@@ -79,25 +102,44 @@ export const ProductManagement = () => {
     try {
       setVendorError(null);
       setLoading(true);
-      
+
+      // Diagnostic logging
+      console.log("[VendorDebug] Starting vendor fetch for Firebase UID:", user.uid);
+
+      // Verify Supabase session before interacting
+      const sesResult = await supabase.auth.getSession();
+      console.log("[VendorDebug] Supabase session at vendor fetch:", sesResult);
+      if (!sesResult?.data?.session) {
+        await ensureSupabaseSession();
+      }
+
       // Add a small delay to ensure vendor record is created
       await new Promise(resolve => setTimeout(resolve, 1000));
       
+      // Try fetch first
       const { data, error } = await supabase
         .from('vendors')
         .select('*')
         .eq('firebase_uid', user.uid)
         .maybeSingle();
+      console.log("[VendorDebug] Vendor fetch result:", { data, error });
 
       if (error) {
-        console.error('Error fetching vendor:', error);
+        console.error('[VendorDebug] Error fetching vendor:', error);
         setVendorError('Unable to load vendor account. Please try refreshing the page.');
         return;
       }
       
       if (!data) {
-        // Try to create vendor record if it doesn't exist
-        console.log("No vendor found, creating one...");
+        // Still no vendor: try to insert, after re-checking session
+        const vendorSession = await supabase.auth.getSession();
+        console.log("[VendorDebug] Supabase session before vendor insert:", vendorSession);
+        // If needed, attempt to restore session again
+        if (!vendorSession?.data?.session || !vendorSession.data.session.user) {
+          await ensureSupabaseSession();
+        }
+        console.log("[VendorDebug] No vendor found, attempting to insert record with firebase_uid:", user.uid);
+
         const { data: newVendor, error: createError } = await supabase
           .from('vendors')
           .insert({
@@ -110,8 +152,10 @@ export const ProductManagement = () => {
           .select()
           .single();
 
+        console.log("[VendorDebug] Vendor insert result:", { newVendor, createError });
+
         if (createError) {
-          console.error('Error creating vendor:', createError);
+          console.error('[VendorDebug] Error creating vendor:', createError);
           setVendorError('Failed to create vendor account. Please contact support.');
           return;
         }
@@ -128,7 +172,7 @@ export const ProductManagement = () => {
       
       setCurrentVendor(data);
     } catch (error) {
-      console.error('Error fetching vendor:', error);
+      console.error('[VendorDebug] Exception in fetchCurrentVendor:', error);
       setVendorError('Failed to load vendor account.');
     } finally {
       setLoading(false);
