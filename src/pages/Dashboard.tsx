@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import ProfilePage from "@/components/profile/ProfilePage";
+import { ProfilePage } from "@/components/profile/ProfilePage";
 import ClubsPage from "@/components/clubs/ClubsPage";
 import ActivityPage from "@/components/activity/ActivityPage";
 import { LogOut, User, Users, Trophy, FileText, ShoppingCart, Settings } from "lucide-react";
