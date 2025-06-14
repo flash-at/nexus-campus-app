@@ -32,27 +32,37 @@ const NotificationDropdown = ({ clubId, userId }: NotificationDropdownProps) => 
 
   const fetchNotifications = async () => {
     try {
-      let query = supabase
+      console.log('Fetching notifications for user:', userId, 'club:', clubId);
+      
+      // Create the base query
+      let query = (supabase as any)
         .from('notifications')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(10);
 
+      // If clubId is provided, filter by club
       if (clubId) {
         query = query.eq('club_id', clubId);
       }
 
       const { data, error } = await query;
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching notifications:', error);
+        return;
+      }
       
-      const uniqueNotifications = data?.filter((notification, index, self) => 
+      console.log('Fetched notifications:', data);
+      
+      // Remove duplicates based on title and message
+      const uniqueNotifications = data?.filter((notification: any, index: number, self: any[]) => 
         index === self.findIndex(n => n.title === notification.title && n.message === notification.message)
       ) || [];
       
       setNotifications(uniqueNotifications);
-      setUnreadCount(uniqueNotifications.filter(n => !n.read).length);
+      setUnreadCount(uniqueNotifications.filter((n: any) => !n.read).length);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
@@ -60,7 +70,7 @@ const NotificationDropdown = ({ clubId, userId }: NotificationDropdownProps) => 
 
   const markAsRead = async (notificationId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('notifications')
         .update({ read: true })
         .eq('id', notificationId);
@@ -78,7 +88,7 @@ const NotificationDropdown = ({ clubId, userId }: NotificationDropdownProps) => 
 
   const deleteNotification = async (notificationId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('notifications')
         .delete()
         .eq('id', notificationId);

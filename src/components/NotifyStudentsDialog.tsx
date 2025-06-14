@@ -35,6 +35,8 @@ const NotifyStudentsDialog = ({ clubId, clubName, members }: NotifyStudentsDialo
     setIsLoading(true);
     
     try {
+      console.log('Sending notifications to members:', members);
+      
       // Create notifications for all club members
       const notifications = members.map(member => ({
         user_id: member.users.id,
@@ -44,11 +46,16 @@ const NotifyStudentsDialog = ({ clubId, clubName, members }: NotifyStudentsDialo
         read: false
       }));
 
-      const { error } = await supabase
+      console.log('Notifications to insert:', notifications);
+
+      const { error } = await (supabase as any)
         .from('notifications')
         .insert(notifications);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error inserting notifications:', error);
+        throw error;
+      }
 
       toast({
         title: "Notifications sent!",
