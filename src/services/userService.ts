@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "firebase/auth";
 
@@ -100,23 +99,6 @@ export const createUserProfile = async (
     console.log("Firebase user email:", firebaseUser.email);
     console.log("Additional data:", additionalData);
 
-    // Get Firebase token first to ensure we're authenticated
-    const token = await firebaseUser.getIdToken();
-    console.log("Got Firebase token, length:", token?.length);
-
-    // Set the session with the Firebase token
-    const { error: sessionError } = await supabase.auth.setSession({
-      access_token: token,
-      refresh_token: token,
-    });
-
-    if (sessionError) {
-      console.error("Session error:", sessionError);
-      return null;
-    }
-
-    console.log("Session set successfully");
-
     const insertData = {
       firebase_uid: firebaseUser.uid,
       full_name: additionalData.fullName,
@@ -130,6 +112,7 @@ export const createUserProfile = async (
 
     console.log("Inserting data:", insertData);
 
+    // Use the anon key directly without trying to set a session
     const { data, error } = await supabase
       .from("users")
       .insert(insertData)
