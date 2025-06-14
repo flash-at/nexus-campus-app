@@ -132,10 +132,10 @@ const Dashboard = () => {
           ></div>
         )}
         
-        {/* Sidebar - Mobile Optimized */}
+        {/* Sidebar - Mobile Optimized with proper height */}
         <aside className={`fixed top-0 left-0 z-50 w-80 sm:w-72 h-screen bg-card/98 backdrop-blur-xl border-r border-border transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           {/* Mobile Close Button */}
-          <div className="flex items-center justify-between p-4 border-b border-border lg:hidden">
+          <div className="flex items-center justify-between p-4 border-b border-border lg:hidden flex-shrink-0">
             <h2 className="text-lg font-semibold">Menu</h2>
             <Button 
               variant="ghost" 
@@ -148,12 +148,15 @@ const Dashboard = () => {
             </Button>
           </div>
           
-          <div className="p-4 lg:p-6 h-full overflow-y-auto">
-            <SidebarNav
-              activeSection={activeSection}
-              setActiveSection={handleSectionSelect}
-              handleSignOut={handleMobileSignOut}
-            />
+          {/* Sidebar content with proper flex layout */}
+          <div className="h-full lg:h-screen flex flex-col">
+            <div className="flex-1 p-4 lg:p-6 lg:pt-6 pt-0 min-h-0">
+              <SidebarNav
+                activeSection={activeSection}
+                setActiveSection={handleSectionSelect}
+                handleSignOut={handleMobileSignOut}
+              />
+            </div>
           </div>
         </aside>
 
