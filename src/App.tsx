@@ -11,6 +11,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import AdminLogin from "./pages/AdminLogin";
 import ProviderRegister from "./pages/ProviderRegister";
+import ProviderLogin from "./pages/ProviderLogin";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "@/hooks/useAuth";
 
@@ -31,6 +32,7 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/provider/register" element={<ProviderRegister />} />
+              <Route path="/provider/login" element={<ProviderLogin />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

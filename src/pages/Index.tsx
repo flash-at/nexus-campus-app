@@ -1,28 +1,17 @@
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { 
   ArrowRight, 
-  ShoppingCart, 
-  Printer, 
-  Calendar, 
-  Users, 
-  Star, 
-  CheckCircle, 
-  Globe, 
-  Smartphone,
-  Coffee,
+  Feather,
   BookOpen,
-  Clock,
-  Shield,
-  Zap,
-  Award,
-  TrendingUp,
-  Heart,
-  MessageCircle,
-  Sparkles
+  Briefcase,
+  University,
+  Star,
+  CheckCircle,
+  Quote,
+  ShieldCheck
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -30,244 +19,117 @@ import ThemeToggle from "@/components/ThemeToggle";
 const Index = () => {
   const features = [
     {
-      icon: ShoppingCart,
-      title: "Food Delivery",
-      description: "Order from campus restaurants with lightning-fast delivery",
-      gradient: "from-orange-500 to-red-500",
-      stats: "15+ Restaurants",
-      delay: "0ms"
+      icon: University,
+      title: "Unified Campus Hub",
+      description: "Access all campus services, from dining to printing, in one centralized platform.",
+      color: "text-blue-500",
     },
     {
-      icon: Printer,
-      title: "Smart Printing",
-      description: "Print documents instantly across all campus locations",
-      gradient: "from-blue-500 to-cyan-500",
-      stats: "50+ Locations",
-      delay: "100ms"
+      icon: BookOpen,
+      title: "Academic Excellence",
+      description: "Tools and resources to support your studies, track progress, and collaborate.",
+      color: "text-purple-500",
     },
     {
-      icon: Calendar,
-      title: "Campus Events",
-      description: "Stay updated with all campus activities and club meetings",
-      gradient: "from-purple-500 to-pink-500",
-      stats: "200+ Events/Month",
-      delay: "200ms"
+      icon: Briefcase,
+      title: "Career Development",
+      description: "Connect with mentors, find internships, and prepare for your future career.",
+      color: "text-emerald-500",
     },
     {
-      icon: Users,
-      title: "Student Hub",
-      description: "Connect with peers and build lasting relationships",
-      gradient: "from-green-500 to-emerald-500",
-      stats: "5000+ Students",
-      delay: "300ms"
-    }
+      icon: Feather,
+      title: "Student Life",
+      description: "Discover events, join clubs, and engage with the vibrant campus community.",
+      color: "text-amber-500",
+    },
   ];
 
   const testimonials = [
     {
-      name: "Sarah Chen",
-      role: "Computer Science, 3rd Year",
-      avatar: "SC",
-      text: "CampusConnect transformed how I manage my daily campus life. From ordering food to printing assignments, everything is seamless.",
-      rating: 5,
-      color: "from-blue-500 to-purple-500"
+      name: "Ananya Sharma",
+      role: "Engineering, 2nd Year",
+      text: "CampusConnect has truly streamlined my college life. It's the one app I use every single day for everything from academics to social events.",
     },
     {
-      name: "Michael Rodriguez",
-      role: "Business Administration, 2nd Year",
-      avatar: "MR",
-      text: "The community features helped me find my study group and connect with like-minded students. It's indispensable!",
-      rating: 5,
-      color: "from-green-500 to-teal-500"
+      name: "Rohan Gupta",
+      role: "Business, Final Year",
+      text: "The career hub is a fantastic resource. I found my summer internship through the platform and connected with amazing mentors.",
     },
-    {
-      name: "Emily Johnson",
-      role: "Engineering, Final Year",
-      avatar: "EJ",
-      text: "From event notifications to quick food orders, this platform has everything a student needs in one beautiful interface.",
-      rating: 5,
-      color: "from-pink-500 to-orange-500"
-    }
-  ];
-
-  const stats = [
-    { number: "10K+", label: "Active Students", icon: Users },
-    { number: "50+", label: "Campus Partners", icon: Award },
-    { number: "99.9%", label: "Uptime", icon: Shield },
-    { number: "24/7", label: "Support", icon: Clock }
-  ];
-
-  const benefits = [
-    { icon: Zap, title: "Lightning Fast", description: "Get your orders in minutes" },
-    { icon: Shield, title: "Secure & Safe", description: "Your data is protected" },
-    { icon: Heart, title: "Student First", description: "Built by students, for students" },
-    { icon: TrendingUp, title: "Always Improving", description: "Regular updates and new features" }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950">
-      {/* Modern Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-lg supports-[backdrop-filter]:bg-white/60 dark:bg-gray-950/80 dark:supports-[backdrop-filter]:bg-gray-950/60">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <Link to="/" className="flex items-center space-x-3 group">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur-sm opacity-30 group-hover:opacity-50 transition-opacity"></div>
-                <div className="relative w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-                  <Logo className="text-white" width={28} height={28} />
-                </div>
-              </div>
-              <div>
-                <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  CampusConnect
-                </span>
-                <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">Smart Campus Living</div>
-              </div>
-            </Link>
-            
-            <nav className="hidden lg:flex items-center space-x-8">
-              <Link to="#features" className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors font-medium">
-                Features
-              </Link>
-              <Link to="#testimonials" className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors font-medium">
-                Reviews
-              </Link>
-              <Link to="#about" className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors font-medium">
-                About
-              </Link>
-            </nav>
-            
-            <div className="flex items-center space-x-4">
-              <ThemeToggle />
-              <Button variant="ghost" asChild className="hidden sm:inline-flex font-medium">
-                <Link to="/login">Sign In</Link>
-              </Button>
-              <Button asChild className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300">
-                <Link to="/register">Get Started</Link>
-              </Button>
+    <div className="bg-background text-foreground font-sans">
+      {/* Header */}
+      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container mx-auto px-6 h-20 flex justify-between items-center">
+          <Link to="/" className="flex items-center space-x-3 group">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+              <Logo className="text-white" width={22} height={22} />
             </div>
+            <span className="text-xl font-semibold">
+              CampusConnect
+            </span>
+          </Link>
+          
+          <nav className="hidden lg:flex items-center space-x-8">
+            <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a>
+            <a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-colors">Testimonials</a>
+            <a href="#cta" className="text-muted-foreground hover:text-foreground transition-colors">Join Us</a>
+          </nav>
+          
+          <div className="flex items-center space-x-2">
+            <ThemeToggle />
+            <Button variant="ghost" asChild>
+              <Link to="/login">Sign In</Link>
+            </Button>
+            <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm">
+              <Link to="/register">Get Started</Link>
+            </Button>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="relative py-24 lg:py-32 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.1),transparent_70%)]"></div>
-        <div className="container mx-auto px-6 relative">
-          <div className="max-w-5xl mx-auto text-center">
-            <div className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800 mb-8">
-              <Sparkles className="w-4 h-4 mr-2" />
-              <span className="font-medium">Revolutionizing Campus Life</span>
-            </div>
-            
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold mb-8 leading-tight tracking-tight">
-              <span className="bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 dark:from-gray-100 dark:via-blue-200 dark:to-purple-200 bg-clip-text text-transparent">
-                Your Campus,
-              </span>
-              <br />
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Reimagined
-              </span>
-            </h1>
-            
-            <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-12 max-w-4xl mx-auto leading-relaxed">
-              Experience seamless campus living with our intelligent platform. From instant food delivery to smart printing, 
-              everything you need is just a tap away.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
-              <Button size="lg" asChild className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-10 py-6 text-lg font-semibold shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:-translate-y-1">
-                <Link to="/register" className="flex items-center">
-                  Start Your Journey
-                  <ArrowRight className="ml-3 h-6 w-6" />
-                </Link>
-              </Button>
-              
-              <Button size="lg" variant="outline" asChild className="px-10 py-6 text-lg font-semibold border-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300">
-                <Link to="/demo">
-                  <Globe className="mr-3 h-6 w-6" />
-                  Watch Demo
-                </Link>
-              </Button>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              {stats.map((stat, index) => (
-                <div key={index} className="group">
-                  <div className="flex flex-col items-center p-6 rounded-2xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-300">
-                    <stat.icon className="w-8 h-8 text-blue-600 dark:text-blue-400 mb-3" />
-                    <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                      {stat.number}
-                    </div>
-                    <div className="text-gray-600 dark:text-gray-400 font-medium">{stat.label}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
+      <section className="relative py-28 lg:py-40 border-b">
+        <div className="absolute inset-0 bg-grid-slate-900/[0.04] bg-[bottom_1px_center] dark:bg-grid-slate-400/[0.05] dark:bg-bottom_1px_center"></div>
+        <div className="container mx-auto px-6 text-center relative">
+          <h1 className="text-5xl md:text-7xl font-serif font-bold mb-6 text-gray-900 dark:text-gray-100 animate-fade-in">
+            Elevate Your Campus Experience.
+          </h1>
+          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 animate-fade-in" style={{animationDelay: '200ms'}}>
+            CampusConnect is the essential platform for modern students, bringing together academics, services, and community into one seamless, intelligent hub.
+          </p>
+          <div className="flex gap-4 justify-center animate-fade-in" style={{animationDelay: '400ms'}}>
+            <Button size="lg" asChild className="h-12 px-8 text-base">
+              <Link to="/register">
+                Join Now <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+            </Button>
+            <Button size="lg" variant="outline" asChild className="h-12 px-8 text-base">
+              <Link to="/provider/register">Partner with Us</Link>
+            </Button>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-24 bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
+      <section id="features" className="py-24 bg-secondary/50">
         <div className="container mx-auto px-6">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent">
-              Everything You Need, One Platform
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed">
-              Discover powerful features designed specifically for modern student life
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="text-4xl font-serif font-bold mb-4">A Foundation for Success</h2>
+            <p className="text-muted-foreground text-lg">
+              We provide the tools and connections you need to thrive during your academic journey and beyond.
             </p>
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
-              <div
-                key={index}
-                className="group relative"
-                style={{ animationDelay: feature.delay }}
-              >
-                <Card className="h-full border-0 bg-white dark:bg-gray-800 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 overflow-hidden">
-                  <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500`}></div>
-                  <CardHeader className="text-center pb-4 relative z-10">
-                    <div className={`inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br ${feature.gradient} mb-6 mx-auto shadow-xl group-hover:shadow-2xl transition-all duration-300 group-hover:scale-110`}>
-                      <feature.icon className="h-10 w-10 text-white" />
-                    </div>
-                    <CardTitle className="text-2xl mb-3 text-gray-900 dark:text-gray-100">{feature.title}</CardTitle>
-                    <Badge variant="outline" className="mb-4 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
-                      {feature.stats}
-                    </Badge>
-                  </CardHeader>
-                  <CardContent className="relative z-10 text-center px-6">
-                    <CardDescription className="text-lg leading-relaxed text-gray-600 dark:text-gray-400">
-                      {feature.description}
-                    </CardDescription>
-                  </CardContent>
-                </Card>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Benefits Section */}
-      <section className="py-24 bg-white dark:bg-gray-900">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-6 text-gray-900 dark:text-gray-100">
-              Why Choose CampusConnect?
-            </h2>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {benefits.map((benefit, index) => (
-              <div key={index} className="text-center group">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <benefit.icon className="w-8 h-8 text-white" />
+              <div key={index} className="text-center p-8 bg-background rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 animate-slide-up" style={{animationDelay: `${index * 100}ms`}}>
+                <div className={`inline-flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/50 dark:to-purple-900/50 mb-5`}>
+                  <feature.icon className={`h-7 w-7 ${feature.color}`} />
                 </div>
-                <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-gray-100">{benefit.title}</h3>
-                <p className="text-gray-600 dark:text-gray-400">{benefit.description}</p>
+                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                <p className="text-muted-foreground">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -275,39 +137,29 @@ const Index = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-24 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
+      <section id="testimonials" className="py-24">
         <div className="container mx-auto px-6">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent">
-              Loved by Students Everywhere
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-400">
-              See what our community has to say about their experience
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="text-4xl font-serif font-bold mb-4">From Our Students</h2>
+            <p className="text-muted-foreground text-lg">
+              Hear what the CampusConnect community has to say about their experience.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {testimonials.map((testimonial, index) => (
-              <Card key={index} className="border-0 bg-white dark:bg-gray-800 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
-                <CardContent className="p-8">
-                  <div className="flex items-center mb-6">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                    ))}
+              <Card key={index} className="p-8 border-border/60 shadow-sm animate-fade-in" style={{animationDelay: `${index * 150}ms`}}>
+                <Quote className="w-10 h-10 text-blue-200 dark:text-blue-900 mb-4" fill="currentColor" />
+                <p className="text-muted-foreground text-lg mb-6 italic">"{testimonial.text}"</p>
+                <div className="flex items-center">
+                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold mr-4">
+                    {testimonial.name.split(' ').map(n => n[0]).join('')}
                   </div>
-                  <p className="text-gray-700 dark:text-gray-300 mb-6 text-lg leading-relaxed italic">
-                    "{testimonial.text}"
-                  </p>
-                  <div className="flex items-center">
-                    <div className={`w-12 h-12 rounded-full bg-gradient-to-r ${testimonial.color} flex items-center justify-center text-white font-bold mr-4`}>
-                      {testimonial.avatar}
-                    </div>
-                    <div>
-                      <div className="font-semibold text-gray-900 dark:text-gray-100 text-lg">{testimonial.name}</div>
-                      <div className="text-gray-500 dark:text-gray-400">{testimonial.role}</div>
-                    </div>
+                  <div>
+                    <div className="font-semibold text-foreground">{testimonial.name}</div>
+                    <div className="text-muted-foreground text-sm">{testimonial.role}</div>
                   </div>
-                </CardContent>
+                </div>
               </Card>
             ))}
           </div>
@@ -315,86 +167,74 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600"></div>
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="container mx-auto px-6 relative z-10">
-          <div className="max-w-4xl mx-auto text-center text-white">
-            <h3 className="text-4xl md:text-6xl font-bold mb-8">
-              Ready to Transform Your Campus Life?
-            </h3>
-            <p className="text-xl md:text-2xl text-blue-100 mb-12 leading-relaxed">
-              Join thousands of students who have already discovered the future of campus living. 
-              Get started today and experience the difference.
+      <section id="cta" className="py-24 bg-secondary/50">
+        <div className="container mx-auto px-6">
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl p-12 text-center shadow-xl">
+            <h3 className="text-4xl font-serif font-bold mb-4">Ready to Connect?</h3>
+            <p className="text-lg text-blue-100 max-w-2xl mx-auto mb-8">
+              Create your free account today and unlock a smarter way to navigate campus life.
             </p>
-            <div className="flex flex-col sm:flex-row gap-8 justify-center">
-              <Button size="lg" variant="secondary" asChild className="bg-white text-blue-600 hover:bg-gray-100 px-10 py-6 text-lg font-semibold shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:-translate-y-1">
-                <Link to="/register">
-                  <CheckCircle className="mr-3 h-6 w-6" />
-                  Create Free Account
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild className="border-2 border-white text-white hover:bg-white/10 px-10 py-6 text-lg font-semibold transition-all duration-300">
-                <Link to="/provider/register">
-                  <Smartphone className="mr-3 h-6 w-6" />
-                  Partner With Us
-                </Link>
-              </Button>
-            </div>
+            <Button size="lg" variant="secondary" asChild className="bg-white text-blue-600 hover:bg-gray-100 h-14 px-10 text-lg font-semibold shadow-2xl hover:shadow-none transition-shadow transform hover:-translate-y-1">
+              <Link to="/register">
+                <CheckCircle className="mr-3 h-6 w-6" />
+                Create Your Account
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 dark:bg-black text-white py-16">
-        <div className="container mx-auto px-6">
-          <div className="grid md:grid-cols-4 gap-12 mb-12">
-            <div className="col-span-2">
-              <div className="flex items-center space-x-4 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center">
-                  <Logo className="text-white" width={28} height={28} />
+      <footer className="bg-background border-t">
+        <div className="container mx-auto px-6 py-12">
+          <div className="grid md:grid-cols-12 gap-8 mb-8">
+            <div className="col-span-12 md:col-span-4">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-9 h-9 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                  <Logo className="text-white" width={20} height={20} />
                 </div>
-                <div>
-                  <span className="text-2xl font-bold">CampusConnect</span>
-                  <div className="text-gray-400 text-sm">Smart Campus Living</div>
-                </div>
+                <span className="text-lg font-semibold">CampusConnect</span>
               </div>
-              <p className="text-gray-400 text-lg leading-relaxed max-w-md">
-                Empowering students with intelligent campus solutions for a seamless, connected college experience.
+              <p className="text-muted-foreground">
+                The essential platform for modern campus life.
               </p>
             </div>
             
-            <div>
-              <h4 className="font-semibold mb-6 text-lg">Platform</h4>
-              <ul className="space-y-4 text-gray-400">
-                <li><Link to="#" className="hover:text-white transition-colors">Food Delivery</Link></li>
-                <li><Link to="#" className="hover:text-white transition-colors">Printing Services</Link></li>
-                <li><Link to="#" className="hover:text-white transition-colors">Events</Link></li>
-                <li><Link to="#" className="hover:text-white transition-colors">Community</Link></li>
+            <div className="col-span-6 md:col-span-2">
+              <h4 className="font-semibold mb-4 text-foreground">Platform</h4>
+              <ul className="space-y-3">
+                <li><a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a></li>
+                <li><Link to="/register" className="text-muted-foreground hover:text-foreground transition-colors">For Students</Link></li>
+                <li><Link to="/provider/register" className="text-muted-foreground hover:text-foreground transition-colors">For Partners</Link></li>
               </ul>
             </div>
             
-            <div>
-              <h4 className="font-semibold mb-6 text-lg">Support</h4>
-              <ul className="space-y-4 text-gray-400">
-                <li><Link to="#" className="hover:text-white transition-colors">Help Center</Link></li>
-                <li><Link to="#" className="hover:text-white transition-colors">Contact Us</Link></li>
-                <li><Link to="#" className="hover:text-white transition-colors">Privacy Policy</Link></li>
-                <li><Link to="#" className="hover:text-white transition-colors">Terms of Service</Link></li>
+            <div className="col-span-6 md:col-span-2">
+              <h4 className="font-semibold mb-4 text-foreground">Company</h4>
+              <ul className="space-y-3">
+                <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">About Us</a></li>
+                <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Careers</a></li>
+                <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Contact</a></li>
+              </ul>
+            </div>
+
+            <div className="col-span-6 md:col-span-2">
+              <h4 className="font-semibold mb-4 text-foreground">Login</h4>
+              <ul className="space-y-3">
+                <li><Link to="/login" className="text-muted-foreground hover:text-foreground transition-colors">Student Portal</Link></li>
+                <li><Link to="/provider/login" className="text-muted-foreground hover:text-foreground transition-colors">Partner Portal</Link></li>
+                <li><Link to="/admin/login" className="text-muted-foreground hover:text-foreground transition-colors">Admin Portal</Link></li>
               </ul>
             </div>
           </div>
           
-          <div className="border-t border-gray-800 pt-8">
-            <div className="flex flex-col md:flex-row justify-between items-center">
-              <p className="text-gray-400 mb-4 md:mb-0">
-                © 2025 CampusConnect. Made with ❤️ for students, by students.
-              </p>
-              <div className="flex space-x-6">
-                <Link to="/login" className="text-gray-400 hover:text-white transition-colors">Student Login</Link>
-                <Link to="/admin/login" className="text-gray-400 hover:text-white transition-colors">Admin Portal</Link>
-                <Link to="/provider/register" className="text-gray-400 hover:text-white transition-colors">Partner Portal</Link>
-              </div>
+          <div className="border-t pt-8 flex flex-col md:flex-row justify-between items-center text-sm">
+            <p className="text-muted-foreground mb-4 md:mb-0">
+              © 2025 CampusConnect. All rights reserved.
+            </p>
+            <div className="flex space-x-4 text-muted-foreground">
+                <a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a>
+                <a href="#" className="hover:text-foreground transition-colors">Terms of Service</a>
             </div>
           </div>
         </div>
