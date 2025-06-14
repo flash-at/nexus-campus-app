@@ -9,9 +9,6 @@ interface ProfileStatsProps {
 }
 
 export const ProfileStats = ({ profile }: ProfileStatsProps) => {
-  // Ensure we get the correct activity points from engagement
-  const activityPoints = profile.engagement?.activity_points || 0;
-  
   const stats = [
     {
       title: "Academic Excellence",
@@ -33,7 +30,7 @@ export const ProfileStats = ({ profile }: ProfileStatsProps) => {
       bgColor: "bg-gradient-to-br from-emerald-500/10 to-green-600/20",
       borderColor: "border-emerald-500/30",
       items: [
-        { label: "Activity Points", value: `${activityPoints} pts`, icon: "⚡" },
+        { label: "Activity Points", value: `${profile.engagement?.activity_points || 0} pts`, icon: "⚡" },
         { label: "Events Attended", value: `${profile.engagement?.events_attended?.length || 0} events`, icon: "🎉" },
         { label: "Feedback Given", value: `${profile.engagement?.feedback_count || 0} times`, icon: "💬" },
         { label: "Badges Earned", value: `${Array.isArray(profile.engagement?.badges) ? profile.engagement.badges.length : 0} badges`, icon: "🏆" }

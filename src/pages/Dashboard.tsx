@@ -1,34 +1,20 @@
 import { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { useUserProfile } from "@/hooks/useUserProfile";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 import { 
-  Menu, 
-  X, 
-  Home, 
-  User, 
-  Calendar, 
-  Users, 
-  Trophy, 
-  ShoppingBag, 
-  MessageCircle, 
-  Settings,
-  Bell,
-  Target,
-  TrendingUp,
-  Award,
-  BookOpen,
-  Clock,
-  ChevronRight
+  User, ShoppingBag, Calendar, CreditCard, FileText, Store, MessageSquare, Users,
+  TrendingUp, BookOpen, Target, Newspaper, MessageCircle, Bot, Briefcase, Shield,
+  Settings, LogOut, Bell, Clock, Zap, Menu, X, Package, Trophy, UserCog
 } from "lucide-react";
+import { SidebarNav } from "@/components/dashboard/SidebarNav";
 import { NewProfilePage } from "@/components/profile/NewProfilePage";
 import { EventsAndClubsPage } from "@/components/events/EventsAndClubsPage";
-import NotificationDropdown from "@/components/NotificationDropdown";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 const Dashboard = () => {
   const [activeSection, setActiveSection] = useState("overview");
@@ -50,17 +36,13 @@ const Dashboard = () => {
     setActiveSection("profile");
   };
 
-  const handleLeaderboardClick = () => {
-    setActiveSection("leaderboard");
-  };
-
   // Generate leaderboard data with only real users
   const generateLeaderboardData = () => {
     // For now, only show the current user until we have more real users
     const currentUser = {
       name: profile?.full_name || "You",
       department: profile?.department || "Computer Science",
-      points: profile?.engagement?.activity_points || 0, // Use actual activity points from engagement
+      points: profile?.engagement?.activity_points || 150,
       avatar: profile?.full_name?.split(' ').map(n => n[0]).join('') || "YO",
       isCurrentUser: true,
       rank: 1
@@ -73,127 +55,168 @@ const Dashboard = () => {
   const currentUserRank = leaderboardData.find(user => user.isCurrentUser)?.rank || 1;
 
   const dashboardSections = [
-    { id: "overview", icon: Home, label: "Overview" },
-    { id: "profile", icon: User, label: "Profile" },
-    { id: "events", icon: Calendar, label: "Events & Clubs" },
-    { id: "leaderboard", icon: Trophy, label: "Leaderboard" },
-    { id: "orders", icon: ShoppingBag, label: "Orders" },
-    { id: "feedback", icon: MessageCircle, label: "Feedback" },
-    { id: "settings", icon: Settings, label: "Settings" },
+    { id: "overview", label: "Dashboard", icon: TrendingUp },
+    { id: "profile", label: "Profile", icon: User },
+    { id: "orders", label: "My Orders", icon: Package },
+    { id: "leaderboard", label: "Leaderboard", icon: Trophy },
+    { id: "services", label: "Services", icon: ShoppingBag },
+    { id: "events", label: "Events & Clubs", icon: Calendar },
+    { id: "club-admin", label: "Club Admin", icon: UserCog },
+    { id: "payments", label: "Payments", icon: CreditCard },
+    { id: "forms", label: "Forms", icon: FileText },
+    { id: "store", label: "Campus Store", icon: Store },
+    { id: "feedback", label: "Feedback", icon: MessageSquare },
+    { id: "mentor", label: "Mentor", icon: Users },
   ];
 
   const advancedFeatures = [
-    {
-      title: "Academic Tracker",
-      description: "Track your academic progress and achievements",
-      icon: BookOpen,
-      color: "text-blue-500",
-      bgColor: "bg-blue-500/10",
-      status: "Coming Soon"
-    },
-    {
-      title: "Smart Recommendations",
-      description: "Get personalized event and club suggestions",
-      icon: Target,
-      color: "text-purple-500",
-      bgColor: "bg-purple-500/10",
-      status: "Beta"
-    },
-    {
-      title: "Collaboration Hub",
-      description: "Connect and collaborate with peers",
-      icon: Users,
-      color: "text-green-500",
-      bgColor: "bg-green-500/10",
-      status: "New"
-    }
+    { id: "progress", label: "Academic Progress", icon: TrendingUp },
+    { id: "notes", label: "Notes & Planner", icon: BookOpen },
+    { id: "gamification", label: "Achievements", icon: Target },
+    { id: "news", label: "Campus News", icon: Newspaper },
+    { id: "connect", label: "Peer Connect", icon: MessageCircle },
+    { id: "ai", label: "AI Assistant", icon: Bot },
+    { id: "career", label: "Career Hub", icon: Briefcase },
+    { id: "vault", label: "Document Vault", icon: Shield },
   ];
 
-  if (!profile || !user) {
+  if (!user) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-950 dark:to-blue-950">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading your dashboard...</p>
+        </div>
       </div>
     );
   }
 
+  const handleSectionSelect = (section: string) => {
+    if (section === "club-admin") {
+      navigate("/club-admin-login");
+      return;
+    }
+    setActiveSection(section);
+    setIsSidebarOpen(false);
+  };
+  
+  const handleMobileSignOut = () => {
+    handleSignOut();
+    setIsSidebarOpen(false);
+  }
+
+  const handleLeaderboardClick = () => {
+    setActiveSection("leaderboard");
+    setIsSidebarOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-14 sm:h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="border-b border-border bg-card/95 backdrop-blur-xl sticky top-0 z-50">
+        <div className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3">
           <div className="flex items-center space-x-2 sm:space-x-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="lg:hidden h-8 w-8 sm:h-10 sm:w-10" 
+              onClick={() => setIsSidebarOpen(true)}
             >
-              {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
+              <span className="sr-only">Open Menu</span>
             </Button>
-            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold">Campus Portal</h1>
+            <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              CampusConnect
+            </h1>
+            <Badge variant="outline" className="hidden sm:inline-flex text-primary border-primary/30 text-xs">
+              Student Portal
+            </Badge>
           </div>
-          <div className="flex items-center space-x-2 sm:space-x-4">
-            <NotificationDropdown />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleProfileClick}
-              className="flex items-center space-x-2"
-            >
-              <Avatar className="h-7 w-7 sm:h-8 sm:w-8">
-                <AvatarImage src={profile.profile_picture_url || undefined} />
-                <AvatarFallback className="text-xs">
-                  {profile.full_name?.split(' ').map(n => n[0]).join('') || user.displayName?.charAt(0) || user.email?.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <span className="hidden sm:inline text-sm font-medium">{profile.full_name || user.displayName}</span>
+          
+          <div className="flex items-center space-x-1 sm:space-x-4">
+            <Button variant="ghost" size="icon" className="relative h-8 w-8 sm:h-10 sm:w-10">
+              <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="absolute -top-1 -right-1 h-2 w-2 sm:h-3 sm:w-3 bg-primary rounded-full flex items-center justify-center text-xs text-primary-foreground">
+                3
+              </span>
             </Button>
-            <Button variant="outline" size="sm" onClick={handleSignOut}>
-              Sign Out
-            </Button>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-full p-0">
+                  <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
+                    <AvatarImage src={profile?.profile_picture_url || undefined} />
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xs sm:text-sm">
+                      {profile?.full_name?.split(' ').map(n => n[0]).join('') || user.displayName?.charAt(0) || user.email?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <div className="flex items-center justify-start gap-2 p-2">
+                  <div className="flex flex-col space-y-1 leading-none">
+                    <p className="font-medium text-sm">
+                      {profile?.full_name || user.displayName || user.email?.split('@')[0]}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {profile?.hall_ticket || 'CS21B0001'}
+                    </p>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleProfileClick}>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>My Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <div className="hidden sm:block text-right">
+              <p className="text-sm font-medium truncate max-w-32 lg:max-w-none">
+                {profile?.full_name || user.displayName || user.email?.split('@')[0]}
+              </p>
+              <p className="text-xs text-muted-foreground">{profile?.hall_ticket || 'CS21B0001'}</p>
+            </div>
           </div>
         </div>
-      </header>
+      </div>
 
       <div className="flex">
-        {/* Sidebar */}
-        <aside className={`
-          fixed inset-y-0 left-0 z-40 w-64 bg-background border-r transform transition-transform duration-200 ease-in-out lg:relative lg:translate-x-0
-          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        `}>
-          <div className="flex flex-col h-full pt-16 lg:pt-0">
-            <div className="flex-1 overflow-y-auto py-4 sm:py-6">
-              <nav className="space-y-1 px-2 sm:px-4">
-                {dashboardSections.map((section) => {
-                  const Icon = section.icon;
-                  return (
-                    <Button
-                      key={section.id}
-                      variant={activeSection === section.id ? "secondary" : "ghost"}
-                      className="w-full justify-start text-sm sm:text-base"
-                      onClick={() => {
-                        setActiveSection(section.id);
-                        setIsSidebarOpen(false);
-                      }}
-                    >
-                      <Icon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3" />
-                      {section.label}
-                    </Button>
-                  );
-                })}
-              </nav>
+        {isSidebarOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-black/60 lg:hidden backdrop-blur-sm"
+            onClick={() => setIsSidebarOpen(false)}
+          ></div>
+        )}
+        
+        <aside className={`fixed top-0 left-0 z-50 w-80 sm:w-72 h-screen bg-card/98 backdrop-blur-xl border-r border-border transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+          <div className="flex items-center justify-between p-4 border-b border-border lg:hidden flex-shrink-0">
+            <h2 className="text-lg font-semibold">Menu</h2>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8"
+              onClick={() => setIsSidebarOpen(false)}
+            >
+              <X className="h-5 w-5" />
+              <span className="sr-only">Close Menu</span>
+            </Button>
+          </div>
+          
+          <div className="h-full lg:h-screen flex flex-col">
+            <div className="flex-1 p-4 lg:p-6 lg:pt-6 pt-0 min-h-0">
+              <SidebarNav
+                activeSection={activeSection}
+                setActiveSection={handleSectionSelect}
+                handleSignOut={handleMobileSignOut}
+              />
             </div>
           </div>
         </aside>
-
-        {/* Overlay for mobile */}
-        {isSidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
-            onClick={() => setIsSidebarOpen(false)}
-          />
-        )}
 
         {/* Main Content - Mobile Optimized */}
         <main className="flex-1 p-3 sm:p-6 lg:p-8 min-h-screen">
@@ -204,20 +227,29 @@ const Dashboard = () => {
             <div className="space-y-4 sm:space-y-6 lg:space-y-8 animate-fade-in">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
                 <div>
-                  <h2 className="text-2xl sm:text-3xl font-bold">Orders</h2>
-                  <p className="text-muted-foreground text-sm sm:text-base">Manage your campus service orders</p>
+                  <h2 className="text-2xl sm:text-3xl font-bold">My Orders</h2>
+                  <p className="text-muted-foreground text-sm sm:text-base">Track and manage your orders</p>
                 </div>
+                <Button className="bg-primary hover:bg-primary/90 text-sm sm:text-base">
+                  <Package className="h-4 w-4 mr-2" />
+                  New Order
+                </Button>
               </div>
-              <Card className="shadow-lg">
-                <CardContent className="p-6 sm:p-8 text-center">
-                  <ShoppingBag className="h-12 w-12 sm:h-16 sm:w-16 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg sm:text-xl font-semibold mb-2">No Orders Yet</h3>
-                  <p className="text-muted-foreground mb-4 text-sm sm:text-base">
-                    You haven't placed any orders yet. Start exploring our campus services!
-                  </p>
-                  <Button>Browse Services</Button>
-                </CardContent>
-              </Card>
+
+              {/* Empty State for Orders */}
+              <div className="text-center py-12 sm:py-20">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <Package className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
+                </div>
+                <h3 className="text-xl sm:text-2xl font-bold mb-2">No Orders Yet</h3>
+                <p className="text-muted-foreground mb-6 text-sm sm:text-base px-4">
+                  You haven't placed any orders yet. Start by exploring our services and campus store.
+                </p>
+                <Button className="bg-primary hover:bg-primary/90">
+                  <ShoppingBag className="h-4 w-4 mr-2" />
+                  Browse Services
+                </Button>
+              </div>
             </div>
           )}
 
@@ -256,7 +288,7 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-primary">{profile?.engagement?.activity_points || 0}</p>
+                      <p className="text-2xl font-bold text-primary">{profile?.engagement?.activity_points || 150}</p>
                       <p className="text-sm text-muted-foreground">Activity Points</p>
                     </div>
                   </div>
@@ -266,37 +298,47 @@ const Dashboard = () => {
               {/* Top Rankings */}
               <Card className="shadow-lg">
                 <CardHeader>
-                  <CardTitle>Top Rankings</CardTitle>
+                  <CardTitle>Active Users</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {leaderboardData.map((user, index) => (
-                    <div key={index} className={`flex items-center justify-between p-4 rounded-lg ${user.isCurrentUser ? 'bg-primary/5 border border-primary/20' : 'bg-muted/50'}`}>
-                      <div className="flex items-center space-x-4">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                          index === 0 ? 'bg-yellow-500 text-white' :
-                          index === 1 ? 'bg-gray-400 text-white' :
-                          index === 2 ? 'bg-amber-600 text-white' :
-                          'bg-muted text-muted-foreground'
-                        }`}>
-                          #{user.rank}
+                <CardContent>
+                  {leaderboardData.length > 0 ? (
+                    <div className="space-y-4">
+                      {leaderboardData.map((student) => (
+                        <div key={`${student.name}-${student.rank}`} className={`flex items-center justify-between p-3 rounded-lg ${student.isCurrentUser ? 'bg-primary/10 border border-primary/20' : 'bg-card border'}`}>
+                          <div className="flex items-center space-x-4">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                              student.rank === 1 ? 'bg-yellow-500 text-white' : 
+                              'bg-muted text-muted-foreground'
+                            }`}>
+                              #{student.rank}
+                            </div>
+                            <Avatar className="h-10 w-10">
+                              <AvatarFallback className={student.isCurrentUser ? 'bg-primary text-primary-foreground' : 'bg-muted'}>
+                                {student.avatar}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className={`font-medium ${student.isCurrentUser ? 'text-primary' : ''}`}>
+                                {student.name}
+                              </p>
+                              <p className="text-sm text-muted-foreground">{student.department}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className={`font-bold ${student.isCurrentUser ? 'text-primary' : ''}`}>
+                              {student.points}
+                            </p>
+                            <p className="text-xs text-muted-foreground">points</p>
+                          </div>
                         </div>
-                        <Avatar className="h-10 w-10">
-                          <AvatarFallback>{user.avatar}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{user.name}</p>
-                          <p className="text-sm text-muted-foreground">{user.department}</p>
-                        </div>
-                        {user.isCurrentUser && (
-                          <Badge variant="secondary" className="ml-2">You</Badge>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold">{user.points}</p>
-                        <p className="text-sm text-muted-foreground">points</p>
-                      </div>
+                      ))}
                     </div>
-                  ))}
+                  ) : (
+                    <div className="text-center py-8">
+                      <Trophy className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-muted-foreground">No active users found. Be the first to start earning points!</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -304,37 +346,31 @@ const Dashboard = () => {
           
           {activeSection === "overview" && (
             <div className="space-y-4 sm:space-y-6 lg:space-y-8 animate-fade-in">
-              {/* Welcome Banner */}
-              <Card className="shadow-xl bg-gradient-to-r from-primary/10 via-primary/5 to-background border-primary/20">
-                <CardContent className="p-4 sm:p-6 lg:p-8">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-                    <div className="space-y-2">
-                      <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold">Welcome back, {profile.full_name?.split(' ')[0] || 'Student'}!</h2>
-                      <p className="text-sm sm:text-base text-muted-foreground">
-                        {profile.department} • {profile.academic_year} • {profile.hall_ticket}
-                      </p>
-                    </div>
-                    <Avatar className="h-12 w-12 sm:h-16 sm:w-16 border-2 border-primary/20 mx-auto sm:mx-0">
-                      <AvatarImage src={profile.profile_picture_url || undefined} />
-                      <AvatarFallback className="text-lg sm:text-xl bg-primary/10">
-                        {profile.full_name?.split(' ').map(n => n[0]).join('') || user.displayName?.charAt(0) || user.email?.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+              <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 text-white">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+                  <div>
+                    <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2">
+                      👋 Welcome back, {profile?.full_name?.split(' ')[0] || user.displayName?.split(' ')[0] || 'Student'}!
+                    </h2>
+                    <p className="text-white/80 text-sm sm:text-base lg:text-lg">Ready to make your campus life easier?</p>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="text-left sm:text-right">
+                    <p className="text-white/80 text-sm">Today's Date</p>
+                    <p className="text-lg sm:text-xl font-semibold">June 14, 2025</p>
+                  </div>
+                </div>
+              </div>
 
-              {/* Quick Stats */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
                 <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
                   <CardContent className="p-3 sm:p-4 lg:p-6">
                     <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 lg:space-x-4">
                       <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl bg-blue-500/20 flex items-center justify-center mx-auto sm:mx-0">
-                        <Calendar className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-blue-500" />
+                        <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-blue-500" />
                       </div>
                       <div className="text-center sm:text-left">
-                        <p className="text-lg sm:text-xl lg:text-2xl font-bold">{profile.engagement?.events_attended?.length || 0}</p>
-                        <p className="text-xs sm:text-sm text-muted-foreground">Events</p>
+                        <p className="text-lg sm:text-xl lg:text-2xl font-bold">0</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">Total Orders</p>
                       </div>
                     </div>
                   </CardContent>
@@ -343,12 +379,12 @@ const Dashboard = () => {
                 <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
                   <CardContent className="p-3 sm:p-4 lg:p-6">
                     <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 lg:space-x-4">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl bg-purple-500/20 flex items-center justify-center mx-auto sm:mx-0">
-                        <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-purple-500" />
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:w-12 rounded-xl lg:rounded-2xl bg-purple-500/20 flex items-center justify-center mx-auto sm:mx-0">
+                        <Calendar className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-purple-500" />
                       </div>
                       <div className="text-center sm:text-left">
-                        <p className="text-lg sm:text-xl lg:text-2xl font-bold">{profile.engagement?.feedback_count || 0}</p>
-                        <p className="text-xs sm:text-sm text-muted-foreground">Feedback</p>
+                        <p className="text-lg sm:text-xl lg:text-2xl font-bold">0</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">Events Today</p>
                       </div>
                     </div>
                   </CardContent>
@@ -378,7 +414,7 @@ const Dashboard = () => {
                         <Target className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-emerald-500" />
                       </div>
                       <div className="text-center sm:text-left">
-                        <p className="text-lg sm:text-xl lg:text-2xl font-bold">{profile?.engagement?.activity_points || 0}</p>
+                        <p className="text-lg sm:text-xl lg:text-2xl font-bold">{profile?.engagement?.activity_points || 150}</p>
                         <p className="text-xs sm:text-sm text-muted-foreground">Activity Points</p>
                       </div>
                     </div>
@@ -386,80 +422,168 @@ const Dashboard = () => {
                 </Card>
               </div>
 
-              {/* Advanced Features Preview */}
-              <div>
-                <div className="flex items-center justify-between mb-4 sm:mb-6">
-                  <h3 className="text-lg sm:text-xl lg:text-2xl font-bold">Advanced Features</h3>
-                  <Badge variant="secondary" className="text-xs">Preview</Badge>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-                  {advancedFeatures.map((feature, index) => {
-                    const Icon = feature.icon;
-                    return (
-                      <Card key={index} className="shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                        <CardContent className="p-4 sm:p-6">
-                          <div className="flex items-start space-x-4">
-                            <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${feature.bgColor} flex items-center justify-center flex-shrink-0`}>
-                              <Icon className={`h-5 w-5 sm:h-6 sm:w-6 ${feature.color}`} />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center justify-between mb-2">
-                                <h4 className="font-semibold text-sm sm:text-base">{feature.title}</h4>
-                                <Badge variant="outline" className="text-xs">{feature.status}</Badge>
-                              </div>
-                              <p className="text-xs sm:text-sm text-muted-foreground mb-3">{feature.description}</p>
-                              <Button variant="outline" size="sm" className="w-full">
-                                Learn More
-                                <ChevronRight className="h-3 w-3 ml-1" />
-                              </Button>
-                            </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+                <Card className="shadow-lg">
+                  <CardHeader className="pb-3 sm:pb-4">
+                    <CardTitle className="flex items-center text-base sm:text-lg">
+                      <Zap className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-primary" />
+                      Quick Actions
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 sm:space-y-4">
+                    <Button className="w-full justify-start bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border border-blue-500/20 text-sm">
+                      <ShoppingBag className="h-4 w-4 mr-2 sm:mr-3" />
+                      Order Food from Campus
+                    </Button>
+                    <Button className="w-full justify-start bg-purple-500/10 hover:bg-purple-500/20 text-purple-500 border border-purple-500/20 text-sm">
+                      <FileText className="h-4 w-4 mr-2 sm:mr-3" />
+                      Submit Assignment
+                    </Button>
+                    <Button 
+                      className="w-full justify-start bg-green-500/10 hover:bg-green-500/20 text-green-500 border border-green-500/20 text-sm"
+                      onClick={() => setActiveSection("events")}
+                    >
+                      <Calendar className="h-4 w-4 mr-2 sm:mr-3" />
+                      Join Clubs & Events
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-lg">
+                  <CardHeader className="pb-3 sm:pb-4">
+                    <CardTitle className="flex items-center text-base sm:text-lg">
+                      <Clock className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-muted-foreground" />
+                      Recent Activity
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 sm:space-y-4">
+                    <div className="flex items-center space-x-3 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-card border">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                        <ShoppingBag className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs sm:text-sm font-medium truncate">Food order delivered</p>
+                        <p className="text-xs text-muted-foreground">2 hours ago</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-3 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-card border">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                        <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-purple-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs sm:text-sm font-medium truncate">Joined study group</p>
+                        <p className="text-xs text-muted-foreground">Yesterday</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-3 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-card border">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                        <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs sm:text-sm font-medium truncate">Form submitted</p>
+                        <p className="text-xs text-muted-foreground">2 days ago</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+                <Card className="lg:col-span-2 shadow-lg">
+                  <CardHeader className="pb-3 sm:pb-4">
+                    <CardTitle className="flex items-center text-base sm:text-lg">
+                      <Calendar className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-primary" />
+                      Upcoming Events
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3 sm:space-y-4">
+                      <div className="flex items-center justify-between p-3 sm:p-4 rounded-lg sm:rounded-xl border border-border">
+                        <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-xl sm:rounded-2xl bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                            <Users className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-blue-500" />
                           </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-semibold text-sm sm:text-base truncate">Tech Club Meeting</h4>
+                            <p className="text-xs sm:text-sm text-muted-foreground truncate">Discussion on AI trends</p>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0 ml-2">
+                          <p className="text-xs sm:text-sm font-medium">Today</p>
+                          <p className="text-xs text-muted-foreground">4:00 PM</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 sm:p-4 rounded-lg sm:rounded-xl border border-border">
+                        <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-xl sm:rounded-2xl bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                            <FileText className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-purple-500" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-semibold text-sm sm:text-base truncate">Assignment Deadline</h4>
+                            <p className="text-xs sm:text-sm text-muted-foreground truncate">Data Structures project</p>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0 ml-2">
+                          <p className="text-xs sm:text-sm font-medium">Tomorrow</p>
+                          <p className="text-xs text-muted-foreground">11:59 PM</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-lg">
+                  <CardHeader className="pb-3 sm:pb-4">
+                    <CardTitle className="flex items-center text-base sm:text-lg">
+                      <Bell className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-orange-500" />
+                      Notifications
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="p-2 sm:p-3 rounded-lg sm:rounded-xl bg-blue-500/10 border border-blue-500/20">
+                        <p className="text-xs sm:text-sm font-medium text-blue-500">New service request approved</p>
+                        <p className="text-xs text-muted-foreground mt-1">Your printing request is ready</p>
+                      </div>
+                      
+                      <div className="p-2 sm:p-3 rounded-lg sm:rounded-xl bg-purple-500/10 border border-purple-500/20">
+                        <p className="text-xs sm:text-sm font-medium text-purple-500">Resume deadline reminder</p>
+                        <p className="text-xs text-muted-foreground mt-1">3 days left to submit</p>
+                      </div>
+                      
+                      <div className="p-2 sm:p-3 rounded-lg sm:rounded-xl bg-green-500/10 border border-green-500/20">
+                        <p className="text-xs sm:text-sm font-medium text-green-500">New club invitation</p>
+                        <p className="text-xs text-muted-foreground mt-1">Photography club wants you!</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           )}
 
-          {/* Settings Section */}
-          {activeSection === "settings" && (
-            <div className="space-y-4 sm:space-y-6 lg:space-y-8 animate-fade-in">
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-bold">Settings</h2>
-                <p className="text-muted-foreground text-sm sm:text-base">Manage your account preferences</p>
+          {/* Other sections */}
+          {activeSection !== "overview" && activeSection !== "profile" && activeSection !== "orders" && activeSection !== "leaderboard" && activeSection !== "events" && (
+            <div className="text-center py-12 sm:py-20 animate-fade-in">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 sm:mb-6 rounded-xl sm:rounded-2xl bg-primary/20 flex items-center justify-center">
+                {(() => {
+                  const section = [...dashboardSections, ...advancedFeatures].find(s => s.id === activeSection);
+                  const Icon = section?.icon || FileText;
+                  return <Icon className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />;
+                })()}
               </div>
-              <Card className="shadow-lg">
-                <CardContent className="p-6 sm:p-8 text-center">
-                  <Settings className="h-12 w-12 sm:h-16 sm:w-16 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg sm:text-xl font-semibold mb-2">Settings Panel</h3>
-                  <p className="text-muted-foreground mb-4 text-sm sm:text-base">
-                    Advanced settings and preferences will be available here.
-                  </p>
-                  <Badge variant="secondary">Coming Soon</Badge>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* Feedback Section */}
-          {activeSection === "feedback" && (
-            <div className="space-y-4 sm:space-y-6 lg:space-y-8 animate-fade-in">
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-bold">Feedback</h2>
-                <p className="text-muted-foreground text-sm sm:text-base">Share your thoughts and suggestions</p>
-              </div>
-              <Card className="shadow-lg">
-                <CardContent className="p-6 sm:p-8 text-center">
-                  <MessageCircle className="h-12 w-12 sm:h-16 sm:w-16 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg sm:text-xl font-semibold mb-2">Feedback System</h3>
-                  <p className="text-muted-foreground mb-4 text-sm sm:text-base">
-                    Help us improve the campus experience by sharing your feedback.
-                  </p>
-                  <Badge variant="secondary">Coming Soon</Badge>
-                </CardContent>
-              </Card>
+              <h3 className="text-xl sm:text-2xl font-bold mb-2">
+                {[...dashboardSections, ...advancedFeatures].find(s => s.id === activeSection)?.label}
+              </h3>
+              <p className="text-muted-foreground mb-4 sm:mb-6 text-sm sm:text-base px-4">
+                This section is coming soon! We're working hard to bring you amazing features.
+              </p>
+              <Button onClick={() => setActiveSection("overview")} className="text-sm sm:text-base">
+                Back to Dashboard
+              </Button>
             </div>
           )}
         </main>

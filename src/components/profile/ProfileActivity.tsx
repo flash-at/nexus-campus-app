@@ -9,9 +9,6 @@ interface ProfileActivityProps {
 }
 
 export const ProfileActivity = ({ profile }: ProfileActivityProps) => {
-  // Ensure we get the correct activity points from engagement
-  const activityPoints = profile.engagement?.activity_points || 0;
-  
   const recentActivities = [
     {
       type: "event",
@@ -89,7 +86,7 @@ export const ProfileActivity = ({ profile }: ProfileActivityProps) => {
           {/* Activity Stats */}
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <div className="text-center p-3 sm:p-4 rounded-lg sm:rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/20 border border-blue-500/20">
-              <div className="text-xl sm:text-2xl font-bold text-blue-600">{activityPoints}</div>
+              <div className="text-xl sm:text-2xl font-bold text-blue-600">{profile.engagement?.activity_points || 0}</div>
               <div className="text-xs sm:text-sm text-muted-foreground">Activity Points</div>
             </div>
             <div className="text-center p-3 sm:p-4 rounded-lg sm:rounded-xl bg-gradient-to-br from-emerald-500/10 to-green-500/20 border border-emerald-500/20">
@@ -124,12 +121,12 @@ export const ProfileActivity = ({ profile }: ProfileActivityProps) => {
           <div className="p-3 sm:p-4 rounded-lg sm:rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/20 border border-purple-500/20">
             <div className="flex justify-between items-center mb-2">
               <span className="text-xs sm:text-sm font-semibold">Progress to Next Level</span>
-              <span className="text-xs sm:text-sm text-muted-foreground">Level {Math.floor(activityPoints / 100) + 1}</span>
+              <span className="text-xs sm:text-sm text-muted-foreground">Level {Math.floor((profile.engagement?.activity_points || 0) / 100) + 1}</span>
             </div>
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 sm:h-3">
               <div 
                 className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 sm:h-3 rounded-full transition-all duration-500"
-                style={{ width: `${(activityPoints % 100)}%` }}
+                style={{ width: `${((profile.engagement?.activity_points || 0) % 100)}%` }}
               ></div>
             </div>
           </div>

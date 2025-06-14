@@ -1,7 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "firebase/auth";
-import { addActivityPoints, POINT_RULES } from "./activityPointsService";
 
 export interface AcademicInfo {
   id: string;
@@ -17,7 +15,7 @@ export interface Engagement {
     id: string;
     user_id: string;
     activity_points: number;
-    badges: any | null;
+    badges: any | null; // JSONB
     last_login: string | null;
     events_attended: string[] | null;
     feedback_count: number;
@@ -40,7 +38,7 @@ export interface Preferences {
     language: string;
     theme: 'Light' | 'Dark' | 'System';
     notifications_enabled: boolean;
-    widgets_enabled: any | null;
+    widgets_enabled: any | null; // JSONB
 }
 
 export interface UserProfile {
@@ -69,7 +67,7 @@ export interface UserProfile {
 const getDefaultEngagement = (userId: string): Engagement => ({
   id: '',
   user_id: userId,
-  activity_points: POINT_RULES.ACCOUNT_CREATION, // Start with account creation points
+  activity_points: 150, // Default starting points
   badges: null,
   last_login: null,
   events_attended: [],
@@ -147,8 +145,8 @@ export const createUserProfile = async (
 
     console.log("User profile created successfully:", data);
 
-    // After creating the user profile, manually create engagement data with account creation points
-    await ensureEngagementData(data.id, true);
+    // After creating the user profile, manually create engagement data if it doesn't exist
+    await ensureEngagementData(data.id);
 
     // Fetch the complete profile with relations
     const completeProfile = await getUserProfile(firebaseUser.uid);
@@ -161,7 +159,7 @@ export const createUserProfile = async (
 };
 
 // Function to ensure engagement data exists for a user
-const ensureEngagementData = async (userId: string, isNewUser: boolean = false): Promise<void> => {
+const ensureEngagementData = async (userId: string): Promise<void> => {
   try {
     // Check if engagement data exists
     const { data: existingEngagement } = await supabase
@@ -176,7 +174,7 @@ const ensureEngagementData = async (userId: string, isNewUser: boolean = false):
         .from("engagement")
         .insert({
           user_id: userId,
-          activity_points: isNewUser ? POINT_RULES.ACCOUNT_CREATION : 0,
+          activity_points: 150,
           feedback_count: 0,
           events_attended: [],
           last_login: new Date().toISOString()
@@ -186,11 +184,6 @@ const ensureEngagementData = async (userId: string, isNewUser: boolean = false):
         console.error("Error creating engagement data:", error);
       } else {
         console.log("Created engagement data for user:", userId);
-        
-        // If this is a new user, record the account creation points in history
-        if (isNewUser) {
-          await addActivityPoints(userId, POINT_RULES.ACCOUNT_CREATION, "Account creation bonus");
-        }
       }
     }
   } catch (error) {
@@ -246,13 +239,33 @@ export const getUserProfile = async (firebaseUid: string): Promise<UserProfile |
         data.engagement = updatedData.engagement;
       } else {
         // Fallback to ensure we always have engagement data
-        data.engagement = getDefaultEngagement(data.id);
+        data.engagement = {
+          id: '',
+          user_id: data.id,
+          activity_points: 150,
+          badges: null,
+          last_login: null,
+          events_attended: [],
+          feedback_count: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
       }
     }
 
     // Ensure engagement is properly structured as a final fallback
     if (!data.engagement) {
-      data.engagement = getDefaultEngagement(data.id);
+      data.engagement = {
+        id: '',
+        user_id: data.id,
+        activity_points: 150,
+        badges: null,
+        last_login: null,
+        events_attended: [],
+        feedback_count: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
     }
 
     console.log("User profile fetched successfully:", data);
