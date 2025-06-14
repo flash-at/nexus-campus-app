@@ -341,7 +341,7 @@ export type Database = {
           id: string
           language: string | null
           notifications_enabled: boolean | null
-          theme: string | null
+          theme: Database["public"]["Enums"]["theme_type"] | null
           updated_at: string | null
           user_id: string
           widgets_enabled: Json | null
@@ -351,7 +351,7 @@ export type Database = {
           id?: string
           language?: string | null
           notifications_enabled?: boolean | null
-          theme?: string | null
+          theme?: Database["public"]["Enums"]["theme_type"] | null
           updated_at?: string | null
           user_id: string
           widgets_enabled?: Json | null
@@ -361,7 +361,7 @@ export type Database = {
           id?: string
           language?: string | null
           notifications_enabled?: boolean | null
-          theme?: string | null
+          theme?: Database["public"]["Enums"]["theme_type"] | null
           updated_at?: string | null
           user_id?: string
           widgets_enabled?: Json | null
@@ -513,7 +513,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      theme_type: "Light" | "Dark" | "System"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -628,6 +628,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      theme_type: ["Light", "Dark", "System"],
+    },
   },
 } as const

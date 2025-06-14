@@ -35,7 +35,7 @@ export interface Preferences {
     id: string;
     user_id: string;
     language: string;
-    theme: string;
+    theme: 'Light' | 'Dark' | 'System';
     notifications_enabled: boolean;
     widgets_enabled: any | null; // JSONB
 }
@@ -69,14 +69,13 @@ export const checkHallTicketExists = async (hallTicket: string): Promise<boolean
       .from("users")
       .select("hall_ticket")
       .eq("hall_ticket", hallTicket)
-      .single();
+      .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
+    if (error) {
       console.error("Error checking hall ticket:", error);
       return false;
     }
 
-    console.log("Hall ticket check result:", data !== null);
     return data !== null;
   } catch (error) {
     console.error("Error checking hall ticket:", error);
@@ -132,14 +131,11 @@ export const createUserProfile = async (
 
     console.log("User profile created successfully:", data);
 
-    // Return the created profile data directly since we just created it
-    return {
-      ...data,
-      academic_info: null,
-      engagement: null,
-      documents: [],
-      preferences: null
-    } as UserProfile;
+    // After creating the user profile, fetch the complete profile with relations
+    // The trigger should have automatically created related data
+    const completeProfile = await getUserProfile(firebaseUser.uid);
+    
+    return completeProfile;
   } catch (error) {
     console.error("Error creating user profile:", error);
     return null;
@@ -160,14 +156,15 @@ export const getUserProfile = async (firebaseUid: string): Promise<UserProfile |
         preferences(*)
       `)
       .eq("firebase_uid", firebaseUid)
-      .single();
+      .maybeSingle();
 
     if (error) {
-      if (error.code === 'PGRST116') { // No rows found
-        console.warn("No user profile found for uid:", firebaseUid);
-        return null;
-      }
       console.error("Error fetching user profile:", error);
+      return null;
+    }
+
+    if (!data) {
+      console.log("No user profile found for UID:", firebaseUid);
       return null;
     }
 
