@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Users, Calendar, Settings, LogOut, Crown, Shield, User } from "lucide-react";
+import NotificationDropdown from "@/components/NotificationDropdown";
+import NotifyStudentsDialog from "@/components/NotifyStudentsDialog";
 
 const ClubAdmin = () => {
   const [clubSession, setClubSession] = useState(null);
@@ -140,10 +142,21 @@ const ClubAdmin = () => {
                   <span className="ml-1 capitalize">{clubSession.userRole.replace('_', ' ')}</span>
                 </Badge>
               </div>
-              <Button variant="outline" onClick={handleLogout}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
+              <div className="flex items-center gap-2">
+                <NotificationDropdown 
+                  clubId={clubSession.clubId} 
+                  userId={clubSession.userId}
+                />
+                <NotifyStudentsDialog 
+                  clubId={clubSession.clubId}
+                  clubName={clubData.name}
+                  members={members}
+                />
+                <Button variant="outline" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </Button>
+              </div>
             </div>
           </CardHeader>
         </Card>
