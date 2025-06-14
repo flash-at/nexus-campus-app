@@ -87,6 +87,10 @@ const Dashboard = () => {
   }
 
   const handleSectionSelect = (section: string) => {
+    if (section === "club-admin") {
+      navigate("/club-admin-login");
+      return;
+    }
     setActiveSection(section);
     setIsSidebarOpen(false);
   };
@@ -529,7 +533,7 @@ const Dashboard = () => {
           )}
 
           {/* Other sections */}
-          {activeSection !== "overview" && activeSection !== "profile" && activeSection !== "orders" && activeSection !== "leaderboard" && activeSection !== "events" && activeSection !== "club-admin" && (
+          {activeSection !== "overview" && activeSection !== "profile" && activeSection !== "orders" && activeSection !== "leaderboard" && activeSection !== "events" && (
             <div className="text-center py-12 sm:py-20 animate-fade-in">
               <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 sm:mb-6 rounded-xl sm:rounded-2xl bg-primary/20 flex items-center justify-center">
                 {(() => {

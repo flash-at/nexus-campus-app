@@ -1,251 +1,175 @@
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
-import { useUserProfile } from "@/hooks/useUserProfile";
-import { 
-  Calendar, Users, Search, MapPin, Clock, User, Trophy, 
-  Plus, UserPlus, UserCheck, AlertCircle 
-} from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
-
-interface Club {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  max_members: number;
-  member_count?: number;
-  is_member?: boolean;
-}
-
-interface Event {
-  id: string;
-  title: string;
-  description: string;
-  event_date: string;
-  location: string;
-  category: string;
-  created_by: string;
-}
-
-interface ClubMembership {
-  id: string;
-  club_id: string;
-  user_id: string;
-  role: string;
-  joined_at: string;
-  clubs: {
-    name: string;
-    category: string;
-  };
-}
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { Calendar, Users, Search, Plus, Lock, UserCheck, LogOut, MapPin, Clock } from "lucide-react";
 
 export const EventsAndClubsPage = () => {
-  const [clubs, setClubs] = useState<Club[]>([]);
-  const [events, setEvents] = useState<Event[]>([]);
-  const [myMemberships, setMyMemberships] = useState<ClubMembership[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [clubs, setClubs] = useState([]);
+  const [myClubs, setMyClubs] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [joinDialogOpen, setJoinDialogOpen] = useState(false);
+  const [selectedClub, setSelectedClub] = useState(null);
+  const [clubPassword, setClubPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const { profile } = useUserProfile();
-  const { toast } = useToast();
 
   useEffect(() => {
-    loadData();
-  }, []);
+    fetchClubs();
+    fetchMyClubs();
+    fetchEvents();
+  }, [profile]);
 
-  const loadData = async () => {
-    setLoading(true);
-    await Promise.all([
-      loadClubs(),
-      loadEvents(),
-      loadMyMemberships()
-    ]);
-    setLoading(false);
-  };
-
-  const loadClubs = async () => {
+  const fetchClubs = async () => {
     try {
-      const { data: clubsData, error } = await supabase
+      const { data, error } = await supabase
         .from('clubs')
         .select(`
-          *,
-          club_memberships(id)
-        `);
-
+          id,
+          name,
+          description,
+          category,
+          max_members,
+          created_at,
+          club_memberships (count)
+        `)
+        .order('created_at', { ascending: false });
+      
       if (error) throw error;
-
-      const clubsWithMemberCount = clubsData?.map(club => ({
-        ...club,
-        member_count: club.club_memberships?.length || 0
-      })) || [];
-
-      setClubs(clubsWithMemberCount);
+      setClubs(data || []);
     } catch (error) {
-      console.error('Error loading clubs:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load clubs",
-        variant: "destructive"
-      });
+      console.error('Error fetching clubs:', error);
     }
   };
 
-  const loadEvents = async () => {
+  const fetchMyClubs = async () => {
+    if (!profile?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('club_memberships')
+        .select(`
+          id,
+          role,
+          joined_at,
+          clubs (
+            id,
+            name,
+            description,
+            category
+          )
+        `)
+        .eq('user_id', profile.id);
+      
+      if (error) throw error;
+      setMyClubs(data || []);
+    } catch (error) {
+      console.error('Error fetching my clubs:', error);
+    }
+  };
+
+  const fetchEvents = async () => {
     try {
       const { data, error } = await supabase
         .from('events')
         .select('*')
+        .gte('event_date', new Date().toISOString())
         .order('event_date', { ascending: true });
-
+      
       if (error) throw error;
       setEvents(data || []);
     } catch (error) {
-      console.error('Error loading events:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load events",
-        variant: "destructive"
-      });
+      console.error('Error fetching events:', error);
     }
   };
 
-  const loadMyMemberships = async () => {
+  const handleJoinClub = async () => {
+    if (!selectedClub || !profile?.id) return;
+    
+    setLoading(true);
+    setError("");
+
     try {
-      const { data: userData } = await supabase
-        .from('users')
-        .select('id')
-        .eq('firebase_uid', (await supabase.auth.getUser()).data.user?.id)
-        .single();
-
-      if (!userData) return;
-
-      const { data, error } = await supabase
-        .from('club_memberships')
-        .select(`
-          *,
-          clubs(name, category)
-        `)
-        .eq('user_id', userData.id);
-
-      if (error) throw error;
-      setMyMemberships(data || []);
-    } catch (error) {
-      console.error('Error loading memberships:', error);
-    }
-  };
-
-  const joinClub = async (clubId: string, password: string) => {
-    try {
-      // Check if already at limit of 3 clubs
-      if (myMemberships.length >= 3) {
-        toast({
-          title: "Club Limit Reached",
-          description: "You can only join a maximum of 3 clubs",
-          variant: "destructive"
-        });
-        return;
+      // Check if user has already reached the 3 club limit
+      if (myClubs.length >= 3) {
+        throw new Error("You can only join up to 3 clubs");
       }
 
-      // Get current user
-      const { data: userData } = await supabase
-        .from('users')
-        .select('id')
-        .eq('firebase_uid', (await supabase.auth.getUser()).data.user?.id)
-        .single();
-
-      if (!userData) {
-        toast({
-          title: "Error",
-          description: "User not found",
-          variant: "destructive"
-        });
-        return;
+      // Check if user is already a member
+      const existingMembership = myClubs.find(
+        membership => membership.clubs.id === selectedClub.id
+      );
+      if (existingMembership) {
+        throw new Error("You are already a member of this club");
       }
 
       // Verify club password
-      const { data: clubData } = await supabase
+      const { data: clubData, error: clubError } = await supabase
         .from('clubs')
         .select('password')
-        .eq('id', clubId)
+        .eq('id', selectedClub.id)
         .single();
 
-      if (clubData?.password !== password) {
-        toast({
-          title: "Invalid Password",
-          description: "Incorrect club password",
-          variant: "destructive"
-        });
-        return;
+      if (clubError) throw clubError;
+
+      if (clubData.password !== clubPassword) {
+        throw new Error("Incorrect club password");
       }
 
       // Join the club
-      const { error } = await supabase
+      const { error: joinError } = await supabase
         .from('club_memberships')
         .insert({
-          user_id: userData.id,
-          club_id: clubId,
+          club_id: selectedClub.id,
+          user_id: profile.id,
           role: 'member'
         });
 
-      if (error) throw error;
+      if (joinError) throw joinError;
 
-      toast({
-        title: "Success!",
-        description: "You have successfully joined the club",
-      });
-
-      // Reload data
-      loadData();
-    } catch (error: any) {
+      // Refresh data
+      await fetchMyClubs();
+      setJoinDialogOpen(false);
+      setClubPassword("");
+      setSelectedClub(null);
+      
+      alert('Successfully joined the club!');
+    } catch (error) {
       console.error('Error joining club:', error);
-      if (error.code === '23505') {
-        toast({
-          title: "Already a Member",
-          description: "You are already a member of this club",
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to join club",
-          variant: "destructive"
-        });
-      }
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const leaveClub = async (membershipId: string) => {
+  const handleLeaveClub = async (clubId) => {
+    if (!profile?.id) return;
+    
     try {
       const { error } = await supabase
         .from('club_memberships')
         .delete()
-        .eq('id', membershipId);
+        .eq('club_id', clubId)
+        .eq('user_id', profile.id);
 
       if (error) throw error;
 
-      toast({
-        title: "Left Club",
-        description: "You have left the club",
-      });
-
-      loadData();
+      await fetchMyClubs();
+      alert('Successfully left the club!');
     } catch (error) {
       console.error('Error leaving club:', error);
-      toast({
-        title: "Error",
-        description: "Failed to leave club",
-        variant: "destructive"
-      });
+      alert('Failed to leave club. Please try again.');
     }
-  };
-
-  const isClubMember = (clubId: string) => {
-    return myMemberships.some(membership => membership.club_id === clubId);
   };
 
   const filteredClubs = clubs.filter(club =>
@@ -255,186 +179,261 @@ export const EventsAndClubsPage = () => {
 
   const filteredEvents = events.filter(event =>
     event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    event.category.toLowerCase().includes(searchTerm.toLowerCase())
+    event.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-          <h2 className="text-3xl font-bold">Events & Clubs</h2>
-          <p className="text-muted-foreground">
-            Discover campus events and join clubs that match your interests
-          </p>
+          <h2 className="text-2xl sm:text-3xl font-bold">Events & Clubs</h2>
+          <p className="text-muted-foreground">Discover and join campus activities</p>
         </div>
-        <div className="flex items-center space-x-2 max-w-sm">
-          <Search className="h-4 w-4 text-muted-foreground" />
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Search events and clubs..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 w-full sm:w-80"
           />
         </div>
       </div>
 
-      {/* My Memberships Section */}
-      {myMemberships.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <UserCheck className="h-5 w-5 mr-2" />
-              My Clubs ({myMemberships.length}/3)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {myMemberships.map((membership) => (
-                <div key={membership.id} className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold">{membership.clubs.name}</h4>
-                    <Badge variant="outline">{membership.clubs.category}</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Joined {new Date(membership.joined_at).toLocaleDateString()}
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => leaveClub(membership.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    Leave Club
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       <Tabs defaultValue="clubs" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="clubs" className="flex items-center">
-            <Users className="h-4 w-4 mr-2" />
-            Clubs
-          </TabsTrigger>
-          <TabsTrigger value="events" className="flex items-center">
-            <Calendar className="h-4 w-4 mr-2" />
-            Events
-          </TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="clubs">All Clubs</TabsTrigger>
+          <TabsTrigger value="my-clubs">My Clubs ({myClubs.length}/3)</TabsTrigger>
+          <TabsTrigger value="events">Upcoming Events</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="clubs" className="space-y-6">
+        <TabsContent value="clubs" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredClubs.map((club) => (
-              <Card key={club.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{club.name}</CardTitle>
-                    <Badge variant="outline">{club.category}</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground mb-4">{club.description}</p>
-                  
-                  <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
-                    <div className="flex items-center">
-                      <User className="h-4 w-4 mr-1" />
-                      {club.member_count} / {club.max_members} members
+            {filteredClubs.map((club) => {
+              const memberCount = club.club_memberships?.[0]?.count || 0;
+              const isJoined = myClubs.some(membership => membership.clubs.id === club.id);
+              
+              return (
+                <Card key={club.id} className="shadow-lg hover:shadow-xl transition-all duration-300">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <CardTitle className="text-lg font-bold">{club.name}</CardTitle>
+                        <Badge variant="outline" className="mt-2">
+                          {club.category}
+                        </Badge>
+                      </div>
+                      {isJoined && (
+                        <Badge className="bg-green-500/20 text-green-700 border-green-500/30">
+                          <UserCheck className="h-3 w-3 mr-1" />
+                          Joined
+                        </Badge>
+                      )}
                     </div>
-                  </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground line-clamp-3">
+                      {club.description}
+                    </p>
+                    
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <div className="flex items-center">
+                        <Users className="h-4 w-4 mr-1" />
+                        {memberCount}/{club.max_members} members
+                      </div>
+                    </div>
 
-                  {isClubMember(club.id) ? (
-                    <Button disabled className="w-full">
-                      <UserCheck className="h-4 w-4 mr-2" />
-                      Member
-                    </Button>
-                  ) : myMemberships.length >= 3 ? (
-                    <Button disabled className="w-full">
-                      <AlertCircle className="h-4 w-4 mr-2" />
-                      Club Limit Reached (3/3)
-                    </Button>
-                  ) : (
+                    {!isJoined ? (
+                      <Dialog open={joinDialogOpen && selectedClub?.id === club.id} onOpenChange={setJoinDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button
+                            className="w-full"
+                            onClick={() => setSelectedClub(club)}
+                            disabled={myClubs.length >= 3}
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            {myClubs.length >= 3 ? "Club Limit Reached" : "Join Club"}
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Join {club.name}</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="password">Club Password</Label>
+                              <div className="relative">
+                                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                                <Input
+                                  id="password"
+                                  type="password"
+                                  placeholder="Enter club password"
+                                  value={clubPassword}
+                                  onChange={(e) => setClubPassword(e.target.value)}
+                                  className="pl-10"
+                                />
+                              </div>
+                            </div>
+                            
+                            {error && (
+                              <Alert variant="destructive">
+                                <AlertDescription>{error}</AlertDescription>
+                              </Alert>
+                            )}
+                            
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="outline" 
+                                onClick={() => {
+                                  setJoinDialogOpen(false);
+                                  setClubPassword("");
+                                  setError("");
+                                }}
+                                className="flex-1"
+                              >
+                                Cancel
+                              </Button>
+                              <Button 
+                                onClick={handleJoinClub}
+                                disabled={loading || !clubPassword}
+                                className="flex-1"
+                              >
+                                {loading ? "Joining..." : "Join Club"}
+                              </Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                          if (confirm('Are you sure you want to leave this club?')) {
+                            handleLeaveClub(club.id);
+                          }
+                        }}
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Leave Club
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+          
+          {filteredClubs.length === 0 && (
+            <div className="text-center py-12">
+              <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">No clubs found</h3>
+              <p className="text-muted-foreground">Try adjusting your search criteria</p>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="my-clubs" className="space-y-4">
+          {myClubs.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {myClubs.map((membership) => (
+                <Card key={membership.id} className="shadow-lg border-primary/20">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-lg font-bold">{membership.clubs.name}</CardTitle>
+                        <Badge variant="outline" className="mt-2">
+                          {membership.clubs.category}
+                        </Badge>
+                      </div>
+                      <Badge className="bg-primary/20 text-primary border-primary/30">
+                        {membership.role}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      {membership.clubs.description}
+                    </p>
+                    
+                    <div className="text-sm text-muted-foreground">
+                      <p>Joined on {new Date(membership.joined_at).toLocaleDateString()}</p>
+                    </div>
+
                     <Button
+                      variant="outline"
                       className="w-full"
                       onClick={() => {
-                        const password = prompt(`Enter password for ${club.name}:`);
-                        if (password) {
-                          joinClub(club.id, password);
+                        if (confirm('Are you sure you want to leave this club?')) {
+                          handleLeaveClub(membership.clubs.id);
                         }
                       }}
                     >
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Join Club
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Leave Club
                     </Button>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">No clubs joined yet</h3>
+              <p className="text-muted-foreground mb-4">You can join up to 3 clubs. Explore and find ones that interest you!</p>
+              <Button onClick={() => setSearchTerm("")}>
+                Browse All Clubs
+              </Button>
+            </div>
+          )}
         </TabsContent>
 
-        <TabsContent value="events" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredEvents.map((event) => (
-              <Card key={event.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{event.title}</CardTitle>
-                    <Badge variant="outline">{event.category}</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground mb-4">{event.description}</p>
-                  
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center text-muted-foreground">
-                      <Clock className="h-4 w-4 mr-2" />
-                      {formatDate(event.event_date)}
-                    </div>
-                    {event.location && (
-                      <div className="flex items-center text-muted-foreground">
-                        <MapPin className="h-4 w-4 mr-2" />
-                        {event.location}
-                      </div>
+        <TabsContent value="events" className="space-y-4">
+          {filteredEvents.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredEvents.map((event) => (
+                <Card key={event.id} className="shadow-lg hover:shadow-xl transition-all duration-300">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-bold">{event.title}</CardTitle>
+                    {event.category && (
+                      <Badge variant="outline">{event.category}</Badge>
                     )}
-                  </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground line-clamp-3">
+                      {event.description}
+                    </p>
+                    
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <div className="flex items-center">
+                        <Clock className="h-4 w-4 mr-2" />
+                        {new Date(event.event_date).toLocaleDateString()} at{' '}
+                        {new Date(event.event_date).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
+                      {event.location && (
+                        <div className="flex items-center">
+                          <MapPin className="h-4 w-4 mr-2" />
+                          {event.location}
+                        </div>
+                      )}
+                    </div>
 
-                  <Button className="w-full mt-4">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Register for Event
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {filteredEvents.length === 0 && (
+                    <Button className="w-full">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Register for Event
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
             <div className="text-center py-12">
               <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-xl font-semibold mb-2">No Events Found</h3>
-              <p className="text-muted-foreground">
-                {searchTerm ? "No events match your search." : "No upcoming events at the moment."}
-              </p>
+              <h3 className="text-lg font-semibold mb-2">No upcoming events</h3>
+              <p className="text-muted-foreground">Check back later for new events and activities</p>
             </div>
           )}
         </TabsContent>

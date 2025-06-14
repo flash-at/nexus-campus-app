@@ -189,11 +189,55 @@ export type Database = {
           },
         ]
       }
+      club_roles: {
+        Row: {
+          club_id: string | null
+          created_at: string | null
+          id: string
+          role: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          club_id?: string | null
+          created_at?: string | null
+          id?: string
+          role: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          club_id?: string | null
+          created_at?: string | null
+          id?: string
+          role?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_roles_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clubs: {
         Row: {
+          auth_code: string | null
           category: string | null
           chair_id: string | null
           created_at: string | null
+          created_by: string | null
           description: string | null
           id: string
           max_members: number | null
@@ -202,9 +246,11 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          auth_code?: string | null
           category?: string | null
           chair_id?: string | null
           created_at?: string | null
+          created_by?: string | null
           description?: string | null
           id?: string
           max_members?: number | null
@@ -213,9 +259,11 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          auth_code?: string | null
           category?: string | null
           chair_id?: string | null
           created_at?: string | null
+          created_by?: string | null
           description?: string | null
           id?: string
           max_members?: number | null
@@ -227,6 +275,13 @@ export type Database = {
           {
             foreignKeyName: "clubs_chair_id_fkey"
             columns: ["chair_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clubs_created_by_fkey"
+            columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
