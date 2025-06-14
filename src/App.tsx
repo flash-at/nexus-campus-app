@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +17,8 @@ import ClubAdminLogin from "./pages/ClubAdminLogin";
 import CreateClub from "./pages/CreateClub";
 import ClubAdmin from "./pages/ClubAdmin";
 import NotFound from "./pages/NotFound";
+import CampusStore from "./pages/CampusStore";
+import PartnerDashboard from "./pages/PartnerDashboard";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ function App() {
                 <Route path="/club-admin-login" element={<ClubAdminLogin />} />
                 <Route path="/create-club" element={<CreateClub />} />
                 <Route path="/club-admin" element={<ClubAdmin />} />
+                <Route path="/campus-store" element={<CampusStore />} />
                 <Route
                   path="/dashboard"
                   element={
