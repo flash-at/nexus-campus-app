@@ -4,24 +4,113 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { supabase } from "@/integrations/supabase/client";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 
 const ProviderLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // This is a placeholder for actual provider login logic
-    setTimeout(() => {
-      toast.info("Provider login functionality is under development.");
+
+    try {
+      // First try to sign in with existing credentials
+      let userCredential;
+      try {
+        userCredential = await signInWithEmailAndPassword(auth, email, password);
+      } catch (signInError: any) {
+        // If user doesn't exist and this is the specific email, create the account
+        if (signInError.code === 'auth/user-not-found' && email === 'maheshch1094@gmail.com') {
+          console.log("Creating new partner account...");
+          userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          
+          // Create vendor record in Supabase
+          const { error: vendorError } = await supabase
+            .from('vendors')
+            .insert({
+              firebase_uid: userCredential.user.uid,
+              business_name: 'Campus Vendor',
+              category: 'Food & Beverages',
+              description: 'Campus service provider',
+              status: 'approved'
+            });
+
+          if (vendorError) {
+            console.error('Error creating vendor record:', vendorError);
+          }
+
+          toast.success("Partner account created successfully!");
+        } else {
+          throw signInError;
+        }
+      }
+
+      if (userCredential?.user) {
+        // Check if this user is a registered vendor
+        const { data: vendor, error: vendorError } = await supabase
+          .from('vendors')
+          .select('*')
+          .eq('firebase_uid', userCredential.user.uid)
+          .single();
+
+        if (vendorError && vendorError.code !== 'PGRST116') {
+          console.error('Error checking vendor status:', vendorError);
+          toast.error("Error verifying partner status");
+          return;
+        }
+
+        if (!vendor) {
+          toast.error("This account is not registered as a partner");
+          await auth.signOut();
+          return;
+        }
+
+        if (vendor.status !== 'approved') {
+          toast.error("Your partner account is pending approval");
+          await auth.signOut();
+          return;
+        }
+
+        toast.success("Signed in successfully!");
+        navigate("/dashboard"); // Navigate to partner dashboard
+      }
+    } catch (error: any) {
+      console.error("Authentication error:", error);
+      let errorMessage = "Sign in failed. Please try again.";
+      
+      switch (error.code) {
+        case 'auth/user-not-found':
+          errorMessage = "No account found with this email";
+          break;
+        case 'auth/wrong-password':
+          errorMessage = "Incorrect password";
+          break;
+        case 'auth/invalid-email':
+          errorMessage = "Invalid email address";
+          break;
+        case 'auth/user-disabled':
+          errorMessage = "This account has been disabled";
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = "Too many failed attempts. Please try again later.";
+          break;
+      }
+      
+      toast.error(errorMessage);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -66,6 +155,8 @@ const ProviderLogin = () => {
                       id="email"
                       type="email"
                       placeholder="manager@business.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       className="h-12 bg-gray-50 dark:bg-gray-700 border-gray-300 focus:border-green-500"
                       required
                     />
@@ -83,6 +174,8 @@ const ProviderLogin = () => {
                         id="password"
                         type={showPassword ? "text" : "password"}
                         placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                         className="h-12 bg-gray-50 dark:bg-gray-700 border-gray-300 focus:border-green-500 pr-12"
                         required
                       />
