@@ -30,28 +30,7 @@ export const authenticateProvider = async (email: string, password: string) => {
       userCredential = await signInWithEmailAndPassword(auth, email, password);
     }
 
-    // Set the Supabase session with Firebase token
-    if (userCredential?.user) {
-      const token = await userCredential.user.getIdToken();
-      console.log("Setting Supabase session with Firebase token...");
-      
-      // Use signInWithIdToken instead of setSession for better compatibility
-      const { data, error: sessionError } = await supabase.auth.signInWithIdToken({
-        provider: 'firebase',
-        token: token
-      });
-
-      if (sessionError) {
-        console.error("Failed to set Supabase session:", sessionError);
-        throw new Error("Failed to establish session");
-      }
-
-      console.log("Supabase session established successfully");
-      
-      // Add a delay to ensure session is fully established
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-
+    console.log("Firebase authentication successful, Firebase UID:", userCredential?.user?.uid);
     return userCredential;
   } catch (error) {
     console.error("Authentication error:", error);
@@ -60,19 +39,13 @@ export const authenticateProvider = async (email: string, password: string) => {
 };
 
 export const verifyVendorStatus = async (userCredential: any, email: string) => {
-  console.log("Checking vendor status for user:", userCredential.user.uid);
+  console.log("Starting vendor verification for user:", userCredential.user.uid);
   
   try {
-    // Double-check that we have an active session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !session) {
-      console.error("No active Supabase session:", sessionError);
-      throw new Error("Authentication session not established");
-    }
+    // First, let's try to query without Supabase auth to see if RLS is the issue
+    console.log("Checking if vendor exists...");
     
-    console.log("Active Supabase session confirmed, user:", session.user?.id);
-    
-    // Check if this user is a registered vendor
+    // Check if this user is a registered vendor using the Firebase UID directly
     const { data: vendor, error: vendorError } = await supabase
       .from('vendors')
       .select('*')
@@ -81,15 +54,15 @@ export const verifyVendorStatus = async (userCredential: any, email: string) => 
 
     console.log("Vendor query result:", { vendor, vendorError });
 
-    if (vendorError && vendorError.code !== 'PGRST116') {
+    if (vendorError) {
       console.error('Error checking vendor status:', vendorError);
-      toast.error("Error verifying partner status");
+      toast.error("Error verifying partner status: " + vendorError.message);
       throw new Error("Error verifying partner status");
     }
 
     if (!vendor) {
       // Create the vendor record
-      console.log("Creating vendor record...");
+      console.log("Creating vendor record for Firebase UID:", userCredential.user.uid);
       
       const vendorData = {
         firebase_uid: userCredential.user.uid,
@@ -99,47 +72,44 @@ export const verifyVendorStatus = async (userCredential: any, email: string) => 
         status: 'approved'
       };
       
-      console.log("Inserting vendor data:", vendorData);
+      console.log("Attempting to insert vendor data:", vendorData);
       
-      // Use upsert to handle potential conflicts
+      // Try direct insert first
       const { data: newVendor, error: createVendorError } = await supabase
         .from('vendors')
-        .upsert(vendorData, { 
-          onConflict: 'firebase_uid',
-          ignoreDuplicates: false 
-        })
+        .insert(vendorData)
         .select()
         .single();
 
       if (createVendorError) {
         console.error('Error creating vendor record:', createVendorError);
-        console.error('Detailed error:', JSON.stringify(createVendorError, null, 2));
+        console.error('Error details:', {
+          code: createVendorError.code,
+          message: createVendorError.message,
+          details: createVendorError.details,
+          hint: createVendorError.hint
+        });
         
-        // Try a simple insert as fallback
-        const { data: fallbackVendor, error: fallbackError } = await supabase
-          .from('vendors')
-          .insert(vendorData)
-          .select()
-          .single();
-          
-        if (fallbackError) {
-          console.error('Fallback insert also failed:', fallbackError);
-          toast.error("Failed to create partner account. Please contact support.");
-          await auth.signOut();
-          throw new Error("Failed to create partner account");
+        // Check if it's an RLS policy violation
+        if (createVendorError.message?.includes('policy')) {
+          console.error('RLS Policy violation detected');
+          toast.error("Authentication error. Please try logging in again.");
+        } else {
+          toast.error("Failed to create partner account: " + createVendorError.message);
         }
         
-        console.log("Vendor record created via fallback:", fallbackVendor);
-        toast.success("Partner account created successfully!");
-      } else {
-        console.log("Vendor record created:", newVendor);
-        toast.success("Partner account created successfully!");
+        await auth.signOut();
+        throw new Error("Failed to create partner account");
       }
+      
+      console.log("Vendor record created successfully:", newVendor);
+      toast.success("Partner account created successfully!");
     } else if (vendor.status !== 'approved') {
       toast.error("Your partner account is pending approval");
       await auth.signOut();
       throw new Error("Account pending approval");
     } else {
+      console.log("Existing vendor found:", vendor);
       toast.success("Welcome back, partner!");
     }
   } catch (error) {
