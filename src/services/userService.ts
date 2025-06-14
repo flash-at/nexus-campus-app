@@ -1,139 +1,303 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import type { User } from "@supabase/supabase-js";
+import { User } from "firebase/auth";
+
+export interface AcademicInfo {
+  id: string;
+  user_id: string;
+  current_semester: number | null;
+  cgpa: number | null;
+  subjects_enrolled: string[] | null;
+  mentor_name: string | null;
+  mentor_email: string | null;
+}
+
+export interface Engagement {
+    id: string;
+    user_id: string;
+    activity_points: number;
+    badges: any | null; // JSONB
+    last_login: string | null;
+    events_attended: string[] | null;
+    feedback_count: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface UserDocument {
+    id: string;
+    user_id: string;
+    doc_type: string;
+    doc_url: string;
+    file_name: string;
+    verified_by_admin: boolean;
+}
+
+export interface Preferences {
+    id: string;
+    user_id: string;
+    language: string;
+    theme: 'Light' | 'Dark' | 'System';
+    notifications_enabled: boolean;
+    widgets_enabled: any | null; // JSONB
+}
 
 export interface UserProfile {
   id: string;
   firebase_uid: string;
   full_name: string;
-  email: string;
   hall_ticket: string;
+  email: string;
   department: string;
   academic_year: string;
   phone_number: string;
-  profile_picture_url?: string;
-  is_active: boolean;
-  email_verified: boolean;
   role: string;
+  email_verified: boolean;
   created_at: string;
   updated_at: string;
-  academic_info?: {
-    current_semester?: number;
-    cgpa?: number;
-    subjects_enrolled?: string[];
-    mentor_name?: string;
-    mentor_email?: string;
-  };
-  engagement?: {
-    activity_points?: number;
-    badges?: any[];
-    last_login?: string;
-    feedback_count?: number;
-    events_attended?: string[];
-  };
-  preferences?: {
-    theme?: string;
-    language?: string;
-    notifications_enabled?: boolean;
-  };
+  profile_picture_url: string | null;
+  is_active: boolean | null;
+
+  academic_info: AcademicInfo | null;
+  engagement: Engagement | null;
+  documents: UserDocument[];
+  preferences: Preferences | null;
 }
 
-interface CreateProfileData {
-  fullName: string;
-  hallTicket: string;
-  department: string;
-  academicYear: string;
-  phoneNumber: string;
-}
-
-export const getUserProfile = async (userId: string): Promise<UserProfile> => {
-  const { data: user, error: userError } = await supabase
-    .from('users')
-    .select(`
-      *,
-      academic_info(*),
-      engagement(*),
-      preferences(*)
-    `)
-    .eq('firebase_uid', userId)
-    .single();
-
-  if (userError) {
-    console.error("Error fetching user profile:", userError);
-    throw userError;
-  }
-
-  return {
-    ...user,
-    engagement: user.engagement ? {
-      ...user.engagement,
-      badges: Array.isArray(user.engagement.badges) ? user.engagement.badges : []
-    } : undefined
-  };
-};
-
-export const createUserProfile = async (user: User, profileData: CreateProfileData): Promise<UserProfile | null> => {
-  try {
-    const { data: newUser, error: userError } = await supabase
-      .from('users')
-      .insert({
-        firebase_uid: user.id,
-        full_name: profileData.fullName,
-        email: user.email || '',
-        hall_ticket: profileData.hallTicket,
-        department: profileData.department,
-        academic_year: profileData.academicYear,
-        phone_number: profileData.phoneNumber,
-        email_verified: !!user.email_confirmed_at,
-        role: 'student'
-      })
-      .select()
-      .single();
-
-    if (userError) {
-      console.error("Error creating user profile:", userError);
-      throw userError;
-    }
-
-    return newUser;
-  } catch (error) {
-    console.error("Error in createUserProfile:", error);
-    throw error;
-  }
-};
+// Helper function to get default engagement data
+const getDefaultEngagement = (userId: string): Engagement => ({
+  id: '',
+  user_id: userId,
+  activity_points: 150, // Default starting points
+  badges: null,
+  last_login: null,
+  events_attended: [],
+  feedback_count: 0,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString()
+});
 
 export const checkHallTicketExists = async (hallTicket: string): Promise<boolean> => {
-  const { data, error } = await supabase
-    .from('users')
-    .select('id')
-    .eq('hall_ticket', hallTicket)
-    .single();
+  try {
+    console.log("Checking hall ticket:", hallTicket);
+    const { data, error } = await supabase
+      .from("users")
+      .select("hall_ticket")
+      .eq("hall_ticket", hallTicket)
+      .maybeSingle();
 
-  if (error && error.code !== 'PGRST116') { // PGRST116 is "not found" error
+    if (error) {
+      console.error("Error checking hall ticket:", error);
+      return false;
+    }
+
+    return data !== null;
+  } catch (error) {
     console.error("Error checking hall ticket:", error);
-    throw error;
+    return false;
   }
-
-  return !!data;
 };
 
-export const updateUserProfile = async (userId: string, updates: Partial<UserProfile>): Promise<UserProfile | null> => {
+export const createUserProfile = async (
+  firebaseUser: User,
+  additionalData: {
+    fullName: string;
+    hallTicket: string;
+    department: string;
+    academicYear: string;
+    phoneNumber: string;
+  }
+): Promise<UserProfile | null> => {
   try {
+    console.log("Creating user profile for Firebase UID:", firebaseUser.uid);
+    console.log("Firebase user email:", firebaseUser.email);
+    console.log("Additional data:", additionalData);
+
+    const insertData = {
+      firebase_uid: firebaseUser.uid,
+      full_name: additionalData.fullName,
+      hall_ticket: additionalData.hallTicket,
+      email: firebaseUser.email!,
+      department: additionalData.department,
+      academic_year: additionalData.academicYear,
+      phone_number: additionalData.phoneNumber,
+      email_verified: firebaseUser.emailVerified,
+    };
+
+    console.log("Inserting data:", insertData);
+
+    // Insert the user profile using the permissive RLS policy
     const { data, error } = await supabase
-      .from('users')
-      .update(updates)
-      .eq('firebase_uid', userId)
+      .from("users")
+      .insert(insertData)
       .select()
       .single();
 
     if (error) {
-      console.error("Error updating user profile:", error);
-      throw error;
+      console.error("Error creating user profile:", error);
+      console.error("Error details:", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
+      return null;
     }
 
-    return data;
+    console.log("User profile created successfully:", data);
+
+    // After creating the user profile, manually create engagement data if it doesn't exist
+    await ensureEngagementData(data.id);
+
+    // Fetch the complete profile with relations
+    const completeProfile = await getUserProfile(firebaseUser.uid);
+    
+    return completeProfile;
   } catch (error) {
-    console.error("Error in updateUserProfile:", error);
-    throw error;
+    console.error("Error creating user profile:", error);
+    return null;
+  }
+};
+
+// Function to ensure engagement data exists for a user
+const ensureEngagementData = async (userId: string): Promise<void> => {
+  try {
+    // Check if engagement data exists
+    const { data: existingEngagement } = await supabase
+      .from("engagement")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (!existingEngagement) {
+      // Create engagement data with default values
+      const { error } = await supabase
+        .from("engagement")
+        .insert({
+          user_id: userId,
+          activity_points: 150,
+          feedback_count: 0,
+          events_attended: [],
+          last_login: new Date().toISOString()
+        });
+
+      if (error) {
+        console.error("Error creating engagement data:", error);
+      } else {
+        console.log("Created engagement data for user:", userId);
+      }
+    }
+  } catch (error) {
+    console.error("Error ensuring engagement data:", error);
+  }
+};
+
+export const getUserProfile = async (firebaseUid: string): Promise<UserProfile | null> => {
+  try {
+    console.log("Fetching user profile for UID:", firebaseUid);
+    
+    const { data, error } = await supabase
+      .from("users")
+      .select(`
+        *,
+        academic_info(*),
+        engagement(*),
+        documents(*),
+        preferences(*)
+      `)
+      .eq("firebase_uid", firebaseUid)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error fetching user profile:", error);
+      return null;
+    }
+
+    if (!data) {
+      console.log("No user profile found for UID:", firebaseUid);
+      return null;
+    }
+
+    // Ensure engagement data exists if it's null
+    if (!data.engagement) {
+      console.log("Engagement data is null, ensuring it exists for user:", data.id);
+      await ensureEngagementData(data.id);
+      
+      // Refetch the profile to get the newly created engagement data
+      const { data: updatedData } = await supabase
+        .from("users")
+        .select(`
+          *,
+          academic_info(*),
+          engagement(*),
+          documents(*),
+          preferences(*)
+        `)
+        .eq("firebase_uid", firebaseUid)
+        .maybeSingle();
+
+      if (updatedData && updatedData.engagement) {
+        data.engagement = updatedData.engagement;
+      } else {
+        // Fallback to ensure we always have engagement data
+        data.engagement = {
+          id: '',
+          user_id: data.id,
+          activity_points: 150,
+          badges: null,
+          last_login: null,
+          events_attended: [],
+          feedback_count: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+      }
+    }
+
+    // Ensure engagement is properly structured as a final fallback
+    if (!data.engagement) {
+      data.engagement = {
+        id: '',
+        user_id: data.id,
+        activity_points: 150,
+        badges: null,
+        last_login: null,
+        events_attended: [],
+        feedback_count: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+    }
+
+    console.log("User profile fetched successfully:", data);
+    return data as UserProfile;
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    return null;
+  }
+};
+
+export const updateUserProfile = async (
+  firebaseUid: string,
+  updates: {
+    full_name?: string;
+    phone_number?: string;
+  }
+): Promise<UserProfile | null> => {
+  try {
+    const { error } = await supabase
+      .from("users")
+      .update(updates)
+      .eq("firebase_uid", firebaseUid);
+
+    if (error) {
+      console.error("Error updating user profile:", error);
+      return null;
+    }
+
+    // After successful update, fetch the full profile to get all relations
+    return await getUserProfile(firebaseUid);
+  } catch (error) {
+    console.error("Error updating user profile:", error);
+    return null;
   }
 };

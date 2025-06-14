@@ -1,22 +1,23 @@
-
 import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { PartnerDashboard } from '@/components/partner/PartnerDashboard';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
+import { auth } from '@/lib/firebase';
 import { toast } from 'sonner';
 import ThemeToggle from '@/components/ThemeToggle';
 import { cleanupSupabaseSession } from '@/utils/authUtils';
 
 const PartnerDashboardPage = () => {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
 
   const handleLogout = async () => {
     try {
-      await signOut();
-      cleanupSupabaseSession();
+      await auth.signOut();
+      cleanupSupabaseSession(); // Clean up Supabase session
       toast.success("Logged out successfully");
+      // Force a full reload to the login page to guarantee a clean state
       window.location.href = '/provider-login';
     } catch (error) {
       console.error("Logout error:", error);

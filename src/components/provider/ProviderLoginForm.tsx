@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { authenticateProvider, verifyVendorStatus, getAuthErrorMessage } from "@/utils/providerAuth";
 import { cleanupSupabaseSession } from "@/utils/authUtils";
+import { auth } from "@/lib/firebase";
 
 export const ProviderLoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -22,13 +23,18 @@ export const ProviderLoginForm = () => {
     setIsLoading(true);
 
     // Clean up any lingering sessions before attempting a new login
+    try {
+      await auth.signOut();
+    } catch (error) {
+      console.warn("Pre-login sign out failed, continuing...", error);
+    }
     cleanupSupabaseSession();
 
     try {
-      const authData = await authenticateProvider(email, password);
+      const userCredential = await authenticateProvider(email, password);
 
-      if (authData?.user) {
-        await verifyVendorStatus(authData, email);
+      if (userCredential?.user) {
+        await verifyVendorStatus(userCredential, email);
         toast.success("Signed in successfully!");
         navigate("/partner-dashboard");
       }

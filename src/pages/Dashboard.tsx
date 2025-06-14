@@ -98,11 +98,6 @@ const Dashboard = () => {
     setIsSidebarOpen(false);
   };
 
-  // Get display name from profile or email
-  const getDisplayName = () => {
-    return profile?.full_name || user.email?.split('@')[0] || 'Student';
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <div className="border-b border-border bg-card/95 backdrop-blur-xl sticky top-0 z-50">
@@ -139,7 +134,7 @@ const Dashboard = () => {
                   <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
                     <AvatarImage src={profile?.profile_picture_url || undefined} />
                     <AvatarFallback className="bg-primary text-primary-foreground text-xs sm:text-sm">
-                      {profile?.full_name?.split(' ').map(n => n[0]).join('') || getDisplayName().charAt(0).toUpperCase()}
+                      {profile?.full_name?.split(' ').map(n => n[0]).join('') || user.displayName?.charAt(0) || user.email?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -148,7 +143,7 @@ const Dashboard = () => {
                 <div className="flex items-center justify-start gap-2 p-2">
                   <div className="flex flex-col space-y-1 leading-none">
                     <p className="font-medium text-sm">
-                      {getDisplayName()}
+                      {profile?.full_name || user.displayName || user.email?.split('@')[0]}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {profile?.hall_ticket || 'CS21B0001'}
@@ -170,7 +165,7 @@ const Dashboard = () => {
             
             <div className="hidden sm:block text-right">
               <p className="text-sm font-medium truncate max-w-32 lg:max-w-none">
-                {getDisplayName()}
+                {profile?.full_name || user.displayName || user.email?.split('@')[0]}
               </p>
               <p className="text-xs text-muted-foreground">{profile?.hall_ticket || 'CS21B0001'}</p>
             </div>
@@ -256,7 +251,7 @@ const Dashboard = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
                   <div>
                     <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2">
-                      👋 Welcome back, {getDisplayName().split(' ')[0]}!
+                      👋 Welcome back, {profile?.full_name?.split(' ')[0] || user.displayName?.split(' ')[0] || 'Student'}!
                     </h2>
                     <p className="text-white/80 text-sm sm:text-base lg:text-lg">Ready to make your campus life easier?</p>
                   </div>
@@ -320,7 +315,7 @@ const Dashboard = () => {
                         <Target className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-emerald-500" />
                       </div>
                       <div className="text-center sm:text-left">
-                        <p className="text-lg sm:text-xl lg:text-2xl font-bold">{currentUserData?.activity_points.toLocaleString() || profile?.engagement?.activity_points?.toLocaleString() || 0}</p>
+                        <p className="text-lg sm:text-xl lg:text-2xl font-bold">{currentUserData?.activity_points.toLocaleString() || profile?.engagement?.activity_points.toLocaleString() || 0}</p>
                         <p className="text-xs sm:text-sm text-muted-foreground">Activity Points</p>
                       </div>
                     </div>

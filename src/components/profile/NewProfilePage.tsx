@@ -29,7 +29,7 @@ const ProfileSkeleton = () => (
 
 export const NewProfilePage = () => {
   const { profile, loading, refetch } = useUserProfile();
-  const { history: pointsHistory, loading: pointsLoading } = usePoints();
+  const { pointsHistory, loading: pointsLoading } = usePoints();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   if (loading) {

@@ -12,7 +12,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { UserProfile, updateUserProfile } from "@/services/userService";
+import { UserProfile, updateUserProfile } from "@/services/profileService";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
@@ -50,7 +50,7 @@ export const EditProfileForm = ({ profile, onSuccess, setOpen }: EditProfileForm
     const toastId = toast.loading("Updating profile...");
 
     try {
-      const updatedProfile = await updateUserProfile(user.id, {
+      const updatedProfile = await updateUserProfile(user.uid, {
         full_name: data.full_name,
         phone_number: data.phone_number,
       });

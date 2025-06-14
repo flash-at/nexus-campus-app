@@ -1,96 +1,192 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { usePoints } from "@/hooks/usePoints";
+import { VoucherCard } from "@/components/points/VoucherCard";
+import { PointsHistoryCard } from "@/components/points/PointsHistoryCard";
 import { 
   getAvailableVouchers, 
   redeemVoucher, 
   Voucher 
-} from '@/services/pointsService';
-import { VoucherCard } from '@/components/points/VoucherCard';
-import { PointsHistoryCard } from '@/components/points/PointsHistoryCard';
-import { usePoints } from '@/hooks/usePoints';
-import { useAuth } from '@/hooks/useAuth';
-import { Coins, Gift, TrendingUp, Star } from 'lucide-react';
+} from "@/services/pointsService";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Gift, Coins, History } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-export const Payments = () => {
-  const { points, history, loading: pointsLoading } = usePoints(); // Updated to use correct property names
+export default function Payments() {
   const { user } = useAuth();
+  const { currentPoints, pointsHistory, loading: pointsLoading, refetch } = usePoints();
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [redeeming, setRedeeming] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
-    fetchVouchers();
-  }, []);
+    const fetchVouchers = async () => {
+      try {
+        setLoading(true);
+        const vouchersData = await getAvailableVouchers();
+        setVouchers(vouchersData);
+      } catch (error) {
+        console.error('Error fetching vouchers:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load vouchers",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const fetchVouchers = async () => {
-    try {
-      const availableVouchers = await getAvailableVouchers();
-      setVouchers(availableVouchers);
-    } catch (error) {
-      console.error('Error fetching vouchers:', error);
-    }
-  };
+    fetchVouchers();
+  }, [toast]);
 
   const handleRedeemVoucher = async (voucherId: string) => {
-    if (!user) return;
-    
-    setLoading(true);
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to redeem vouchers",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      await redeemVoucher(voucherId, user.id); // Changed from user.uid to user.id
-      await fetchVouchers();
+      setRedeeming(voucherId);
+
+      // Get user's internal ID
+      const { data: userData } = await supabase
+        .from('users')
+        .select('id')
+        .eq('firebase_uid', user.uid)
+        .single();
+
+      if (!userData) {
+        throw new Error('User not found');
+      }
+
+      const result = await redeemVoucher(voucherId, userData.id);
+
+      if (result.success) {
+        toast({
+          title: "Voucher Redeemed!",
+          description: `Your voucher code is: ${result.redemption?.redemption_code}`,
+        });
+        
+        // Refresh points and vouchers
+        refetch();
+        const updatedVouchers = await getAvailableVouchers();
+        setVouchers(updatedVouchers);
+      } else {
+        toast({
+          title: "Redemption Failed",
+          description: result.error || "Something went wrong",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error('Error redeeming voucher:', error);
+      toast({
+        title: "Error",
+        description: "Failed to redeem voucher",
+        variant: "destructive",
+      });
     } finally {
-      setLoading(false);
+      setRedeeming(null);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center space-y-4 mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-yellow-500 to-orange-600 mb-4">
-            <Coins className="h-8 w-8 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold">Rewards & Payments</h1>
-          <p className="text-muted-foreground">Redeem your points for exclusive vouchers and rewards</p>
-        </div>
-
-        <Tabs defaultValue="vouchers" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="vouchers" className="text-sm font-medium">Available Vouchers</TabsTrigger>
-            <TabsTrigger value="history" className="text-sm font-medium">Points History</TabsTrigger>
-          </TabsList>
-          <TabsContent value="vouchers" className="space-y-4">
-            {vouchers.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {vouchers.map((voucher) => (
-                  <VoucherCard
-                    key={voucher.id}
-                    voucher={voucher}
-                    currentPoints={points}
-                    onRedeem={handleRedeemVoucher}
-                    loading={loading}
-                  />
-                ))}
-              </div>
-            ) : (
-              <Card className="text-center p-6">
-                <CardContent className="flex flex-col items-center justify-center space-y-4">
-                  <Gift className="w-10 h-10 text-muted-foreground opacity-50" />
-                  <p className="text-lg font-medium">No vouchers available at the moment</p>
-                  <p className="text-sm text-muted-foreground">Check back later for new rewards!</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-          <TabsContent value="history" className="space-y-4">
-            <PointsHistoryCard transactions={history} loading={pointsLoading} />
-          </TabsContent>
-        </Tabs>
+  if (!user) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-center text-muted-foreground">
+              Please log in to access the rewards system
+            </p>
+          </CardContent>
+        </Card>
       </div>
+    );
+  }
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Rewards & Vouchers</h1>
+        <Card className="p-4">
+          <div className="flex items-center space-x-2">
+            <Coins className="w-5 h-5 text-yellow-500" />
+            <span className="text-2xl font-bold">{currentPoints}</span>
+            <span className="text-muted-foreground">points</span>
+          </div>
+        </Card>
+      </div>
+
+      <Tabs defaultValue="vouchers" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="vouchers" className="flex items-center space-x-2">
+            <Gift className="w-4 h-4" />
+            <span>Available Vouchers</span>
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center space-x-2">
+            <History className="w-4 h-4" />
+            <span>Points History</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="vouchers" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Gift className="w-5 h-5" />
+                <span>Redeem Your Points</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="animate-pulse">
+                      <div className="h-64 bg-gray-200 rounded-lg"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : vouchers.length === 0 ? (
+                <div className="text-center py-12">
+                  <Gift className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Vouchers Available</h3>
+                  <p className="text-muted-foreground">
+                    Check back later for new vouchers to redeem with your points!
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {vouchers.map((voucher) => (
+                    <VoucherCard
+                      key={voucher.id}
+                      voucher={voucher}
+                      currentPoints={currentPoints}
+                      onRedeem={handleRedeemVoucher}
+                      loading={redeeming === voucher.id}
+                    />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="history" className="space-y-6">
+          <PointsHistoryCard 
+            transactions={pointsHistory} 
+            loading={pointsLoading}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
-};
+}

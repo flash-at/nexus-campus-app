@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { UserProfile } from "@/services/userService";
@@ -65,7 +66,7 @@ const TransactionItem = ({ transaction, index }: { transaction: any; index: numb
 };
 
 export const ProfileActivity = ({ profile }: ProfileActivityProps) => {
-  const { history: pointsHistory, loading: pointsLoading } = usePoints();
+  const { pointsHistory, loading: pointsLoading } = usePoints();
 
   const recentActivities = [
     {

@@ -1,38 +1,64 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
-import { getUserPoints, getPointsHistory, PointsHistoryEntry } from '@/services/pointsService';
+import { supabase } from '@/integrations/supabase/client';
+import { 
+  getCurrentPoints, 
+  getPointsHistory, 
+  PointsTransaction 
+} from '@/services/pointsService';
 
 export const usePoints = () => {
   const { user } = useAuth();
-  const [points, setPoints] = useState(0);
+  const [currentPoints, setCurrentPoints] = useState<number>(0);
+  const [pointsHistory, setPointsHistory] = useState<PointsTransaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [history, setHistory] = useState<PointsHistoryEntry[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (user) {
-      fetchData();
+  const fetchPoints = async () => {
+    if (!user) {
+      setCurrentPoints(0);
+      setPointsHistory([]);
+      setLoading(false);
+      return;
     }
-  }, [user]);
 
-  const fetchData = async () => {
-    if (!user) return;
-    
     try {
       setLoading(true);
-      const [pointsData, historyData] = await Promise.all([
-        getUserPoints(user.id),
-        getPointsHistory(user.id)
-      ]);
-      
-      setPoints(pointsData);
-      setHistory(historyData);
-    } catch (error) {
-      console.error('Error fetching points data:', error);
+      setError(null);
+
+      // Get current points
+      const points = await getCurrentPoints(user.uid);
+      setCurrentPoints(points);
+
+      // Get user's internal ID for history
+      const { data: userData } = await supabase
+        .from('users')
+        .select('id')
+        .eq('firebase_uid', user.uid)
+        .single();
+
+      if (userData) {
+        const history = await getPointsHistory(userData.id);
+        setPointsHistory(history);
+      }
+    } catch (err) {
+      console.error('Failed to fetch points:', err);
+      setError('Failed to load points data');
     } finally {
       setLoading(false);
     }
   };
 
-  return { points, history, loading, refetch: fetchData };
+  useEffect(() => {
+    fetchPoints();
+  }, [user]);
+
+  return {
+    currentPoints,
+    pointsHistory,
+    loading,
+    error,
+    refetch: fetchPoints
+  };
 };

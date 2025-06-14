@@ -76,7 +76,7 @@ export const Cart: React.FC<CartProps> = ({
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('id')
-        .eq('firebase_uid', user.id) // Changed from user.uid to user.id
+        .eq('firebase_uid', user.uid)
         .single();
 
       if (userError || !userData) {

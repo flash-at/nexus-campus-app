@@ -23,8 +23,7 @@ const ProtectedRoute = ({ children, requireEmailVerified = true }: ProtectedRout
     return <Navigate to="/login" replace />;
   }
 
-  // For Supabase, we check email_confirmed_at instead of emailVerified
-  if (requireEmailVerified && !user.email_confirmed_at) {
+  if (requireEmailVerified && !user.emailVerified) {
     return <Navigate to="/login" replace />;
   }
 
