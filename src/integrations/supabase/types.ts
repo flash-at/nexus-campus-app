@@ -185,6 +185,111 @@ export type Database = {
         }
         Relationships: []
       }
+      campus_order_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          order_id: string | null
+          product_id: string | null
+          quantity: number
+          subtotal: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          order_id?: string | null
+          product_id?: string | null
+          quantity: number
+          subtotal: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          order_id?: string | null
+          product_id?: string | null
+          quantity?: number
+          subtotal?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campus_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "campus_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campus_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campus_orders: {
+        Row: {
+          created_at: string | null
+          id: string
+          notes: string | null
+          payment_method: string
+          pickup_deadline: string | null
+          qr_code: string | null
+          service_fee: number
+          status: string
+          student_id: string | null
+          total_price: number
+          updated_at: string | null
+          vendor_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          pickup_deadline?: string | null
+          qr_code?: string | null
+          service_fee: number
+          status?: string
+          student_id?: string | null
+          total_price: number
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          pickup_deadline?: string | null
+          qr_code?: string | null
+          service_fee?: number
+          status?: string
+          student_id?: string | null
+          total_price?: number
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campus_orders_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campus_orders_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       club_memberships: {
         Row: {
           club_id: string | null
@@ -611,6 +716,48 @@ export type Database = {
         }
         Relationships: []
       }
+      pickup_confirmations: {
+        Row: {
+          confirmed_at: string | null
+          confirmed_by: string | null
+          id: string
+          notes: string | null
+          order_id: string | null
+          qr_code: string
+        }
+        Insert: {
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          qr_code: string
+        }
+        Update: {
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          qr_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pickup_confirmations_confirmed_by_fkey"
+            columns: ["confirmed_by"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pickup_confirmations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "campus_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       preferences: {
         Row: {
           created_at: string | null
@@ -651,6 +798,162 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      products: {
+        Row: {
+          available_from: string | null
+          available_until: string | null
+          category_id: string | null
+          created_at: string | null
+          description: string | null
+          discount_percentage: number | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          name: string
+          price: number
+          quantity: number | null
+          updated_at: string | null
+          vendor_id: string | null
+        }
+        Insert: {
+          available_from?: string | null
+          available_until?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          discount_percentage?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name: string
+          price: number
+          quantity?: number | null
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Update: {
+          available_from?: string | null
+          available_until?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          discount_percentage?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name?: string
+          price?: number
+          quantity?: number | null
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "store_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promo_offers: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          discount_type: string
+          discount_value: number
+          end_time: string
+          id: string
+          is_active: boolean | null
+          product_id: string | null
+          start_time: string
+          title: string
+          vendor_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          discount_type: string
+          discount_value: number
+          end_time: string
+          id?: string
+          is_active?: boolean | null
+          product_id?: string | null
+          start_time: string
+          title: string
+          vendor_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          end_time?: string
+          id?: string
+          is_active?: boolean | null
+          product_id?: string | null
+          start_time?: string
+          title?: string
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promo_offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_categories: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          icon: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       store_items: {
         Row: {
