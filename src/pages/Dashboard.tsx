@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,11 +10,12 @@ import { useNavigate } from "react-router-dom";
 import { 
   User, ShoppingBag, Calendar, CreditCard, FileText, Store, MessageSquare, Users,
   TrendingUp, BookOpen, Target, Newspaper, MessageCircle, Bot, Briefcase, Shield,
-  Settings, LogOut, Bell, Clock, Zap, Menu, X, Package, Trophy, UserCog
+  Settings, LogOut, Bell, Clock, Zap, Menu, X, Package, Trophy, UserCog, IdCard
 } from "lucide-react";
 import { SidebarNav } from "@/components/dashboard/SidebarNav";
 import { NewProfilePage } from "@/components/profile/NewProfilePage";
 import { EventsAndClubsPage } from "@/components/events/EventsAndClubsPage";
+import { IdCardPage } from "@/components/id-card/IdCardPage";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
 const Dashboard = () => {
