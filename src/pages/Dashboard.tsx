@@ -18,6 +18,7 @@ import { IdCardPage } from "@/components/id-card/IdCardPage";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
 import { LeaderboardPage } from "@/components/dashboard/LeaderboardPage";
+import { CampusStorePage } from "@/components/store/CampusStorePage";
 
 const Dashboard = () => {
   const [activeSection, setActiveSection] = useState("overview");
@@ -210,6 +211,7 @@ const Dashboard = () => {
           {activeSection === "profile" && <NewProfilePage />}
           {activeSection === "events" && <EventsAndClubsPage />}
           {activeSection === "id-card" && <IdCardPage />}
+          {activeSection === "store" && <CampusStorePage />}
           
           {activeSection === "orders" && (
             <div className="space-y-4 sm:space-y-6 lg:space-y-8 animate-fade-in">
@@ -465,7 +467,7 @@ const Dashboard = () => {
           )}
 
           {/* Other sections */}
-          {activeSection !== "overview" && activeSection !== "profile" && activeSection !== "orders" && activeSection !== "leaderboard" && activeSection !== "events" && activeSection !== "id-card" && (
+          {activeSection !== "overview" && activeSection !== "profile" && activeSection !== "orders" && activeSection !== "leaderboard" && activeSection !== "events" && activeSection !== "id-card" && activeSection !== "store" && (
             <div className="text-center py-12 sm:py-20 animate-fade-in">
               <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 sm:mb-6 rounded-xl sm:rounded-2xl bg-primary/20 flex items-center justify-center">
                 {(() => {
