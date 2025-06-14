@@ -101,7 +101,7 @@ const Dashboard = () => {
             </Button>
             
             <Avatar>
-              <AvatarImage src={profile?.profile_picture} />
+              <AvatarImage src={profile?.profile_picture_url} />
               <AvatarFallback className="bg-primary text-primary-foreground">
                 {profile?.full_name?.split(' ').map(n => n[0]).join('') || user.displayName?.charAt(0) || user.email?.charAt(0).toUpperCase()}
               </AvatarFallback>
@@ -244,7 +244,7 @@ const Dashboard = () => {
                         <TrendingUp className="h-6 w-6 text-green-500" />
                       </div>
                       <div>
-                        <p className="text-2xl font-bold">{profile?.cgpa?.toFixed(1) || '8.7'}</p>
+                        <p className="text-2xl font-bold">{profile?.academic_info?.cgpa?.toFixed(1) || 'N/A'}</p>
                         <p className="text-sm text-muted-foreground">CGPA</p>
                       </div>
                     </div>
@@ -258,7 +258,7 @@ const Dashboard = () => {
                         <Target className="h-6 w-6 text-emerald-500" />
                       </div>
                       <div>
-                        <p className="text-2xl font-bold">{profile?.activity_points || 450}</p>
+                        <p className="text-2xl font-bold">{profile?.engagement?.activity_points || 0}</p>
                         <p className="text-sm text-muted-foreground">Activity Points</p>
                       </div>
                     </div>
