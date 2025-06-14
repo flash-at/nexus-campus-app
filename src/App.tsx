@@ -11,6 +11,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import PartnerDashboard from "./pages/PartnerDashboard";
 import AdminLogin from "./pages/AdminLogin";
 import ProviderLogin from "./pages/ProviderLogin";
 import ProviderRegister from "./pages/ProviderRegister";
@@ -42,6 +43,7 @@ function App() {
                 <Route path="/club-admin-login" element={<ClubAdminLogin />} />
                 <Route path="/create-club" element={<CreateClub />} />
                 <Route path="/club-admin" element={<ClubAdmin />} />
+                <Route path="/partner-dashboard" element={<PartnerDashboard />} />
                 <Route
                   path="/dashboard"
                   element={

@@ -90,7 +90,7 @@ const ProviderLogin = () => {
         }
 
         toast.success("Signed in successfully!");
-        navigate("/dashboard");
+        navigate("/partner-dashboard");
       }
     } catch (error: any) {
       console.error("Authentication error:", error);
