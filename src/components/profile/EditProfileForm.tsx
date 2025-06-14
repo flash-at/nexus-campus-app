@@ -12,7 +12,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { UserProfile, updateUserProfile } from "@/services/userService";
+import { UserProfile, updateUserProfile } from "@/services/profileService";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
@@ -47,19 +47,24 @@ export const EditProfileForm = ({ profile, onSuccess, setOpen }: EditProfileForm
       return;
     }
 
-    toast.loading("Updating profile...");
+    const toastId = toast.loading("Updating profile...");
 
-    const updatedProfile = await updateUserProfile(user.uid, {
-      full_name: data.full_name,
-      phone_number: data.phone_number,
-    });
-    
-    toast.dismiss();
+    try {
+      const updatedProfile = await updateUserProfile(user.uid, {
+        full_name: data.full_name,
+        phone_number: data.phone_number,
+      });
+      
+      toast.dismiss(toastId);
 
-    if (updatedProfile) {
-      toast.success("Profile updated successfully!");
-      onSuccess();
-    } else {
+      if (updatedProfile) {
+        toast.success("Profile updated successfully!");
+        onSuccess();
+      } else {
+        toast.error("Failed to update profile. Please try again.");
+      }
+    } catch (error) {
+      toast.dismiss(toastId);
       toast.error("Failed to update profile. Please try again.");
     }
   }
@@ -94,10 +99,12 @@ export const EditProfileForm = ({ profile, onSuccess, setOpen }: EditProfileForm
           )}
         />
         <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button type="submit" disabled={form.formState.isSubmitting || !form.formState.isDirty}>
-                {form.formState.isSubmitting ? "Saving..." : "Save Changes"}
-            </Button>
+          <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={form.formState.isSubmitting || !form.formState.isDirty}>
+            {form.formState.isSubmitting ? "Saving..." : "Save Changes"}
+          </Button>
         </div>
       </form>
     </Form>

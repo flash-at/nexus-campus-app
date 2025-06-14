@@ -10,14 +10,14 @@ import {
   TrendingUp, BookOpen, Target, Newspaper, MessageCircle, Bot, Briefcase, Shield,
   Settings, LogOut, Bell, Clock, Zap, Menu
 } from "lucide-react";
-import { ProfilePage } from "@/components/profile/ProfilePage";
-import { useProfile } from "@/hooks/useProfile";
 import { SidebarNav } from "@/components/dashboard/SidebarNav";
+import { NewProfilePage } from "@/components/profile/NewProfilePage";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 const Dashboard = () => {
   const [activeSection, setActiveSection] = useState("overview");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { profile } = useProfile();
+  const { profile } = useUserProfile();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -133,7 +133,7 @@ const Dashboard = () => {
 
         {/* Main Content */}
         <main className="flex-1 p-4 sm:p-8">
-          {activeSection === "profile" && <ProfilePage />}
+          {activeSection === "profile" && <NewProfilePage />}
           
           {activeSection === "overview" && (
             <div className="space-y-8 animate-fade-in">
@@ -190,7 +190,7 @@ const Dashboard = () => {
                         <TrendingUp className="h-6 w-6 text-green-500" />
                       </div>
                       <div>
-                        <p className="text-2xl font-bold">{profile?.academic_info?.cgpa?.toFixed(1) || 'N/A'}</p>
+                        <p className="text-2xl font-bold">8.5</p>
                         <p className="text-sm text-muted-foreground">CGPA</p>
                       </div>
                     </div>
@@ -204,7 +204,7 @@ const Dashboard = () => {
                         <Target className="h-6 w-6 text-emerald-500" />
                       </div>
                       <div>
-                        <p className="text-2xl font-bold">{profile?.engagement?.activity_points || 0}</p>
+                        <p className="text-2xl font-bold">150</p>
                         <p className="text-sm text-muted-foreground">Activity Points</p>
                       </div>
                     </div>
