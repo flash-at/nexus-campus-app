@@ -29,13 +29,31 @@ export const authenticateProvider = async (email: string, password: string) => {
     userCredential = await signInWithEmailAndPassword(auth, email, password);
   }
 
-  // Set the Supabase session with Firebase token
+  // Set the Supabase session with Firebase token - this is crucial for RLS
   if (userCredential?.user) {
-    const token = await userCredential.user.getIdToken();
-    await supabase.auth.setSession({
-      access_token: token,
-      refresh_token: token
-    });
+    try {
+      const token = await userCredential.user.getIdToken();
+      console.log("Setting Supabase session with Firebase token...");
+      
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: token,
+        refresh_token: token
+      });
+
+      if (sessionError) {
+        console.error("Failed to set Supabase session:", sessionError);
+        throw new Error("Failed to establish session");
+      }
+
+      console.log("Supabase session established successfully");
+      
+      // Add a small delay to ensure session is fully established
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+    } catch (sessionError) {
+      console.error("Error setting up Supabase session:", sessionError);
+      throw new Error("Failed to establish authentication session");
+    }
   }
 
   return userCredential;
@@ -44,52 +62,71 @@ export const authenticateProvider = async (email: string, password: string) => {
 export const verifyVendorStatus = async (userCredential: any, email: string) => {
   console.log("Checking vendor status for user:", userCredential.user.uid);
   
-  // Check if this user is a registered vendor
-  const { data: vendor, error: vendorError } = await supabase
-    .from('vendors')
-    .select('*')
-    .eq('firebase_uid', userCredential.user.uid)
-    .maybeSingle();
-
-  console.log("Vendor query result:", { vendor, vendorError });
-
-  if (vendorError && vendorError.code !== 'PGRST116') {
-    console.error('Error checking vendor status:', vendorError);
-    toast.error("Error verifying partner status");
-    throw new Error("Error verifying partner status");
-  }
-
-  if (!vendor) {
-    // Create the vendor record for any authenticated user
-    console.log("Creating vendor record...");
+  try {
+    // Verify Supabase session is active
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !session) {
+      console.error("No active Supabase session:", sessionError);
+      throw new Error("Authentication session not established");
+    }
     
-    const { data: newVendor, error: createVendorError } = await supabase
+    console.log("Active Supabase session confirmed");
+    
+    // Check if this user is a registered vendor
+    const { data: vendor, error: vendorError } = await supabase
       .from('vendors')
-      .insert({
+      .select('*')
+      .eq('firebase_uid', userCredential.user.uid)
+      .maybeSingle();
+
+    console.log("Vendor query result:", { vendor, vendorError });
+
+    if (vendorError && vendorError.code !== 'PGRST116') {
+      console.error('Error checking vendor status:', vendorError);
+      toast.error("Error verifying partner status");
+      throw new Error("Error verifying partner status");
+    }
+
+    if (!vendor) {
+      // Create the vendor record for any authenticated user
+      console.log("Creating vendor record...");
+      
+      const vendorData = {
         firebase_uid: userCredential.user.uid,
         business_name: email === 'maheshch1094@gmail.com' ? 'Campus Vendor' : 'Partner Business',
         category: 'Food & Beverages',
         description: 'Campus service provider',
         status: 'approved'
-      })
-      .select()
-      .single();
+      };
+      
+      console.log("Inserting vendor data:", vendorData);
+      
+      const { data: newVendor, error: createVendorError } = await supabase
+        .from('vendors')
+        .insert(vendorData)
+        .select()
+        .single();
 
-    if (createVendorError) {
-      console.error('Error creating vendor record:', createVendorError);
-      toast.error("Failed to create partner account. Please contact support.");
+      if (createVendorError) {
+        console.error('Error creating vendor record:', createVendorError);
+        console.error('Detailed error:', JSON.stringify(createVendorError, null, 2));
+        toast.error("Failed to create partner account. Please contact support.");
+        await auth.signOut();
+        throw new Error("Failed to create partner account");
+      }
+      
+      console.log("Vendor record created:", newVendor);
+      toast.success("Partner account created successfully!");
+    } else if (vendor.status !== 'approved') {
+      toast.error("Your partner account is pending approval");
       await auth.signOut();
-      throw new Error("Failed to create partner account");
+      throw new Error("Account pending approval");
+    } else {
+      toast.success("Welcome back, partner!");
     }
-    
-    console.log("Vendor record created:", newVendor);
-    toast.success("Partner account created successfully!");
-  } else if (vendor.status !== 'approved') {
-    toast.error("Your partner account is pending approval");
-    await auth.signOut();
-    throw new Error("Account pending approval");
-  } else {
-    toast.success("Welcome back, partner!");
+  } catch (error) {
+    console.error("Error in verifyVendorStatus:", error);
+    throw error;
   }
 };
 
