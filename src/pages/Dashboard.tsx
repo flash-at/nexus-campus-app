@@ -33,12 +33,12 @@ const Dashboard = () => {
   // Generate mock leaderboard data with real user data and unique names
   const generateLeaderboardData = () => {
     const mockUsers = [
-      { name: "Alex Johnson", department: "Computer Science", points: 285, avatar: "AJ" },
-      { name: "Sarah Wilson", department: "Electronics", points: 267, avatar: "SW" },
-      { name: "Mike Chen", department: "Mechanical", points: 142, avatar: "MC" },
-      { name: "Emma Davis", department: "Civil", points: 138, avatar: "ED" },
-      { name: "Ryan Kumar", department: "Information Technology", points: 125, avatar: "RK" },
-      { name: "Lisa Zhang", department: "Electronics", points: 118, avatar: "LZ" }
+      { name: "Alex Johnson", department: "Computer Science", points: 285, avatar: "AJ", isCurrentUser: false },
+      { name: "Sarah Wilson", department: "Electronics", points: 267, avatar: "SW", isCurrentUser: false },
+      { name: "Mike Chen", department: "Mechanical", points: 142, avatar: "MC", isCurrentUser: false },
+      { name: "Emma Davis", department: "Civil", points: 138, avatar: "ED", isCurrentUser: false },
+      { name: "Ryan Kumar", department: "Information Technology", points: 125, avatar: "RK", isCurrentUser: false },
+      { name: "Lisa Zhang", department: "Electronics", points: 118, avatar: "LZ", isCurrentUser: false }
     ];
 
     // Add current user to the list
