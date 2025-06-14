@@ -1,6 +1,44 @@
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "firebase/auth";
 
+export interface AcademicInfo {
+  id: string;
+  user_id: string;
+  current_semester: number | null;
+  cgpa: number | null;
+  subjects_enrolled: string[] | null;
+  mentor_name: string | null;
+  mentor_email: string | null;
+}
+
+export interface Engagement {
+    id: string;
+    user_id: string;
+    activity_points: number;
+    badges: any | null; // JSONB
+    last_login: string | null;
+    events_attended: string[] | null;
+    feedback_count: number;
+}
+
+export interface UserDocument {
+    id: string;
+    user_id: string;
+    doc_type: string;
+    doc_url: string;
+    file_name: string;
+    verified_by_admin: boolean;
+}
+
+export interface Preferences {
+    id: string;
+    user_id: string;
+    language: string;
+    theme: string;
+    notifications_enabled: boolean;
+    widgets_enabled: any | null; // JSONB
+}
+
 export interface UserProfile {
   id: string;
   firebase_uid: string;
@@ -14,7 +52,15 @@ export interface UserProfile {
   email_verified: boolean;
   created_at: string;
   updated_at: string;
+  profile_picture_url: string | null;
+  is_active: boolean | null;
+
+  academic_info: AcademicInfo | null;
+  engagement: Engagement | null;
+  documents: UserDocument[];
+  preferences: Preferences | null;
 }
+
 
 export const checkHallTicketExists = async (hallTicket: string): Promise<boolean> => {
   try {
@@ -78,16 +124,26 @@ export const getUserProfile = async (firebaseUid: string): Promise<UserProfile |
   try {
     const { data, error } = await supabase
       .from("users")
-      .select("*")
+      .select(`
+        *,
+        academic_info(*),
+        engagement(*),
+        documents(*),
+        preferences(*)
+      `)
       .eq("firebase_uid", firebaseUid)
       .single();
 
     if (error) {
+      if (error.code === 'PGRST116') { // No rows found
+        console.warn("No user profile found for uid:", firebaseUid);
+        return null;
+      }
       console.error("Error fetching user profile:", error);
       return null;
     }
 
-    return data;
+    return data as UserProfile;
   } catch (error) {
     console.error("Error fetching user profile:", error);
     return null;
@@ -96,14 +152,23 @@ export const getUserProfile = async (firebaseUid: string): Promise<UserProfile |
 
 export const updateUserProfile = async (
   firebaseUid: string,
-  updates: Partial<UserProfile>
+  updates: {
+    full_name?: string;
+    phone_number?: string;
+  }
 ): Promise<UserProfile | null> => {
   try {
     const { data, error } = await supabase
       .from("users")
       .update(updates)
       .eq("firebase_uid", firebaseUid)
-      .select()
+      .select(`
+        *,
+        academic_info(*),
+        engagement(*),
+        documents(*),
+        preferences(*)
+      `)
       .single();
 
     if (error) {
@@ -111,7 +176,7 @@ export const updateUserProfile = async (
       return null;
     }
 
-    return data;
+    return data as UserProfile;
   } catch (error) {
     console.error("Error updating user profile:", error);
     return null;
