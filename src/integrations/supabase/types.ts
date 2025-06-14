@@ -790,6 +790,12 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_user_rank: {
+        Args: { p_user_id: string }
+        Returns: {
+          rank: number
+        }[]
+      }
     }
     Enums: {
       theme_type: "Light" | "Dark" | "System"
