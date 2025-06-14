@@ -18,3 +18,23 @@ export const cleanupSupabaseSession = () => {
     console.error("Error during Supabase session cleanup:", error);
   }
 };
+
+export const cleanupFirebaseSession = () => {
+  console.log("Cleaning up Firebase session from localStorage...");
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      // Target keys used by Firebase for session management
+      if (key && (key.startsWith('firebase:') || key.includes('firebase'))) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => {
+      localStorage.removeItem(key);
+      console.log(`Removed '${key}' from localStorage.`);
+    });
+  } catch (error) {
+    console.error("Error during Firebase session cleanup:", error);
+  }
+};
