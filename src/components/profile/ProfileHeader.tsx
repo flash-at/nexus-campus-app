@@ -67,9 +67,9 @@ export const ProfileHeader = ({ profile, onEditClick }: ProfileHeaderProps) => {
                 <span className="truncate text-xs sm:text-sm">{profile.email}</span>
               </div>
               {profile.phone_number && (
-                <div className="flex items-center gap-2 sm:gap-3 bg-white/10 rounded-lg sm:rounded-xl p-2 sm:p-3 backdrop-blur-sm">
+                <div className="flex items-center gap-2 sm:gap-3 bg-white/10 rounded-lg sm:rounded-xl p-2 sm:p-3 backdrop-blur-sm min-w-0">
                   <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-green-300 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm">{profile.phone_number}</span>
+                  <span className="truncate text-xs sm:text-sm">{profile.phone_number}</span>
                 </div>
               )}
             </div>
