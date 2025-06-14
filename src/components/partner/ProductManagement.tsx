@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Plus, Edit, Trash2, Package, DollarSign } from 'lucide-react';
+import { Plus, Edit, Trash2, Package, DollarSign, AlertCircle } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -42,6 +43,7 @@ export const ProductManagement = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [currentVendor, setCurrentVendor] = useState<any>(null);
+  const [vendorError, setVendorError] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -75,26 +77,35 @@ export const ProductManagement = () => {
     if (!user) return;
     
     try {
+      setVendorError(null);
       const { data, error } = await supabase
         .from('vendors')
         .select('*')
         .eq('firebase_uid', user.uid)
-        .eq('status', 'approved')
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching vendor:', error);
-        toast({
-          title: "Error",
-          description: "Unable to find your vendor account. Please contact support.",
-          variant: "destructive"
-        });
+        setVendorError('Unable to load vendor account. Please try refreshing the page.');
+        return;
+      }
+      
+      if (!data) {
+        setVendorError('No vendor account found. Please contact support.');
+        return;
+      }
+
+      if (data.status !== 'approved') {
+        setVendorError('Your vendor account is pending approval.');
         return;
       }
       
       setCurrentVendor(data);
     } catch (error) {
       console.error('Error fetching vendor:', error);
+      setVendorError('Failed to load vendor account.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -120,8 +131,6 @@ export const ProductManagement = () => {
         description: "Failed to load products",
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -197,7 +206,7 @@ export const ProductManagement = () => {
           .insert(productData);
         
         if (error) throw error;
-        toast({ title: "Product added successfully!" });
+        toast({ title: "Product added successfully! It will now appear in the Campus Store." });
       }
 
       setShowAddDialog(false);
@@ -231,7 +240,7 @@ export const ProductManagement = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
+    if (!confirm('Are you sure you want to delete this product? It will be removed from the Campus Store.')) return;
 
     try {
       const { error } = await supabase
@@ -260,35 +269,40 @@ export const ProductManagement = () => {
         .eq('id', id);
 
       if (error) throw error;
+      toast({
+        title: !currentStatus ? "Product activated" : "Product deactivated",
+        description: !currentStatus 
+          ? "Product is now visible in the Campus Store" 
+          : "Product is now hidden from the Campus Store"
+      });
       fetchProducts();
     } catch (error) {
       console.error('Error updating product status:', error);
     }
   };
 
-  if (!currentVendor) {
+  if (loading) {
     return (
-      <div className="text-center py-12">
-        <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-        <h3 className="text-lg font-semibold mb-2">Vendor Account Required</h3>
-        <p className="text-muted-foreground">You need an approved vendor account to manage products.</p>
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <Package className="h-8 w-8 mx-auto mb-2 animate-spin text-muted-foreground" />
+          <p className="text-muted-foreground">Loading vendor account...</p>
+        </div>
       </div>
     );
   }
 
-  if (loading) {
+  if (vendorError || !currentVendor) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[...Array(6)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <div className="h-48 bg-muted"></div>
-            <CardContent className="p-4">
-              <div className="h-4 bg-muted rounded mb-2"></div>
-              <div className="h-3 bg-muted rounded mb-2"></div>
-              <div className="h-4 bg-muted rounded w-1/2"></div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="text-center py-12">
+        <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive" />
+        <h3 className="text-lg font-semibold mb-2">Vendor Account Issue</h3>
+        <p className="text-muted-foreground mb-4">
+          {vendorError || 'Unable to access vendor account'}
+        </p>
+        <Button onClick={fetchCurrentVendor} variant="outline">
+          Try Again
+        </Button>
       </div>
     );
   }
@@ -297,7 +311,10 @@ export const ProductManagement = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Product Management</h2>
+        <div>
+          <h2 className="text-2xl font-bold">Product Management</h2>
+          <p className="text-muted-foreground">Add products that will be visible to students in the Campus Store</p>
+        </div>
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
           <DialogTrigger asChild>
             <Button onClick={resetForm}>
@@ -427,7 +444,7 @@ export const ProductManagement = () => {
                   checked={formData.is_active}
                   onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
                 />
-                <Label htmlFor="is_active">Product Active</Label>
+                <Label htmlFor="is_active">Make product visible in Campus Store</Label>
               </div>
 
               <div className="flex gap-2 pt-4">
@@ -474,7 +491,7 @@ export const ProductManagement = () => {
                     <Badge className="bg-red-500">{product.discount_percentage}% OFF</Badge>
                   )}
                   <Badge variant={product.is_active ? "default" : "secondary"}>
-                    {product.is_active ? 'Active' : 'Inactive'}
+                    {product.is_active ? 'Visible' : 'Hidden'}
                   </Badge>
                 </div>
               </div>
@@ -535,7 +552,7 @@ export const ProductManagement = () => {
         <div className="text-center py-12">
           <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
           <h3 className="text-lg font-semibold mb-2">No Products Yet</h3>
-          <p className="text-muted-foreground mb-4">Start by adding your first product</p>
+          <p className="text-muted-foreground mb-4">Start by adding your first product to the Campus Store</p>
           <Button onClick={() => setShowAddDialog(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Add Your First Product

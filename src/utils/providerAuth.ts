@@ -14,43 +14,12 @@ export const authenticateProvider = async (email: string, password: string) => {
       console.log("Creating partner account...");
       userCredential = await createUserWithEmailAndPassword(auth, email, password);
       console.log("Account created successfully:", userCredential.user.uid);
-      
-      // Set the session in Supabase to match Firebase auth
-      await supabase.auth.signInAnonymously();
-      
-      // Create vendor record in Supabase with retry logic
-      const vendorData = {
-        firebase_uid: userCredential.user.uid,
-        business_name: 'Campus Vendor',
-        category: 'Food & Beverages',
-        description: 'Campus service provider',
-        status: 'approved'
-      };
-
-      console.log("Creating vendor record:", vendorData);
-      const { data: vendorRecord, error: vendorError } = await supabase
-        .from('vendors')
-        .insert(vendorData)
-        .select()
-        .single();
-
-      if (vendorError) {
-        console.error('Error creating vendor record:', vendorError);
-        // If vendor creation fails, still try to proceed - maybe it already exists
-      } else {
-        console.log("Vendor record created successfully:", vendorRecord);
-      }
-
-      toast.success("Partner account created successfully!");
     } catch (createError: any) {
       // If account already exists, try to sign in
       if (createError.code === 'auth/email-already-in-use') {
         console.log("Account exists, trying to sign in...");
         userCredential = await signInWithEmailAndPassword(auth, email, password);
         console.log("Signed in successfully:", userCredential.user.uid);
-        
-        // Set the session in Supabase to match Firebase auth
-        await supabase.auth.signInAnonymously();
       } else {
         throw createError;
       }
@@ -58,8 +27,6 @@ export const authenticateProvider = async (email: string, password: string) => {
   } else {
     // For other emails, just try to sign in
     userCredential = await signInWithEmailAndPassword(auth, email, password);
-    // Set the session in Supabase to match Firebase auth
-    await supabase.auth.signInAnonymously();
   }
 
   return userCredential;
@@ -73,7 +40,7 @@ export const verifyVendorStatus = async (userCredential: any, email: string) => 
     .from('vendors')
     .select('*')
     .eq('firebase_uid', userCredential.user.uid)
-    .single();
+    .maybeSingle();
 
   console.log("Vendor query result:", { vendor, vendorError });
 
@@ -86,9 +53,8 @@ export const verifyVendorStatus = async (userCredential: any, email: string) => 
   if (!vendor) {
     // For the specific partner email, create the vendor record if it doesn't exist
     if (email === 'maheshch1094@gmail.com') {
-      console.log("Creating missing vendor record for partner...");
+      console.log("Creating vendor record for partner...");
       
-      // Use the Supabase service role to bypass RLS for this specific case
       const { data: newVendor, error: createVendorError } = await supabase
         .from('vendors')
         .insert({
@@ -103,14 +69,13 @@ export const verifyVendorStatus = async (userCredential: any, email: string) => 
 
       if (createVendorError) {
         console.error('Error creating vendor record:', createVendorError);
-        // For now, let's bypass the vendor check for this specific email
-        console.log("Bypassing vendor check for partner email");
-        toast.success("Partner access granted!");
-        return; // Allow login to proceed
+        toast.error("Failed to create partner account. Please contact support.");
+        await auth.signOut();
+        throw new Error("Failed to create partner account");
       }
       
       console.log("Vendor record created:", newVendor);
-      toast.success("Partner registration completed!");
+      toast.success("Partner account created successfully!");
     } else {
       toast.error("This account is not registered as a partner");
       await auth.signOut();
@@ -120,6 +85,8 @@ export const verifyVendorStatus = async (userCredential: any, email: string) => 
     toast.error("Your partner account is pending approval");
     await auth.signOut();
     throw new Error("Account pending approval");
+  } else {
+    toast.success("Welcome back, partner!");
   }
 };
 
