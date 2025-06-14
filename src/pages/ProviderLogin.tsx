@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -32,20 +33,29 @@ const ProviderLogin = () => {
           // Try to create a new account first
           console.log("Creating partner account...");
           userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          console.log("Account created successfully:", userCredential.user.uid);
           
-          // Create vendor record in Supabase
-          const { error: vendorError } = await supabase
+          // Create vendor record in Supabase with retry logic
+          const vendorData = {
+            firebase_uid: userCredential.user.uid,
+            business_name: 'Campus Vendor',
+            category: 'Food & Beverages',
+            description: 'Campus service provider',
+            status: 'approved'
+          };
+
+          console.log("Creating vendor record:", vendorData);
+          const { data: vendorRecord, error: vendorError } = await supabase
             .from('vendors')
-            .insert({
-              firebase_uid: userCredential.user.uid,
-              business_name: 'Campus Vendor',
-              category: 'Food & Beverages',
-              description: 'Campus service provider',
-              status: 'approved'
-            });
+            .insert(vendorData)
+            .select()
+            .single();
 
           if (vendorError) {
             console.error('Error creating vendor record:', vendorError);
+            // If vendor creation fails, still try to proceed - maybe it already exists
+          } else {
+            console.log("Vendor record created successfully:", vendorRecord);
           }
 
           toast.success("Partner account created successfully!");
@@ -54,6 +64,7 @@ const ProviderLogin = () => {
           if (createError.code === 'auth/email-already-in-use') {
             console.log("Account exists, trying to sign in...");
             userCredential = await signInWithEmailAndPassword(auth, email, password);
+            console.log("Signed in successfully:", userCredential.user.uid);
           } else {
             throw createError;
           }
@@ -64,12 +75,16 @@ const ProviderLogin = () => {
       }
 
       if (userCredential?.user) {
+        console.log("Checking vendor status for user:", userCredential.user.uid);
+        
         // Check if this user is a registered vendor
         const { data: vendor, error: vendorError } = await supabase
           .from('vendors')
           .select('*')
           .eq('firebase_uid', userCredential.user.uid)
           .single();
+
+        console.log("Vendor query result:", { vendor, vendorError });
 
         if (vendorError && vendorError.code !== 'PGRST116') {
           console.error('Error checking vendor status:', vendorError);
@@ -78,12 +93,36 @@ const ProviderLogin = () => {
         }
 
         if (!vendor) {
-          toast.error("This account is not registered as a partner");
-          await auth.signOut();
-          return;
-        }
+          // For the specific partner email, create the vendor record if it doesn't exist
+          if (email === 'maheshch1094@gmail.com') {
+            console.log("Creating missing vendor record for partner...");
+            const { data: newVendor, error: createVendorError } = await supabase
+              .from('vendors')
+              .insert({
+                firebase_uid: userCredential.user.uid,
+                business_name: 'Campus Vendor',
+                category: 'Food & Beverages',
+                description: 'Campus service provider',
+                status: 'approved'
+              })
+              .select()
+              .single();
 
-        if (vendor.status !== 'approved') {
+            if (createVendorError) {
+              console.error('Error creating vendor record:', createVendorError);
+              toast.error("Failed to register as partner. Please contact support.");
+              await auth.signOut();
+              return;
+            }
+            
+            console.log("Vendor record created:", newVendor);
+            toast.success("Partner registration completed!");
+          } else {
+            toast.error("This account is not registered as a partner");
+            await auth.signOut();
+            return;
+          }
+        } else if (vendor.status !== 'approved') {
           toast.error("Your partner account is pending approval");
           await auth.signOut();
           return;
