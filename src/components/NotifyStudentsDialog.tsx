@@ -32,10 +32,21 @@ const NotifyStudentsDialog = ({ clubId, clubName, members }: NotifyStudentsDialo
       return;
     }
 
+    if (!members || members.length === 0) {
+      toast({
+        title: "Error",
+        description: "No members found to notify.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
     
     try {
       console.log('Sending notifications to members:', members);
+      console.log('Club ID:', clubId);
+      console.log('Notification content:', { title: title.trim(), message: message.trim() });
       
       // Create notifications for all club members
       const notifications = members.map(member => ({
@@ -48,14 +59,17 @@ const NotifyStudentsDialog = ({ clubId, clubName, members }: NotifyStudentsDialo
 
       console.log('Notifications to insert:', notifications);
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('notifications')
-        .insert(notifications);
+        .insert(notifications)
+        .select();
 
       if (error) {
         console.error('Error inserting notifications:', error);
         throw error;
       }
+
+      console.log('Successfully inserted notifications:', data);
 
       toast({
         title: "Notifications sent!",

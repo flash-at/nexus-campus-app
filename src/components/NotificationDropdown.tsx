@@ -24,15 +24,24 @@ interface NotificationDropdownProps {
 const NotificationDropdown = ({ clubId, userId }: NotificationDropdownProps) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log('NotificationDropdown mounted with:', { clubId, userId });
     fetchNotifications();
   }, [clubId, userId]);
 
   const fetchNotifications = async () => {
+    if (!userId) {
+      console.log('No userId provided, skipping fetch');
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      console.log('Fetching notifications for user:', userId, 'club:', clubId);
+      setIsLoading(true);
+      console.log('Fetching notifications for Firebase UID:', userId, 'club:', clubId);
       
       // Get the current user's internal ID from the users table
       const { data: userData, error: userError } = await supabase
@@ -43,15 +52,22 @@ const NotificationDropdown = ({ clubId, userId }: NotificationDropdownProps) => 
 
       if (userError) {
         console.error('Error fetching user data:', userError);
+        toast({
+          title: "Error",
+          description: "Failed to fetch user data for notifications.",
+          variant: "destructive"
+        });
+        setIsLoading(false);
         return;
       }
 
       if (!userData?.id) {
         console.error('No user found with firebase_uid:', userId);
+        setIsLoading(false);
         return;
       }
 
-      console.log('Found user ID:', userData.id);
+      console.log('Found internal user ID:', userData.id);
 
       // Create the base query for notifications
       let query = supabase
@@ -64,12 +80,19 @@ const NotificationDropdown = ({ clubId, userId }: NotificationDropdownProps) => 
       // If clubId is provided, filter by club
       if (clubId) {
         query = query.eq('club_id', clubId);
+        console.log('Filtering notifications for club:', clubId);
       }
 
       const { data, error } = await query;
       
       if (error) {
         console.error('Error fetching notifications:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load notifications.",
+          variant: "destructive"
+        });
+        setIsLoading(false);
         return;
       }
       
@@ -79,36 +102,60 @@ const NotificationDropdown = ({ clubId, userId }: NotificationDropdownProps) => 
       setNotifications(notificationData);
       setUnreadCount(notificationData.filter(n => !n.read).length);
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      console.error('Unexpected error fetching notifications:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while loading notifications.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const markAsRead = async (notificationId: string) => {
     try {
+      console.log('Marking notification as read:', notificationId);
+      
       const { error } = await supabase
         .from('notifications')
         .update({ read: true })
         .eq('id', notificationId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error marking notification as read:', error);
+        throw error;
+      }
       
       setNotifications(prev => 
         prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
+      
+      console.log('Successfully marked notification as read');
     } catch (error) {
       console.error('Error marking notification as read:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark notification as read.",
+        variant: "destructive"
+      });
     }
   };
 
   const deleteNotification = async (notificationId: string) => {
     try {
+      console.log('Deleting notification:', notificationId);
+      
       const { error } = await supabase
         .from('notifications')
         .delete()
         .eq('id', notificationId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting notification:', error);
+        throw error;
+      }
       
       setNotifications(prev => prev.filter(n => n.id !== notificationId));
       setUnreadCount(prev => {
@@ -120,6 +167,8 @@ const NotificationDropdown = ({ clubId, userId }: NotificationDropdownProps) => 
         title: "Notification deleted",
         description: "The notification has been removed."
       });
+      
+      console.log('Successfully deleted notification');
     } catch (error) {
       console.error('Error deleting notification:', error);
       toast({
@@ -155,7 +204,11 @@ const NotificationDropdown = ({ clubId, userId }: NotificationDropdownProps) => 
           )}
         </div>
         
-        {notifications.length === 0 ? (
+        {isLoading ? (
+          <div className="p-4 text-center text-muted-foreground text-sm">
+            Loading notifications...
+          </div>
+        ) : notifications.length === 0 ? (
           <div className="p-4 text-center text-muted-foreground text-sm">
             No notifications yet
           </div>
