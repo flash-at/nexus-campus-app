@@ -53,58 +53,6 @@ export type Database = {
           },
         ]
       }
-      activity_allocations: {
-        Row: {
-          allocated_at: string | null
-          allocated_by: string | null
-          club_id: string | null
-          id: string
-          points: number
-          reason: string | null
-          student_id: string | null
-        }
-        Insert: {
-          allocated_at?: string | null
-          allocated_by?: string | null
-          club_id?: string | null
-          id?: string
-          points: number
-          reason?: string | null
-          student_id?: string | null
-        }
-        Update: {
-          allocated_at?: string | null
-          allocated_by?: string | null
-          club_id?: string | null
-          id?: string
-          points?: number
-          reason?: string | null
-          student_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "activity_allocations_allocated_by_fkey"
-            columns: ["allocated_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "activity_allocations_club_id_fkey"
-            columns: ["club_id"]
-            isOneToOne: false
-            referencedRelation: "clubs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "activity_allocations_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       admin_applications: {
         Row: {
           approved_at: string | null
@@ -149,89 +97,6 @@ export type Database = {
           status?: string
         }
         Relationships: []
-      }
-      club_memberships: {
-        Row: {
-          club_id: string | null
-          id: string
-          joined_at: string | null
-          role: string | null
-          user_id: string | null
-        }
-        Insert: {
-          club_id?: string | null
-          id?: string
-          joined_at?: string | null
-          role?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          club_id?: string | null
-          id?: string
-          joined_at?: string | null
-          role?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "club_memberships_club_id_fkey"
-            columns: ["club_id"]
-            isOneToOne: false
-            referencedRelation: "clubs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "club_memberships_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      clubs: {
-        Row: {
-          category: string | null
-          chair_id: string | null
-          created_at: string | null
-          description: string | null
-          id: string
-          max_members: number | null
-          name: string
-          password: string
-          updated_at: string | null
-        }
-        Insert: {
-          category?: string | null
-          chair_id?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          max_members?: number | null
-          name: string
-          password: string
-          updated_at?: string | null
-        }
-        Update: {
-          category?: string | null
-          chair_id?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          max_members?: number | null
-          name?: string
-          password?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "clubs_chair_id_fkey"
-            columns: ["chair_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       complaints: {
         Row: {
@@ -645,10 +510,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_current_user_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      [_ in never]: never
     }
     Enums: {
       theme_type: "Light" | "Dark" | "System"
