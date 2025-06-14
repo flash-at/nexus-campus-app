@@ -1,14 +1,19 @@
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { User, Mail, Phone, BookOpen, Award } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { EditProfileForm } from "./EditProfileForm";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "@/hooks/useAuth";
+import { createUserProfile } from "@/services/userService";
+import { toast } from "sonner";
 
 const ProfilePageSkeleton = () => (
     <div className="space-y-8">
@@ -48,18 +53,91 @@ const ProfilePageSkeleton = () => (
 
 export const ProfilePage = () => {
   const { profile, loading, refetch } = useProfile();
+  const { user } = useAuth();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isCreatingProfile, setIsCreatingProfile] = useState(false);
+  const [newProfileData, setNewProfileData] = useState({
+    fullName: "",
+    hallTicket: "",
+    department: "",
+    academicYear: "",
+    phoneNumber: "",
+  });
 
   if (loading) {
     return <ProfilePageSkeleton />;
   }
 
+  const handleCreateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) {
+      toast.error("You must be logged in to create a profile.");
+      return;
+    }
+
+    const { fullName, hallTicket, department, academicYear, phoneNumber } = newProfileData;
+    if (!fullName || !hallTicket || !department || !academicYear || !phoneNumber) {
+      toast.error("Please fill all fields.");
+      return;
+    }
+
+    setIsCreatingProfile(true);
+    try {
+      const createdProfile = await createUserProfile(user, newProfileData);
+      if (createdProfile) {
+        toast.success("Profile created successfully!");
+        await refetch();
+      } else {
+        toast.error("Failed to create profile. Please try again.");
+      }
+    } catch (error) {
+      console.error("Profile creation error:", error);
+      toast.error("An unexpected error occurred during profile creation.");
+    } finally {
+      setIsCreatingProfile(false);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setNewProfileData((prev) => ({ ...prev, [id]: value }));
+  };
+
   if (!profile) {
     return (
-      <Card>
-        <CardHeader><CardTitle>Profile Not Found</CardTitle></CardHeader>
+      <Card className="soft-shadow animate-fade-in">
+        <CardHeader>
+          <CardTitle>Create Your Profile</CardTitle>
+          <CardDescription>
+            Welcome! Please provide your details to set up your student profile.
+          </CardDescription>
+        </CardHeader>
         <CardContent>
-          <p>We couldn't load your profile. Please try again later.</p>
+          <form onSubmit={handleCreateProfile} className="space-y-4">
+            <div>
+              <Label htmlFor="fullName">Full Name</Label>
+              <Input id="fullName" value={newProfileData.fullName} onChange={handleInputChange} placeholder="e.g., John Doe" required />
+            </div>
+            <div>
+              <Label htmlFor="hallTicket">Hall Ticket Number</Label>
+              <Input id="hallTicket" value={newProfileData.hallTicket} onChange={handleInputChange} placeholder="e.g., CS21B0001" required />
+            </div>
+            <div>
+              <Label htmlFor="department">Department</Label>
+              <Input id="department" value={newProfileData.department} onChange={handleInputChange} placeholder="e.g., Computer Science" required />
+            </div>
+            <div>
+              <Label htmlFor="academicYear">Academic Year</Label>
+              <Input id="academicYear" value={newProfileData.academicYear} onChange={handleInputChange} placeholder="e.g., 2021-2025" required />
+            </div>
+            <div>
+              <Label htmlFor="phoneNumber">Phone Number</Label>
+              <Input id="phoneNumber" type="tel" value={newProfileData.phoneNumber} onChange={handleInputChange} placeholder="e.g., 9876543210" required />
+            </div>
+            <Button type="submit" className="w-full" disabled={isCreatingProfile}>
+              {isCreatingProfile ? "Creating Profile..." : "Create Profile"}
+            </Button>
+          </form>
         </CardContent>
       </Card>
     );
