@@ -11,7 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { Plus, ArrowLeft, ArrowRight, Eye, EyeOff, Users, Shield, Key, Lock } from "lucide-react";
+import { Plus, ArrowLeft, ArrowRight, Eye, EyeOff, Users, Shield, Key, Lock, UserCog } from "lucide-react";
 
 const CreateClub = () => {
   const [step, setStep] = useState(1);
@@ -213,7 +213,7 @@ const CreateClub = () => {
             )}
 
             {step === 2 && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="maxMembers" className="text-sm font-medium">Maximum Members</Label>
                   <div className="relative">
@@ -234,11 +234,85 @@ const CreateClub = () => {
                   </p>
                 </div>
 
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                      <UserCog className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold">Club Core Committee Structure</h3>
+                      <p className="text-sm text-muted-foreground">Understanding your club's leadership hierarchy</p>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4">
+                    <div className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/50 border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 mt-1">
+                          <Shield className="h-4 w-4 text-white" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">Club Chair</h4>
+                          <p className="text-sm text-blue-700 dark:text-blue-200 leading-relaxed">
+                            The primary leader and decision-maker. Has full administrative access, can manage all members, 
+                            assign roles, and oversee club activities. You'll be automatically assigned as Chair upon creation.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-lg bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-950/50 dark:to-purple-900/50 border border-purple-200 dark:border-purple-800">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center flex-shrink-0 mt-1">
+                          <UserCog className="h-4 w-4 text-white" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-purple-900 dark:text-purple-100 mb-1">Vice Chair</h4>
+                          <p className="text-sm text-purple-700 dark:text-purple-200 leading-relaxed">
+                            Second-in-command with administrative privileges. Can help manage members, organize events, 
+                            and assist with club operations. You can assign this role after club creation.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-lg bg-gradient-to-r from-green-50 to-green-100 dark:from-green-950/50 dark:to-green-900/50 border border-green-200 dark:border-green-800">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0 mt-1">
+                          <Users className="h-4 w-4 text-white" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-green-900 dark:text-green-100 mb-1">Core Members</h4>
+                          <p className="text-sm text-green-700 dark:text-green-200 leading-relaxed">
+                            Active contributors with special responsibilities. They help organize events, mentor new members, 
+                            and support club initiatives. Can be promoted from regular members.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 border border-gray-200 dark:border-gray-600">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gray-500 flex items-center justify-center flex-shrink-0 mt-1">
+                          <Users className="h-4 w-4 text-white" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Regular Members</h4>
+                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                            General club participants who attend events, engage in activities, and contribute to the club community. 
+                            They join using the club join password.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <Alert>
-                  <Users className="h-4 w-4" />
+                  <UserCog className="h-4 w-4" />
                   <AlertDescription>
-                    <strong>Club Structure:</strong> You'll be automatically assigned as the Club Chair. 
-                    You can later assign Vice Chairs and Core Members through the admin dashboard.
+                    <strong>Role Management:</strong> After creating your club, you can assign Vice Chairs and Core Members 
+                    through the admin dashboard. Role assignments help distribute responsibilities and ensure smooth club operations.
                   </AlertDescription>
                 </Alert>
               </div>
