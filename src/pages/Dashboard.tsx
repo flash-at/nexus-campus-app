@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,11 +50,11 @@ const Dashboard = () => {
     };
 
     const otherUsers = [
-      { name: "Emily Carter", department: "Electrical Eng.", points: 1280, avatar: "EC" },
-      { name: "James Rodriguez", department: "Mechanical Eng.", points: 1055, avatar: "JR" },
-      { name: "Sophia Chen", department: "Biotechnology", points: 910, avatar: "SC" },
-      { name: "Benjamin Lee", department: "Civil Engineering", points: 895, avatar: "BL" },
-      { name: "Olivia Garcia", department: "Architecture", points: 760, avatar: "OG" },
+      { name: "Emily Carter", department: "Electrical Eng.", points: 1280, avatar: "EC", isCurrentUser: false },
+      { name: "James Rodriguez", department: "Mechanical Eng.", points: 1055, avatar: "JR", isCurrentUser: false },
+      { name: "Sophia Chen", department: "Biotechnology", points: 910, avatar: "SC", isCurrentUser: false },
+      { name: "Benjamin Lee", department: "Civil Engineering", points: 895, avatar: "BL", isCurrentUser: false },
+      { name: "Olivia Garcia", department: "Architecture", points: 760, avatar: "OG", isCurrentUser: false },
     ];
 
     const allUsers = [...otherUsers, currentUser];
