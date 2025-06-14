@@ -430,7 +430,7 @@ const Register = () => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .bg-grid-pattern {
           background-image: radial-gradient(circle, #000 1px, transparent 1px);
           background-size: 20px 20px;
