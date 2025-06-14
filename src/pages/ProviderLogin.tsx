@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -25,14 +24,13 @@ const ProviderLogin = () => {
     setIsLoading(true);
 
     try {
-      // First try to sign in with existing credentials
       let userCredential;
-      try {
-        userCredential = await signInWithEmailAndPassword(auth, email, password);
-      } catch (signInError: any) {
-        // If user doesn't exist and this is the specific email, create the account
-        if (signInError.code === 'auth/user-not-found' && email === 'maheshch1094@gmail.com') {
-          console.log("Creating new partner account...");
+      
+      // For the specific partner email, always try to create/reset the account
+      if (email === 'maheshch1094@gmail.com') {
+        try {
+          // Try to create a new account first
+          console.log("Creating partner account...");
           userCredential = await createUserWithEmailAndPassword(auth, email, password);
           
           // Create vendor record in Supabase
@@ -51,9 +49,18 @@ const ProviderLogin = () => {
           }
 
           toast.success("Partner account created successfully!");
-        } else {
-          throw signInError;
+        } catch (createError: any) {
+          // If account already exists, try to sign in
+          if (createError.code === 'auth/email-already-in-use') {
+            console.log("Account exists, trying to sign in...");
+            userCredential = await signInWithEmailAndPassword(auth, email, password);
+          } else {
+            throw createError;
+          }
         }
+      } else {
+        // For other emails, just try to sign in
+        userCredential = await signInWithEmailAndPassword(auth, email, password);
       }
 
       if (userCredential?.user) {
@@ -83,7 +90,7 @@ const ProviderLogin = () => {
         }
 
         toast.success("Signed in successfully!");
-        navigate("/dashboard"); // Navigate to partner dashboard
+        navigate("/dashboard");
       }
     } catch (error: any) {
       console.error("Authentication error:", error);
@@ -94,7 +101,8 @@ const ProviderLogin = () => {
           errorMessage = "No account found with this email";
           break;
         case 'auth/wrong-password':
-          errorMessage = "Incorrect password";
+        case 'auth/invalid-credential':
+          errorMessage = "Incorrect email or password";
           break;
         case 'auth/invalid-email':
           errorMessage = "Invalid email address";
@@ -104,6 +112,9 @@ const ProviderLogin = () => {
           break;
         case 'auth/too-many-requests':
           errorMessage = "Too many failed attempts. Please try again later.";
+          break;
+        case 'auth/weak-password':
+          errorMessage = "Password should be at least 6 characters";
           break;
       }
       
