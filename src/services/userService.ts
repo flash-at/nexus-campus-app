@@ -93,7 +93,7 @@ export const createUserProfile = async (
   }
 ): Promise<UserProfile | null> => {
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("users")
       .insert({
         firebase_uid: firebaseUser.uid,
@@ -104,16 +104,15 @@ export const createUserProfile = async (
         academic_year: additionalData.academicYear,
         phone_number: additionalData.phoneNumber,
         email_verified: firebaseUser.emailVerified,
-      })
-      .select()
-      .single();
+      });
 
     if (error) {
       console.error("Error creating user profile:", error);
       return null;
     }
 
-    return data;
+    // After successful creation, fetch the full profile
+    return await getUserProfile(firebaseUser.uid);
   } catch (error) {
     console.error("Error creating user profile:", error);
     return null;
@@ -158,25 +157,18 @@ export const updateUserProfile = async (
   }
 ): Promise<UserProfile | null> => {
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("users")
       .update(updates)
-      .eq("firebase_uid", firebaseUid)
-      .select(`
-        *,
-        academic_info(*),
-        engagement(*),
-        documents(*),
-        preferences(*)
-      `)
-      .single();
+      .eq("firebase_uid", firebaseUid);
 
     if (error) {
       console.error("Error updating user profile:", error);
       return null;
     }
 
-    return data as UserProfile;
+    // After successful update, fetch the full profile to get all relations
+    return await getUserProfile(firebaseUid);
   } catch (error) {
     console.error("Error updating user profile:", error);
     return null;
