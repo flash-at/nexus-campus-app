@@ -36,7 +36,7 @@ export const Analytics = () => {
                 <p className="text-2xl font-bold">₹{stats.todayRevenue}</p>
                 <div className="flex items-center gap-1 text-sm text-green-600">
                   <TrendingUp className="h-3 w-3" />
-                  <span>+{stats.revenueGrowth}%</span>
+                  <span>+{stats.recentTrends.revenueGrowth}%</span>
                 </div>
               </div>
               <DollarSign className="h-8 w-8 text-green-500" />
