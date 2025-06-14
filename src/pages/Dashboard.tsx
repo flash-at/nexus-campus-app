@@ -1,8 +1,9 @@
-
-import { useAuth } from "@/hooks/useAuth";
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { 
   User, 
@@ -10,26 +11,29 @@ import {
   Calendar, 
   CreditCard, 
   FileText, 
+  Store, 
   MessageSquare, 
-  HelpCircle,
-  LogOut,
-  Store,
-  Printer,
-  Coffee,
-  BookOpen,
-  Bell,
-  Settings,
-  TrendingUp,
-  Clock,
-  MapPin,
-  Star,
   Users,
+  TrendingUp,
+  BookOpen,
+  Target,
+  Newspaper,
+  MessageCircle,
+  Bot,
+  Briefcase,
+  Shield,
+  Settings,
+  LogOut,
+  Bell,
+  Clock,
   Zap
 } from "lucide-react";
-import Logo from "@/components/Logo";
-import ThemeToggle from "@/components/ThemeToggle";
+import { ProfilePage } from "@/components/profile/ProfilePage";
+import { useProfile } from "@/hooks/useProfile";
 
 const Dashboard = () => {
+  const [activeSection, setActiveSection] = useState("overview");
+  const { profile } = useProfile();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -42,109 +46,27 @@ const Dashboard = () => {
     }
   };
 
-  const serviceCategories = [
-    {
-      title: "Food & Beverages",
-      description: "Order from campus cafeterias and food courts",
-      icon: <Coffee className="h-8 w-8" />,
-      gradient: "from-orange-500 to-red-500",
-      count: "15+ Outlets",
-      status: "Available",
-      stats: "⚡ 15 min avg delivery"
-    },
-    {
-      title: "Printing & Xerox",
-      description: "Print documents, notes, and assignments",
-      icon: <Printer className="h-8 w-8" />,
-      gradient: "from-blue-500 to-cyan-500",
-      count: "50+ Locations",
-      status: "Online",
-      stats: "📄 50+ pages printed today"
-    },
-    {
-      title: "Campus Store",
-      description: "Stationery, books, and daily essentials",
-      icon: <Store className="h-8 w-8" />,
-      gradient: "from-green-500 to-emerald-500",
-      count: "2 Stores",
-      status: "Open",
-      stats: "🛍️ 200+ items available"
-    },
-    {
-      title: "Study Materials",
-      description: "Notes, books, and academic resources",
-      icon: <BookOpen className="h-8 w-8" />,
-      gradient: "from-purple-500 to-pink-500",
-      count: "Available",
-      status: "Updated",
-      stats: "📚 50+ subjects covered"
-    }
+  const dashboardSections = [
+    { id: "overview", label: "Dashboard", icon: TrendingUp },
+    { id: "profile", label: "Profile", icon: User },
+    { id: "services", label: "Services", icon: ShoppingBag },
+    { id: "events", label: "Events & Clubs", icon: Calendar },
+    { id: "payments", label: "Payments", icon: CreditCard },
+    { id: "forms", label: "Forms", icon: FileText },
+    { id: "store", label: "Campus Store", icon: Store },
+    { id: "feedback", label: "Feedback", icon: MessageSquare },
+    { id: "mentor", label: "Mentor", icon: Users },
   ];
 
-  const quickActions = [
-    { title: "My Profile", icon: <User className="h-6 w-6" />, description: "View and edit profile", color: "bg-blue-500" },
-    { title: "Order History", icon: <ShoppingBag className="h-6 w-6" />, description: "Track past orders", color: "bg-green-500" },
-    { title: "Events", icon: <Calendar className="h-6 w-6" />, description: "Campus events & clubs", color: "bg-purple-500" },
-    { title: "Payments", icon: <CreditCard className="h-6 w-6" />, description: "Wallet & transactions", color: "bg-orange-500" },
-    { title: "Forms", icon: <FileText className="h-6 w-6" />, description: "Applications & forms", color: "bg-pink-500" },
-    { title: "Support", icon: <HelpCircle className="h-6 w-6" />, description: "Help & complaints", color: "bg-red-500" }
-  ];
-
-  const recentOrders = [
-    {
-      id: "ORD001",
-      title: "Campus Cafeteria",
-      subtitle: "Veg Biryani + Cold Drink",
-      amount: "₹180",
-      status: "Delivered",
-      time: "2 hours ago",
-      statusColor: "bg-green-100 text-green-800"
-    },
-    {
-      id: "ORD002", 
-      title: "Xerox Center",
-      subtitle: "50 pages - Computer Networks Notes",
-      amount: "₹25",
-      status: "Processing",
-      time: "30 minutes ago",
-      statusColor: "bg-yellow-100 text-yellow-800"
-    },
-    {
-      id: "ORD003",
-      title: "Campus Store",
-      subtitle: "Notebook + Pens (3 items)",
-      amount: "₹120",
-      status: "Ready",
-      time: "1 hour ago",
-      statusColor: "bg-blue-100 text-blue-800"
-    }
-  ];
-
-  const upcomingEvents = [
-    {
-      title: "Tech Fest 2024",
-      date: "Tomorrow",
-      time: "10:00 AM",
-      location: "Main Auditorium",
-      type: "Competition",
-      attendees: "500+"
-    },
-    {
-      title: "Career Fair",
-      date: "Dec 15, 2024",
-      time: "9:00 AM",
-      location: "Sports Complex",
-      type: "Placement",
-      attendees: "50+ Companies"
-    },
-    {
-      title: "Cultural Night",
-      date: "Dec 20, 2024",
-      time: "6:00 PM",
-      location: "Open Ground",
-      type: "Cultural",
-      attendees: "1000+"
-    }
+  const advancedFeatures = [
+    { id: "progress", label: "Academic Progress", icon: TrendingUp },
+    { id: "notes", label: "Notes & Planner", icon: BookOpen },
+    { id: "gamification", label: "Achievements", icon: Target },
+    { id: "news", label: "Campus News", icon: Newspaper },
+    { id: "connect", label: "Peer Connect", icon: MessageCircle },
+    { id: "ai", label: "AI Assistant", icon: Bot },
+    { id: "career", label: "Career Hub", icon: Briefcase },
+    { id: "vault", label: "Document Vault", icon: Shield },
   ];
 
   if (!user) {
@@ -159,238 +81,356 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950">
-      {/* Modern Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-lg supports-[backdrop-filter]:bg-white/60 dark:bg-gray-950/80 dark:supports-[backdrop-filter]:bg-gray-950/60">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center">
-                  <Logo className="text-white" width={24} height={24} />
-                </div>
-                <div>
-                  <h1 className="font-bold text-lg bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">CampusConnect</h1>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Smart Campus Platform</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" className="relative">
-                <Bell className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-xs"></span>
-              </Button>
-              <ThemeToggle />
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                  {user.displayName ? user.displayName.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase()}
-                </div>
-                <div className="hidden sm:block">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{user.displayName || user.email?.split('@')[0]}</p>
-                  <Badge variant={user.emailVerified ? "default" : "destructive"} className="text-xs">
-                    {user.emailVerified ? "Verified" : "Unverified"}
-                  </Badge>
-                </div>
-              </div>
-              <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
-                <LogOut className="h-5 w-5" />
-              </Button>
-            </div>
+    <div className="min-h-screen bg-background">
+      {/* Top Navigation */}
+      <div className="border-b border-border bg-card/50 backdrop-blur-xl sticky top-0 z-50">
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center space-x-4">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">CampusConnect</h1>
+            <Badge variant="outline" className="text-primary border-primary/30">
+              Student Portal
+            </Badge>
           </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-6 py-8">
-        {/* Welcome Section */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                Welcome back, {user.displayName?.split(' ')[0] || "Student"}! 👋
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400 text-lg">
-                Here's what's happening on your campus today
-              </p>
-            </div>
-            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg">
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
+          
+          <div className="flex items-center space-x-4">
+            <Button variant="ghost" size="sm" className="relative">
+              <Bell className="h-4 w-4" />
+              <span className="absolute -top-1 -right-1 h-3 w-3 bg-primary rounded-full flex items-center justify-center text-xs text-primary-foreground">
+                3
+              </span>
             </Button>
-          </div>
-
-          {/* Quick Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0">
-              <CardContent className="p-4 text-center">
-                <TrendingUp className="h-8 w-8 mx-auto mb-2" />
-                <div className="text-2xl font-bold">15</div>
-                <div className="text-sm opacity-90">Orders This Month</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0">
-              <CardContent className="p-4 text-center">
-                <Clock className="h-8 w-8 mx-auto mb-2" />
-                <div className="text-2xl font-bold">₹1,250</div>
-                <div className="text-sm opacity-90">Total Spent</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0">
-              <CardContent className="p-4 text-center">
-                <Star className="h-8 w-8 mx-auto mb-2" />
-                <div className="text-2xl font-bold">4.8</div>
-                <div className="text-sm opacity-90">Avg Rating</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0">
-              <CardContent className="p-4 text-center">
-                <MapPin className="h-8 w-8 mx-auto mb-2" />
-                <div className="text-2xl font-bold">3</div>
-                <div className="text-sm opacity-90">Events Attended</div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Services Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {serviceCategories.map((service, index) => (
-            <Card key={index} className="group hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm overflow-hidden cursor-pointer">
-              <div className={`absolute inset-0 bg-gradient-to-br ${service.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500`}></div>
-              <CardHeader className="relative z-10 text-center pb-4">
-                <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${service.gradient} mb-4 mx-auto shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110`}>
-                  <div className="text-white">{service.icon}</div>
-                </div>
-                <div className="flex items-center justify-between mb-2">
-                  <CardTitle className="text-lg">{service.title}</CardTitle>
-                  <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
-                    {service.status}
-                  </Badge>
-                </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">{service.count}</div>
-              </CardHeader>
-              <CardContent className="relative z-10">
-                <CardDescription className="text-sm mb-3 leading-relaxed">
-                  {service.description}
-                </CardDescription>
-                <div className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                  {service.stats}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Quick Actions */}
-        <Card className="mb-12 shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center text-xl">
-              <Zap className="h-6 w-6 mr-3 text-blue-600" />
-              Quick Actions
-            </CardTitle>
-            <CardDescription>
-              Frequently used features and tools
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {quickActions.map((action, index) => (
-                <Button
-                  key={index}
-                  variant="ghost"
-                  className="h-auto flex-col space-y-3 p-6 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl group transition-all duration-300 hover:shadow-lg"
-                >
-                  <div className={`w-12 h-12 ${action.color} rounded-xl flex items-center justify-center text-white group-hover:scale-110 transition-transform duration-300`}>
-                    {action.icon}
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm font-semibold">{action.title}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{action.description}</p>
-                  </div>
-                </Button>
-              ))}
+            
+            <Avatar>
+              <AvatarImage src={profile?.profile_picture} />
+              <AvatarFallback className="bg-primary text-primary-foreground">
+                {profile?.full_name?.split(' ').map(n => n[0]).join('') || user.displayName?.charAt(0) || user.email?.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            
+            <div className="text-right">
+              <p className="text-sm font-medium">{profile?.full_name || user.displayName || user.email?.split('@')[0]}</p>
+              <p className="text-xs text-muted-foreground">{profile?.hall_ticket || 'CS21B0001'}</p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+      </div>
 
-        {/* Recent Activity */}
-        <div className="grid lg:grid-cols-2 gap-8">
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center text-xl">
-                <ShoppingBag className="h-6 w-6 mr-3 text-green-600" />
-                Recent Orders
-              </CardTitle>
-              <CardDescription>Your latest purchases and services</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentOrders.map((order, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:shadow-md transition-shadow">
+      <div className="flex">
+        {/* Sidebar */}
+        <div className="w-64 border-r border-border bg-card/30 backdrop-blur-xl min-h-screen p-6">
+          <div className="space-y-6">
+            {/* Core Features */}
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                Core Features
+              </h3>
+              <div className="space-y-1">
+                {dashboardSections.map((section) => {
+                  const Icon = section.icon;
+                  return (
+                    <Button
+                      key={section.id}
+                      variant={activeSection === section.id ? "secondary" : "ghost"}
+                      className="w-full justify-start"
+                      onClick={() => setActiveSection(section.id)}
+                    >
+                      <Icon className="h-4 w-4 mr-3" />
+                      {section.label}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Advanced Features */}
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                Advanced Features
+              </h3>
+              <div className="space-y-1">
+                {advancedFeatures.map((feature) => {
+                  const Icon = feature.icon;
+                  return (
+                    <Button
+                      key={feature.id}
+                      variant={activeSection === feature.id ? "secondary" : "ghost"}
+                      className="w-full justify-start"
+                      onClick={() => setActiveSection(feature.id)}
+                    >
+                      <Icon className="h-4 w-4 mr-3" />
+                      {feature.label}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Settings */}
+            <div className="pt-6 border-t border-border">
+              <div className="space-y-1">
+                <Button variant="ghost" className="w-full justify-start">
+                  <Settings className="h-4 w-4 mr-3" />
+                  Settings
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start text-destructive hover:text-destructive"
+                  onClick={handleSignOut}
+                >
+                  <LogOut className="h-4 w-4 mr-3" />
+                  Sign Out
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 p-8">
+          {activeSection === "profile" && <ProfilePage />}
+          
+          {activeSection === "overview" && (
+            <div className="space-y-8 animate-fade-in">
+              {/* Welcome Section */}
+              <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-3xl font-bold mb-2">
+                      👋 Welcome back, {profile?.full_name?.split(' ')[0] || user.displayName?.split(' ')[0] || 'Student'}!
+                    </h2>
+                    <p className="text-white/80 text-lg">Ready to make your campus life easier?</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-white/80">Today's Date</p>
+                    <p className="text-xl font-semibold">June 14, 2025</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
+                  <CardContent className="p-6">
                     <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center text-white font-semibold">
-                        {order.id.slice(-2)}
+                      <div className="w-12 h-12 rounded-2xl bg-blue-500/20 flex items-center justify-center">
+                        <ShoppingBag className="h-6 w-6 text-blue-500" />
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-900 dark:text-gray-100">{order.title}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{order.subtitle}</p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500">{order.time}</p>
+                        <p className="text-2xl font-bold">12</p>
+                        <p className="text-sm text-muted-foreground">Total Orders</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-gray-900 dark:text-gray-100">{order.amount}</p>
-                      <Badge className={`text-xs ${order.statusColor}`}>{order.status}</Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  </CardContent>
+                </Card>
 
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center text-xl">
-                <Calendar className="h-6 w-6 mr-3 text-purple-600" />
-                Upcoming Events
-              </CardTitle>
-              <CardDescription>Don't miss these campus activities</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {upcomingEvents.map((event, index) => (
-                  <div key={index} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold text-gray-900 dark:text-gray-100">{event.title}</h3>
-                      <Badge variant="outline" className="text-xs">
-                        {event.type}
-                      </Badge>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 dark:text-gray-400">
-                      <div className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-2" />
-                        {event.date}
+                <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 rounded-2xl bg-purple-500/20 flex items-center justify-center">
+                        <Calendar className="h-6 w-6 text-purple-500" />
                       </div>
-                      <div className="flex items-center">
-                        <Clock className="h-4 w-4 mr-2" />
-                        {event.time}
-                      </div>
-                      <div className="flex items-center">
-                        <MapPin className="h-4 w-4 mr-2" />
-                        {event.location}
-                      </div>
-                      <div className="flex items-center">
-                        <Users className="h-4 w-4 mr-2" />
-                        {event.attendees}
+                      <div>
+                        <p className="text-2xl font-bold">3</p>
+                        <p className="text-sm text-muted-foreground">Events Today</p>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 rounded-2xl bg-green-500/20 flex items-center justify-center">
+                        <TrendingUp className="h-6 w-6 text-green-500" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold">{profile?.cgpa?.toFixed(1) || '8.7'}</p>
+                        <p className="text-sm text-muted-foreground">CGPA</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center">
+                        <Target className="h-6 w-6 text-emerald-500" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold">{profile?.activity_points || 450}</p>
+                        <p className="text-sm text-muted-foreground">Activity Points</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
+
+              {/* Quick Actions & Recent Activity */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <Card className="shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Zap className="h-5 w-5 mr-2 text-primary" />
+                      Quick Actions
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Button className="w-full justify-start bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border border-blue-500/20">
+                      <ShoppingBag className="h-4 w-4 mr-3" />
+                      Order Food from Campus
+                    </Button>
+                    <Button className="w-full justify-start bg-purple-500/10 hover:bg-purple-500/20 text-purple-500 border border-purple-500/20">
+                      <FileText className="h-4 w-4 mr-3" />
+                      Submit Assignment
+                    </Button>
+                    <Button className="w-full justify-start bg-green-500/10 hover:bg-green-500/20 text-green-500 border border-green-500/20">
+                      <Calendar className="h-4 w-4 mr-3" />
+                      View Class Schedule
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Clock className="h-5 w-5 mr-2 text-muted-foreground" />
+                      Recent Activity
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center space-x-3 p-3 rounded-xl bg-card border">
+                      <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
+                        <ShoppingBag className="h-4 w-4 text-blue-500" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">Food order delivered</p>
+                        <p className="text-xs text-muted-foreground">2 hours ago</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-3 p-3 rounded-xl bg-card border">
+                      <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
+                        <Calendar className="h-4 w-4 text-purple-500" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">Joined study group</p>
+                        <p className="text-xs text-muted-foreground">Yesterday</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-3 p-3 rounded-xl bg-card border">
+                      <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
+                        <FileText className="h-4 w-4 text-green-500" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">Form submitted</p>
+                        <p className="text-xs text-muted-foreground">2 days ago</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Upcoming Events & Notifications */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <Card className="lg:col-span-2 shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Calendar className="h-5 w-5 mr-2 text-primary" />
+                      Upcoming Events
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 rounded-xl border border-border">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-12 h-12 rounded-2xl bg-blue-500/20 flex items-center justify-center">
+                            <Users className="h-6 w-6 text-blue-500" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold">Tech Club Meeting</h4>
+                            <p className="text-sm text-muted-foreground">Discussion on AI trends</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-medium">Today</p>
+                          <p className="text-xs text-muted-foreground">4:00 PM</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-4 rounded-xl border border-border">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-12 h-12 rounded-2xl bg-purple-500/20 flex items-center justify-center">
+                            <FileText className="h-6 w-6 text-purple-500" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold">Assignment Deadline</h4>
+                            <p className="text-sm text-muted-foreground">Data Structures project</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-medium">Tomorrow</p>
+                          <p className="text-xs text-muted-foreground">11:59 PM</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Bell className="h-5 w-5 mr-2 text-orange-500" />
+                      Notifications
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                        <p className="text-sm font-medium text-blue-500">New service request approved</p>
+                        <p className="text-xs text-muted-foreground mt-1">Your printing request is ready</p>
+                      </div>
+                      
+                      <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                        <p className="text-sm font-medium text-purple-500">Resume deadline reminder</p>
+                        <p className="text-xs text-muted-foreground mt-1">3 days left to submit</p>
+                      </div>
+                      
+                      <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/20">
+                        <p className="text-sm font-medium text-green-500">New club invitation</p>
+                        <p className="text-xs text-muted-foreground mt-1">Photography club wants you!</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+
+          {/* Other sections */}
+          {activeSection !== "overview" && activeSection !== "profile" && (
+            <div className="text-center py-20 animate-fade-in">
+              <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-primary/20 flex items-center justify-center">
+                {(() => {
+                  const section = [...dashboardSections, ...advancedFeatures].find(s => s.id === activeSection);
+                  const Icon = section?.icon || FileText;
+                  return <Icon className="h-8 w-8 text-primary" />;
+                })()}
+              </div>
+              <h3 className="text-2xl font-bold mb-2">
+                {[...dashboardSections, ...advancedFeatures].find(s => s.id === activeSection)?.label}
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                This section is coming soon! We're working hard to bring you amazing features.
+              </p>
+              <Button onClick={() => setActiveSection("overview")}>
+                Back to Dashboard
+              </Button>
+            </div>
+          )}
         </div>
-      </main>
+      </div>
     </div>
   );
 };
