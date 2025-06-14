@@ -31,6 +31,11 @@ export interface UserProfile {
     feedback_count?: number;
     events_attended?: string[];
   };
+  preferences?: {
+    theme?: string;
+    language?: string;
+    notifications_enabled?: boolean;
+  };
 }
 
 interface CreateProfileData {
@@ -47,7 +52,8 @@ export const getUserProfile = async (userId: string): Promise<UserProfile> => {
     .select(`
       *,
       academic_info(*),
-      engagement(*)
+      engagement(*),
+      preferences(*)
     `)
     .eq('firebase_uid', userId)
     .single();
@@ -57,7 +63,13 @@ export const getUserProfile = async (userId: string): Promise<UserProfile> => {
     throw userError;
   }
 
-  return user;
+  return {
+    ...user,
+    engagement: user.engagement ? {
+      ...user.engagement,
+      badges: Array.isArray(user.engagement.badges) ? user.engagement.badges : []
+    } : undefined
+  };
 };
 
 export const createUserProfile = async (user: User, profileData: CreateProfileData): Promise<UserProfile | null> => {

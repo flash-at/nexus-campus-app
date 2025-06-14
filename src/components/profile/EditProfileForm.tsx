@@ -12,7 +12,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { UserProfile, updateUserProfile } from "@/services/profileService";
+import { UserProfile, updateUserProfile } from "@/services/userService";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 

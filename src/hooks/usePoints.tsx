@@ -1,15 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
-import { getUserPoints, getPointsHistory } from '@/services/pointsService';
-
-export interface PointsHistoryEntry {
-  id: string;
-  transaction_type: 'earned' | 'redeemed';
-  points: number;
-  reason: string;
-  created_at: string;
-}
+import { getUserPoints, getPointsHistory, PointsHistoryEntry } from '@/services/pointsService';
 
 export const usePoints = () => {
   const { user } = useAuth();
