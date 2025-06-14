@@ -94,6 +94,10 @@ export const ActivityPointsHistory = () => {
               <Badge variant="outline" className="text-red-600">-{POINT_RULES.CLUB_LEAVE_COST}</Badge>
             </div>
           </div>
+          <div className="mt-3 text-xs text-muted-foreground">
+            <p>• Students must stay in clubs for {POINT_RULES.MINIMUM_CLUB_DAYS} days before leaving</p>
+            <p>• Feedback Hero badge awarded for 5+ feedback submissions</p>
+          </div>
         </div>
 
         {/* Transaction History */}
