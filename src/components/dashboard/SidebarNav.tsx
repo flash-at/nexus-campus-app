@@ -3,13 +3,14 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import {
   TrendingUp, User, ShoppingBag, Calendar, CreditCard, FileText, Store, MessageSquare, Users,
-  BookOpen, Target, Newspaper, MessageCircle, Bot, Briefcase, Shield, Settings, LogOut, Package
+  BookOpen, Target, Newspaper, MessageCircle, Bot, Briefcase, Shield, Settings, LogOut, Package, Trophy
 } from "lucide-react";
 
 const dashboardSections = [
     { id: "overview", label: "Dashboard", icon: TrendingUp },
     { id: "profile", label: "Profile", icon: User },
     { id: "orders", label: "My Orders", icon: Package },
+    { id: "leaderboard", label: "Leaderboard", icon: Trophy },
     { id: "services", label: "Services", icon: ShoppingBag },
     { id: "events", label: "Events & Clubs", icon: Calendar },
     { id: "payments", label: "Payments", icon: CreditCard },

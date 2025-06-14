@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { 
   User, ShoppingBag, Calendar, CreditCard, FileText, Store, MessageSquare, Users,
   TrendingUp, BookOpen, Target, Newspaper, MessageCircle, Bot, Briefcase, Shield,
-  Settings, LogOut, Bell, Clock, Zap, Menu, X, Package
+  Settings, LogOut, Bell, Clock, Zap, Menu, X, Package, Trophy
 } from "lucide-react";
 import { SidebarNav } from "@/components/dashboard/SidebarNav";
 import { NewProfilePage } from "@/components/profile/NewProfilePage";
@@ -74,6 +74,11 @@ const Dashboard = () => {
     handleSignOut();
     setIsSidebarOpen(false);
   }
+
+  const handleLeaderboardClick = () => {
+    setActiveSection("leaderboard");
+    setIsSidebarOpen(false);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -177,113 +182,109 @@ const Dashboard = () => {
                 </Button>
               </div>
 
-              {/* Orders Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">Order #1234</CardTitle>
-                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                        Delivered
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                        <ShoppingBag className="h-6 w-6 text-blue-500" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Campus Canteen</p>
-                        <p className="text-sm text-muted-foreground">Chicken Biryani, Coke</p>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center pt-2">
-                      <p className="text-sm text-muted-foreground">June 13, 2025</p>
-                      <p className="font-semibold">₹180</p>
-                    </div>
-                  </CardContent>
-                </Card>
+              {/* Empty State for Orders */}
+              <div className="text-center py-12 sm:py-20">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <Package className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
+                </div>
+                <h3 className="text-xl sm:text-2xl font-bold mb-2">No Orders Yet</h3>
+                <p className="text-muted-foreground mb-6 text-sm sm:text-base px-4">
+                  You haven't placed any orders yet. Start by exploring our services and campus store.
+                </p>
+                <Button className="bg-primary hover:bg-primary/90">
+                  <ShoppingBag className="h-4 w-4 mr-2" />
+                  Browse Services
+                </Button>
+              </div>
+            </div>
+          )}
 
-                <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">Order #1235</CardTitle>
-                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                        In Progress
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                        <Store className="h-6 w-6 text-purple-500" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Campus Store</p>
-                        <p className="text-sm text-muted-foreground">Notebooks, Pens</p>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center pt-2">
-                      <p className="text-sm text-muted-foreground">June 14, 2025</p>
-                      <p className="font-semibold">₹245</p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">Order #1236</CardTitle>
-                      <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                        Pending
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 rounded-lg bg-green-500/20 flex items-center justify-center">
-                        <FileText className="h-6 w-6 text-green-500" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Print Shop</p>
-                        <p className="text-sm text-muted-foreground">Document Printing</p>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center pt-2">
-                      <p className="text-sm text-muted-foreground">June 14, 2025</p>
-                      <p className="font-semibold">₹50</p>
-                    </div>
-                  </CardContent>
-                </Card>
+          {activeSection === "leaderboard" && (
+            <div className="space-y-4 sm:space-y-6 lg:space-y-8 animate-fade-in">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+                <div>
+                  <h2 className="text-2xl sm:text-3xl font-bold">Leaderboard</h2>
+                  <p className="text-muted-foreground text-sm sm:text-base">Campus activity rankings based on points</p>
+                </div>
               </div>
 
-              {/* Order Summary */}
-              <Card className="shadow-lg">
-                <CardHeader>
+              {/* Current User Position */}
+              <Card className="shadow-lg border-primary/20">
+                <CardHeader className="pb-3">
                   <CardTitle className="flex items-center">
-                    <TrendingUp className="h-5 w-5 mr-2 text-primary" />
-                    Order Summary
+                    <Trophy className="h-5 w-5 mr-2 text-primary" />
+                    Your Position
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center p-4 rounded-lg bg-blue-50 dark:bg-blue-950/20">
-                      <p className="text-2xl font-bold text-blue-600">12</p>
-                      <p className="text-sm text-muted-foreground">Total Orders</p>
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-primary/5">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
+                        #3
+                      </div>
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={profile?.profile_picture_url || undefined} />
+                        <AvatarFallback className="bg-primary text-primary-foreground">
+                          {profile?.full_name?.split(' ').map(n => n[0]).join('') || user.displayName?.charAt(0) || user.email?.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">{profile?.full_name || user.displayName || 'You'}</p>
+                        <p className="text-sm text-muted-foreground">{profile?.department || 'Computer Science'}</p>
+                      </div>
                     </div>
-                    <div className="text-center p-4 rounded-lg bg-green-50 dark:bg-green-950/20">
-                      <p className="text-2xl font-bold text-green-600">8</p>
-                      <p className="text-sm text-muted-foreground">Delivered</p>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-primary">{profile?.engagement?.activity_points || 150}</p>
+                      <p className="text-sm text-muted-foreground">Activity Points</p>
                     </div>
-                    <div className="text-center p-4 rounded-lg bg-orange-50 dark:bg-orange-950/20">
-                      <p className="text-2xl font-bold text-orange-600">3</p>
-                      <p className="text-sm text-muted-foreground">In Progress</p>
-                    </div>
-                    <div className="text-center p-4 rounded-lg bg-purple-50 dark:bg-purple-950/20">
-                      <p className="text-2xl font-bold text-purple-600">₹2,340</p>
-                      <p className="text-sm text-muted-foreground">Total Spent</p>
-                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Top Rankings */}
+              <Card className="shadow-lg">
+                <CardHeader>
+                  <CardTitle>Top Students</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {[
+                      { rank: 1, name: "Alex Johnson", department: "Computer Science", points: 285, avatar: "AJ" },
+                      { rank: 2, name: "Sarah Wilson", department: "Electronics", points: 267, avatar: "SW" },
+                      { rank: 3, name: profile?.full_name || "You", department: profile?.department || "Computer Science", points: profile?.engagement?.activity_points || 150, avatar: profile?.full_name?.split(' ').map(n => n[0]).join('') || "YO", isCurrentUser: true },
+                      { rank: 4, name: "Mike Chen", department: "Mechanical", points: 142, avatar: "MC" },
+                      { rank: 5, name: "Emma Davis", department: "Civil", points: 138, avatar: "ED" }
+                    ].map((student) => (
+                      <div key={student.rank} className={`flex items-center justify-between p-3 rounded-lg ${student.isCurrentUser ? 'bg-primary/10 border border-primary/20' : 'bg-card border'}`}>
+                        <div className="flex items-center space-x-4">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                            student.rank === 1 ? 'bg-yellow-500 text-white' : 
+                            student.rank === 2 ? 'bg-gray-400 text-white' : 
+                            student.rank === 3 ? 'bg-orange-500 text-white' : 
+                            'bg-muted text-muted-foreground'
+                          }`}>
+                            #{student.rank}
+                          </div>
+                          <Avatar className="h-10 w-10">
+                            <AvatarFallback className={student.isCurrentUser ? 'bg-primary text-primary-foreground' : 'bg-muted'}>
+                              {student.avatar}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className={`font-medium ${student.isCurrentUser ? 'text-primary' : ''}`}>
+                              {student.name}
+                            </p>
+                            <p className="text-sm text-muted-foreground">{student.department}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className={`font-bold ${student.isCurrentUser ? 'text-primary' : ''}`}>
+                            {student.points}
+                          </p>
+                          <p className="text-xs text-muted-foreground">points</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
@@ -317,7 +318,7 @@ const Dashboard = () => {
                         <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-blue-500" />
                       </div>
                       <div className="text-center sm:text-left">
-                        <p className="text-lg sm:text-xl lg:text-2xl font-bold">12</p>
+                        <p className="text-lg sm:text-xl lg:text-2xl font-bold">0</p>
                         <p className="text-xs sm:text-sm text-muted-foreground">Total Orders</p>
                       </div>
                     </div>
@@ -331,22 +332,25 @@ const Dashboard = () => {
                         <Calendar className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-purple-500" />
                       </div>
                       <div className="text-center sm:text-left">
-                        <p className="text-lg sm:text-xl lg:text-2xl font-bold">3</p>
+                        <p className="text-lg sm:text-xl lg:text-2xl font-bold">0</p>
                         <p className="text-xs sm:text-sm text-muted-foreground">Events Today</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
+                <Card 
+                  className="shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer hover:bg-primary/5"
+                  onClick={handleLeaderboardClick}
+                >
                   <CardContent className="p-3 sm:p-4 lg:p-6">
                     <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 lg:space-x-4">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl bg-green-500/20 flex items-center justify-center mx-auto sm:mx-0">
-                        <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-green-500" />
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl bg-yellow-500/20 flex items-center justify-center mx-auto sm:mx-0">
+                        <Trophy className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-yellow-500" />
                       </div>
                       <div className="text-center sm:text-left">
-                        <p className="text-lg sm:text-xl lg:text-2xl font-bold">8.5</p>
-                        <p className="text-xs sm:text-sm text-muted-foreground">CGPA</p>
+                        <p className="text-lg sm:text-xl lg:text-2xl font-bold">#3</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">Leaderboard</p>
                       </div>
                     </div>
                   </CardContent>
@@ -359,7 +363,7 @@ const Dashboard = () => {
                         <Target className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-emerald-500" />
                       </div>
                       <div className="text-center sm:text-left">
-                        <p className="text-lg sm:text-xl lg:text-2xl font-bold">150</p>
+                        <p className="text-lg sm:text-xl lg:text-2xl font-bold">{profile?.engagement?.activity_points || 150}</p>
                         <p className="text-xs sm:text-sm text-muted-foreground">Activity Points</p>
                       </div>
                     </div>
@@ -510,7 +514,7 @@ const Dashboard = () => {
           )}
 
           {/* Other sections */}
-          {activeSection !== "overview" && activeSection !== "profile" && activeSection !== "orders" && (
+          {activeSection !== "overview" && activeSection !== "profile" && activeSection !== "orders" && activeSection !== "leaderboard" && (
             <div className="text-center py-12 sm:py-20 animate-fade-in">
               <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 sm:mb-6 rounded-xl sm:rounded-2xl bg-primary/20 flex items-center justify-center">
                 {(() => {
