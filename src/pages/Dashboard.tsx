@@ -22,7 +22,9 @@ import {
   TrendingUp,
   Clock,
   MapPin,
-  Star
+  Star,
+  Users,
+  Zap
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
