@@ -30,10 +30,45 @@ const Dashboard = () => {
     }
   };
 
+  // Generate mock leaderboard data with real user data and unique names
+  const generateLeaderboardData = () => {
+    const mockUsers = [
+      { name: "Alex Johnson", department: "Computer Science", points: 285, avatar: "AJ" },
+      { name: "Sarah Wilson", department: "Electronics", points: 267, avatar: "SW" },
+      { name: "Mike Chen", department: "Mechanical", points: 142, avatar: "MC" },
+      { name: "Emma Davis", department: "Civil", points: 138, avatar: "ED" },
+      { name: "Ryan Kumar", department: "Information Technology", points: 125, avatar: "RK" },
+      { name: "Lisa Zhang", department: "Electronics", points: 118, avatar: "LZ" }
+    ];
+
+    // Add current user to the list
+    const currentUser = {
+      name: profile?.full_name || "You",
+      department: profile?.department || "Computer Science",
+      points: profile?.engagement?.activity_points || 150,
+      avatar: profile?.full_name?.split(' ').map(n => n[0]).join('') || "YO",
+      isCurrentUser: true
+    };
+
+    // Combine and sort by points, ensuring no duplicates
+    const allUsers = [...mockUsers, currentUser]
+      .filter((user, index, array) => 
+        array.findIndex(u => u.name === user.name) === index
+      )
+      .sort((a, b) => b.points - a.points)
+      .map((user, index) => ({ ...user, rank: index + 1 }));
+
+    return allUsers;
+  };
+
+  const leaderboardData = generateLeaderboardData();
+  const currentUserRank = leaderboardData.find(user => user.isCurrentUser)?.rank || 3;
+
   const dashboardSections = [
     { id: "overview", label: "Dashboard", icon: TrendingUp },
     { id: "profile", label: "Profile", icon: User },
     { id: "orders", label: "My Orders", icon: Package },
+    { id: "leaderboard", label: "Leaderboard", icon: Trophy },
     { id: "services", label: "Services", icon: ShoppingBag },
     { id: "events", label: "Events & Clubs", icon: Calendar },
     { id: "payments", label: "Payments", icon: CreditCard },
@@ -220,7 +255,7 @@ const Dashboard = () => {
                   <div className="flex items-center justify-between p-4 rounded-lg bg-primary/5">
                     <div className="flex items-center space-x-4">
                       <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
-                        #3
+                        #{currentUserRank}
                       </div>
                       <Avatar className="h-10 w-10">
                         <AvatarImage src={profile?.profile_picture_url || undefined} />
@@ -248,14 +283,8 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {[
-                      { rank: 1, name: "Alex Johnson", department: "Computer Science", points: 285, avatar: "AJ" },
-                      { rank: 2, name: "Sarah Wilson", department: "Electronics", points: 267, avatar: "SW" },
-                      { rank: 3, name: profile?.full_name || "You", department: profile?.department || "Computer Science", points: profile?.engagement?.activity_points || 150, avatar: profile?.full_name?.split(' ').map(n => n[0]).join('') || "YO", isCurrentUser: true },
-                      { rank: 4, name: "Mike Chen", department: "Mechanical", points: 142, avatar: "MC" },
-                      { rank: 5, name: "Emma Davis", department: "Civil", points: 138, avatar: "ED" }
-                    ].map((student) => (
-                      <div key={student.rank} className={`flex items-center justify-between p-3 rounded-lg ${student.isCurrentUser ? 'bg-primary/10 border border-primary/20' : 'bg-card border'}`}>
+                    {leaderboardData.slice(0, 6).map((student) => (
+                      <div key={`${student.name}-${student.rank}`} className={`flex items-center justify-between p-3 rounded-lg ${student.isCurrentUser ? 'bg-primary/10 border border-primary/20' : 'bg-card border'}`}>
                         <div className="flex items-center space-x-4">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
                             student.rank === 1 ? 'bg-yellow-500 text-white' : 
@@ -349,7 +378,7 @@ const Dashboard = () => {
                         <Trophy className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-yellow-500" />
                       </div>
                       <div className="text-center sm:text-left">
-                        <p className="text-lg sm:text-xl lg:text-2xl font-bold">#3</p>
+                        <p className="text-lg sm:text-xl lg:text-2xl font-bold">#{currentUserRank}</p>
                         <p className="text-xs sm:text-sm text-muted-foreground">Leaderboard</p>
                       </div>
                     </div>
