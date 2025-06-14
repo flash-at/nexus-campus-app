@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { Plus, Edit, Trash2, Package, DollarSign } from 'lucide-react';
 
 interface Product {
@@ -41,7 +41,9 @@ export const ProductManagement = () => {
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [currentVendor, setCurrentVendor] = useState<any>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -57,11 +59,48 @@ export const ProductManagement = () => {
   });
 
   useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-  }, []);
+    if (user) {
+      fetchCurrentVendor();
+      fetchCategories();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (currentVendor) {
+      fetchProducts();
+    }
+  }, [currentVendor]);
+
+  const fetchCurrentVendor = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('vendors')
+        .select('*')
+        .eq('firebase_uid', user.uid)
+        .eq('status', 'approved')
+        .single();
+
+      if (error) {
+        console.error('Error fetching vendor:', error);
+        toast({
+          title: "Error",
+          description: "Unable to find your vendor account. Please contact support.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      setCurrentVendor(data);
+    } catch (error) {
+      console.error('Error fetching vendor:', error);
+    }
+  };
 
   const fetchProducts = async () => {
+    if (!currentVendor) return;
+    
     try {
       const { data, error } = await supabase
         .from('products')
@@ -69,6 +108,7 @@ export const ProductManagement = () => {
           *,
           store_categories (name)
         `)
+        .eq('vendor_id', currentVendor.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -119,6 +159,15 @@ export const ProductManagement = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!currentVendor) {
+      toast({
+        title: "Error",
+        description: "Vendor account not found",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
       const productData = {
         name: formData.name,
@@ -131,7 +180,7 @@ export const ProductManagement = () => {
         available_until: formData.available_until,
         category_id: formData.category_id,
         is_active: formData.is_active,
-        vendor_id: 'temp-vendor-id' // This should come from auth
+        vendor_id: currentVendor.id
       };
 
       if (editingProduct) {
@@ -216,6 +265,16 @@ export const ProductManagement = () => {
       console.error('Error updating product status:', error);
     }
   };
+
+  if (!currentVendor) {
+    return (
+      <div className="text-center py-12">
+        <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+        <h3 className="text-lg font-semibold mb-2">Vendor Account Required</h3>
+        <p className="text-muted-foreground">You need an approved vendor account to manage products.</p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
