@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/hooks/useAuth";
+import { PartnerAuthProvider } from "@/hooks/usePartnerAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -31,29 +32,31 @@ function App() {
           <Sonner />
           <BrowserRouter>
             <AuthProvider>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/admin-login" element={<AdminLogin />} />
-                <Route path="/provider-login" element={<ProviderLogin />} />
-                <Route path="/provider/login" element={<ProviderLogin />} />
-                <Route path="/provider-register" element={<ProviderRegister />} />
-                <Route path="/provider/register" element={<ProviderRegister />} />
-                <Route path="/club-admin-login" element={<ClubAdminLogin />} />
-                <Route path="/create-club" element={<CreateClub />} />
-                <Route path="/club-admin" element={<ClubAdmin />} />
-                <Route path="/partner-dashboard" element={<PartnerDashboard />} />
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <Dashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <PartnerAuthProvider>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/admin-login" element={<AdminLogin />} />
+                  <Route path="/provider-login" element={<ProviderLogin />} />
+                  <Route path="/provider/login" element={<ProviderLogin />} />
+                  <Route path="/provider-register" element={<ProviderRegister />} />
+                  <Route path="/provider/register" element={<ProviderRegister />} />
+                  <Route path="/club-admin-login" element={<ClubAdminLogin />} />
+                  <Route path="/create-club" element={<CreateClub />} />
+                  <Route path="/club-admin" element={<ClubAdmin />} />
+                  <Route path="/partner-dashboard" element={<PartnerDashboard />} />
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <Dashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </PartnerAuthProvider>
             </AuthProvider>
           </BrowserRouter>
         </TooltipProvider>

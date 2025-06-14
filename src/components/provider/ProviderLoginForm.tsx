@@ -7,9 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
-import { authenticateProvider, verifyVendorStatus, getAuthErrorMessage } from "@/utils/providerAuth";
-import { cleanupSupabaseSession } from "@/utils/authUtils";
-import { auth } from "@/lib/firebase";
+import { signInPartner, getPartnerAuthErrorMessage } from "@/utils/partnerSupabaseAuth";
 
 export const ProviderLoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -22,25 +20,13 @@ export const ProviderLoginForm = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Clean up any lingering sessions before attempting a new login
     try {
-      await auth.signOut();
-    } catch (error) {
-      console.warn("Pre-login sign out failed, continuing...", error);
-    }
-    cleanupSupabaseSession();
-
-    try {
-      const userCredential = await authenticateProvider(email, password);
-
-      if (userCredential?.user) {
-        await verifyVendorStatus(userCredential, email);
-        toast.success("Signed in successfully!");
-        navigate("/partner-dashboard");
-      }
+      await signInPartner(email, password);
+      toast.success("Signed in successfully!");
+      navigate("/partner-dashboard");
     } catch (error: any) {
       console.error("Authentication error:", error);
-      const errorMessage = getAuthErrorMessage(error);
+      const errorMessage = getPartnerAuthErrorMessage(error);
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);

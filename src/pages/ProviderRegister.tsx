@@ -1,3 +1,4 @@
+
 import React, { useState, Fragment } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { toast } from "sonner";
 import { ArrowLeft, ArrowRight, User, Building, Shield, CheckCircle } from "lucide-react";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
+import { signUpPartner, getPartnerAuthErrorMessage } from "@/utils/partnerSupabaseAuth";
 
 const ProviderRegister = () => {
   const navigate = useNavigate();
@@ -21,6 +23,8 @@ const ProviderRegister = () => {
     fullName: "",
     email: "",
     phone: "",
+    password: "",
+    confirmPassword: "",
     
     // Step 2 - Business Info
     businessName: "",
@@ -51,12 +55,20 @@ const ProviderRegister = () => {
   const validateStep = (step: number) => {
     switch (step) {
       case 1:
-        if (!formData.fullName || !formData.email || !formData.phone) {
+        if (!formData.fullName || !formData.email || !formData.phone || !formData.password || !formData.confirmPassword) {
           toast.error("Please fill in all personal information fields");
           return false;
         }
         if (!/^[0-9]{10}$/.test(formData.phone)) {
           toast.error("Phone number must be exactly 10 digits");
+          return false;
+        }
+        if (formData.password !== formData.confirmPassword) {
+          toast.error("Passwords do not match");
+          return false;
+        }
+        if (formData.password.length < 6) {
+          toast.error("Password must be at least 6 characters");
           return false;
         }
         break;
@@ -92,18 +104,22 @@ const ProviderRegister = () => {
     setIsLoading(true);
     
     try {
-      // Simulate submission API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await signUpPartner(formData.email, formData.password, {
+        businessName: formData.businessName,
+        category: formData.serviceCategory,
+        description: formData.description
+      });
       
-      toast.success("Application submitted successfully! You'll receive an email within 6 hours.");
+      toast.success("Application submitted successfully! Please check your email for verification.");
       
-      // Redirect to status check page after short delay
+      // Redirect to login page
       setTimeout(() => {
-        navigate("/status-check");
+        navigate("/provider-login");
       }, 2000);
       
-    } catch (error) {
-      toast.error("Submission failed. Please try again.");
+    } catch (error: any) {
+      const errorMessage = getPartnerAuthErrorMessage(error);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -213,6 +229,32 @@ const ProviderRegister = () => {
                           onChange={(e) => handleInputChange("phone", e.target.value.replace(/\D/g, ''))}
                           className="h-12 bg-gray-50 dark:bg-gray-700 border-gray-300 focus:border-green-500"
                           maxLength={10}
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Password</Label>
+                        <Input
+                          id="password"
+                          type="password"
+                          placeholder="Enter password (min 6 characters)"
+                          value={formData.password}
+                          onChange={(e) => handleInputChange("password", e.target.value)}
+                          className="h-12 bg-gray-50 dark:bg-gray-700 border-gray-300 focus:border-green-500"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="confirmPassword">Confirm Password</Label>
+                        <Input
+                          id="confirmPassword"
+                          type="password"
+                          placeholder="Confirm your password"
+                          value={formData.confirmPassword}
+                          onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                          className="h-12 bg-gray-50 dark:bg-gray-700 border-gray-300 focus:border-green-500"
                           required
                         />
                       </div>
