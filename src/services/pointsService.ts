@@ -45,6 +45,8 @@ export interface VoucherRedemption {
 
 export const getPointsHistory = async (userId: string): Promise<PointsTransaction[]> => {
   try {
+    console.log('Fetching points history for userId:', userId);
+    
     const { data, error } = await supabase
       .from('activity_points_history')
       .select('*')
@@ -53,7 +55,30 @@ export const getPointsHistory = async (userId: string): Promise<PointsTransactio
 
     if (error) {
       console.error('Error fetching points history:', error);
-      return [];
+    }
+
+    console.log('Points history data:', data);
+
+    // If no history records exist but user has points, create a default entry to show current points
+    if ((!data || data.length === 0)) {
+      // Get user's current points to show something in history
+      const { data: engagementData } = await supabase
+        .from('engagement')
+        .select('activity_points, created_at')
+        .eq('user_id', userId)
+        .single();
+
+      if (engagementData && engagementData.activity_points > 0) {
+        // Return a synthetic transaction to show the current points
+        return [{
+          id: 'initial-points',
+          user_id: userId,
+          points: engagementData.activity_points,
+          transaction_type: 'earned' as const,
+          reason: 'Initial activity points',
+          created_at: engagementData.created_at || new Date().toISOString(),
+        }];
+      }
     }
 
     // Type assertion to ensure proper typing
@@ -69,6 +94,8 @@ export const getPointsHistory = async (userId: string): Promise<PointsTransactio
 
 export const getCurrentPoints = async (firebaseUid: string): Promise<number> => {
   try {
+    console.log('Fetching current points for firebaseUid:', firebaseUid);
+    
     // First get the user's internal ID
     const { data: userData } = await supabase
       .from('users')
@@ -77,8 +104,11 @@ export const getCurrentPoints = async (firebaseUid: string): Promise<number> => 
       .single();
 
     if (!userData) {
+      console.log('No user found for firebaseUid:', firebaseUid);
       return 0;
     }
+
+    console.log('Found user ID:', userData.id);
 
     // Get current points from engagement table
     const { data: engagementData } = await supabase
@@ -87,6 +117,8 @@ export const getCurrentPoints = async (firebaseUid: string): Promise<number> => 
       .eq('user_id', userData.id)
       .single();
 
+    console.log('Engagement data:', engagementData);
+    
     return engagementData?.activity_points || 0;
   } catch (error) {
     console.error('Error fetching current points:', error);
@@ -96,8 +128,7 @@ export const getCurrentPoints = async (firebaseUid: string): Promise<number> => 
 
 export const getAvailableVouchers = async (): Promise<Voucher[]> => {
   try {
-    // Since vouchers table is not in types yet, we'll create a mock response
-    // In a real implementation, this would fetch from the database
+    // Using mock data since vouchers table doesn't exist in Supabase types yet
     const mockVouchers: Voucher[] = [
       {
         id: '1',
@@ -170,8 +201,7 @@ export const getAvailableVouchers = async (): Promise<Voucher[]> => {
 
 export const getUserRedemptions = async (userId: string): Promise<VoucherRedemption[]> => {
   try {
-    // Since voucher_redemptions table is not in types yet, we'll return empty array for now
-    // In a real implementation, this would fetch from the database
+    // Return empty array for now since voucher_redemptions table doesn't exist yet
     return [];
   } catch (error) {
     console.error('Error fetching user redemptions:', error);
@@ -267,6 +297,8 @@ export const addPoints = async (
   referenceId?: string
 ): Promise<boolean> => {
   try {
+    console.log('Adding points:', { userId, points, reason, transactionType });
+    
     // Add to points history
     const { error: historyError } = await supabase
       .from('activity_points_history')
@@ -306,6 +338,7 @@ export const addPoints = async (
       return false;
     }
 
+    console.log('Successfully added points');
     return true;
   } catch (error) {
     console.error('Error adding points:', error);
