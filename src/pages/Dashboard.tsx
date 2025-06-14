@@ -6,33 +6,17 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { 
-  User, 
-  ShoppingBag, 
-  Calendar, 
-  CreditCard, 
-  FileText, 
-  Store, 
-  MessageSquare, 
-  Users,
-  TrendingUp,
-  BookOpen,
-  Target,
-  Newspaper,
-  MessageCircle,
-  Bot,
-  Briefcase,
-  Shield,
-  Settings,
-  LogOut,
-  Bell,
-  Clock,
-  Zap
+  User, ShoppingBag, Calendar, CreditCard, FileText, Store, MessageSquare, Users,
+  TrendingUp, BookOpen, Target, Newspaper, MessageCircle, Bot, Briefcase, Shield,
+  Settings, LogOut, Bell, Clock, Zap, Menu
 } from "lucide-react";
 import { ProfilePage } from "@/components/profile/ProfilePage";
 import { useProfile } from "@/hooks/useProfile";
+import { SidebarNav } from "@/components/dashboard/SidebarNav";
 
 const Dashboard = () => {
   const [activeSection, setActiveSection] = useState("overview");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { profile } = useProfile();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -80,21 +64,35 @@ const Dashboard = () => {
     );
   }
 
+  const handleSectionSelect = (section: string) => {
+    setActiveSection(section);
+    setIsSidebarOpen(false);
+  };
+  
+  const handleMobileSignOut = () => {
+    handleSignOut();
+    setIsSidebarOpen(false);
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Top Navigation */}
       <div className="border-b border-border bg-card/50 backdrop-blur-xl sticky top-0 z-50">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center space-x-4">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3">
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setIsSidebarOpen(true)}>
+              <Menu className="h-6 w-6" />
+              <span className="sr-only">Open Menu</span>
+            </Button>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">CampusConnect</h1>
-            <Badge variant="outline" className="text-primary border-primary/30">
+            <Badge variant="outline" className="hidden sm:inline-flex text-primary border-primary/30">
               Student Portal
             </Badge>
           </div>
           
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="sm" className="relative">
-              <Bell className="h-4 w-4" />
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            <Button variant="ghost" size="icon" className="relative">
+              <Bell className="h-5 w-5" />
               <span className="absolute -top-1 -right-1 h-3 w-3 bg-primary rounded-full flex items-center justify-center text-xs text-primary-foreground">
                 3
               </span>
@@ -107,7 +105,7 @@ const Dashboard = () => {
               </AvatarFallback>
             </Avatar>
             
-            <div className="text-right">
+            <div className="hidden md:block text-right">
               <p className="text-sm font-medium">{profile?.full_name || user.displayName || user.email?.split('@')[0]}</p>
               <p className="text-xs text-muted-foreground">{profile?.hall_ticket || 'CS21B0001'}</p>
             </div>
@@ -116,77 +114,25 @@ const Dashboard = () => {
       </div>
 
       <div className="flex">
+        {/* Mobile Sidebar Overlay */}
+        {isSidebarOpen && (
+          <div
+            className="fixed inset-0 z-30 bg-black/60 lg:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          ></div>
+        )}
+        
         {/* Sidebar */}
-        <div className="w-64 border-r border-border bg-card/30 backdrop-blur-xl min-h-screen p-6">
-          <div className="space-y-6">
-            {/* Core Features */}
-            <div>
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-                Core Features
-              </h3>
-              <div className="space-y-1">
-                {dashboardSections.map((section) => {
-                  const Icon = section.icon;
-                  return (
-                    <Button
-                      key={section.id}
-                      variant={activeSection === section.id ? "secondary" : "ghost"}
-                      className="w-full justify-start"
-                      onClick={() => setActiveSection(section.id)}
-                    >
-                      <Icon className="h-4 w-4 mr-3" />
-                      {section.label}
-                    </Button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Advanced Features */}
-            <div>
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-                Advanced Features
-              </h3>
-              <div className="space-y-1">
-                {advancedFeatures.map((feature) => {
-                  const Icon = feature.icon;
-                  return (
-                    <Button
-                      key={feature.id}
-                      variant={activeSection === feature.id ? "secondary" : "ghost"}
-                      className="w-full justify-start"
-                      onClick={() => setActiveSection(feature.id)}
-                    >
-                      <Icon className="h-4 w-4 mr-3" />
-                      {feature.label}
-                    </Button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Settings */}
-            <div className="pt-6 border-t border-border">
-              <div className="space-y-1">
-                <Button variant="ghost" className="w-full justify-start">
-                  <Settings className="h-4 w-4 mr-3" />
-                  Settings
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start text-destructive hover:text-destructive"
-                  onClick={handleSignOut}
-                >
-                  <LogOut className="h-4 w-4 mr-3" />
-                  Sign Out
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <aside className={`fixed top-0 left-0 z-40 w-72 h-screen bg-card/95 backdrop-blur-xl border-r border-border p-6 transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+          <SidebarNav
+            activeSection={activeSection}
+            setActiveSection={handleSectionSelect}
+            handleSignOut={handleMobileSignOut}
+          />
+        </aside>
 
         {/* Main Content */}
-        <div className="flex-1 p-8">
+        <main className="flex-1 p-4 sm:p-8">
           {activeSection === "profile" && <ProfilePage />}
           
           {activeSection === "overview" && (
@@ -429,7 +375,7 @@ const Dashboard = () => {
               </Button>
             </div>
           )}
-        </div>
+        </main>
       </div>
     </div>
   );

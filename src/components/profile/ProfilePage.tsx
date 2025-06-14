@@ -6,13 +6,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { User, Mail, Phone, BookOpen, Award } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { EditProfileForm } from "./EditProfileForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
-import { createUserProfile } from "@/services/userService";
+import { createUserProfile, checkHallTicketExists } from "@/services/userService";
 import { toast } from "sonner";
 
 const ProfilePageSkeleton = () => (
@@ -83,6 +83,13 @@ export const ProfilePage = () => {
 
     setIsCreatingProfile(true);
     try {
+      const hallTicketExists = await checkHallTicketExists(hallTicket);
+      if (hallTicketExists) {
+        toast.error("This Hall Ticket number is already registered.");
+        setIsCreatingProfile(false);
+        return;
+      }
+
       const createdProfile = await createUserProfile(user, newProfileData);
       if (createdProfile) {
         toast.success("Profile created successfully!");
@@ -152,8 +159,8 @@ export const ProfilePage = () => {
     <div className="space-y-8 animate-fade-in">
       {/* Profile Header */}
       <Card className="soft-shadow">
-        <CardContent className="p-8">
-          <div className="flex items-center space-x-6">
+        <CardContent className="p-6 md:p-8">
+          <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
             <Avatar className="w-24 h-24">
               <AvatarImage src={profile.profile_picture_url || undefined} />
               <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
@@ -161,11 +168,11 @@ export const ProfilePage = () => {
               </AvatarFallback>
             </Avatar>
             
-            <div className="flex-1">
+            <div className="flex-1 text-center md:text-left">
               <h2 className="text-3xl font-bold mb-2">{profile.full_name}</h2>
               <p className="text-muted-foreground mb-4">{profile.department}</p>
               
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center justify-center md:justify-start space-x-2 md:space-x-4 flex-wrap">
                 <Badge variant="outline" className="text-primary border-primary/30">
                   {profile.hall_ticket}
                 </Badge>
@@ -259,7 +266,7 @@ export const ProfilePage = () => {
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
                 <Mail className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">{profile.email}</span>
+                <span className="text-sm break-all">{profile.email}</span>
               </div>
               <div className="flex items-center space-x-3">
                 <Phone className="h-4 w-4 text-muted-foreground" />
