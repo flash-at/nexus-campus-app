@@ -16,6 +16,7 @@ import { NewProfilePage } from "@/components/profile/NewProfilePage";
 import { EventsAndClubsPage } from "@/components/events/EventsAndClubsPage";
 import { IdCardPage } from "@/components/id-card/IdCardPage";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const Dashboard = () => {
   const [activeSection, setActiveSection] = useState("overview");
@@ -37,23 +38,34 @@ const Dashboard = () => {
     setActiveSection("profile");
   };
 
-  // Generate leaderboard data with only real users
+  // Generate leaderboard data with mock users
   const generateLeaderboardData = () => {
-    // For now, only show the current user until we have more real users
     const currentUser = {
       name: profile?.full_name || "You",
       department: profile?.department || "Computer Science",
-      points: profile?.engagement?.activity_points || 150,
+      points: profile?.engagement?.activity_points || 1150,
       avatar: profile?.full_name?.split(' ').map(n => n[0]).join('') || "YO",
       isCurrentUser: true,
-      rank: 1
     };
 
-    return [currentUser];
+    const otherUsers = [
+      { name: "Emily Carter", department: "Electrical Eng.", points: 1280, avatar: "EC" },
+      { name: "James Rodriguez", department: "Mechanical Eng.", points: 1055, avatar: "JR" },
+      { name: "Sophia Chen", department: "Biotechnology", points: 910, avatar: "SC" },
+      { name: "Benjamin Lee", department: "Civil Engineering", points: 895, avatar: "BL" },
+      { name: "Olivia Garcia", department: "Architecture", points: 760, avatar: "OG" },
+    ];
+
+    const allUsers = [...otherUsers, currentUser];
+
+    return allUsers
+      .sort((a, b) => b.points - a.points)
+      .map((student, index) => ({ ...student, rank: index + 1 }));
   };
 
   const leaderboardData = generateLeaderboardData();
-  const currentUserRank = leaderboardData.find(user => user.isCurrentUser)?.rank || 1;
+  const currentUserData = leaderboardData.find(user => user.isCurrentUser);
+  const currentUserRank = currentUserData?.rank || 1;
 
   const dashboardSections = [
     { id: "overview", label: "Dashboard", icon: TrendingUp },
@@ -266,75 +278,92 @@ const Dashboard = () => {
               </div>
 
               {/* Current User Position */}
-              <Card className="shadow-lg border-primary/20">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center">
-                    <Trophy className="h-5 w-5 mr-2 text-primary" />
-                    Your Position
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between p-4 rounded-lg bg-primary/5">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
-                        #{currentUserRank}
+              {currentUserData && (
+                <Card className="shadow-lg border-primary/20 bg-gradient-to-r from-blue-600 to-purple-600 text-primary-foreground overflow-hidden">
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex flex-col sm:flex-row items-center sm:justify-between space-y-4 sm:space-y-0">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-12 h-12 rounded-full bg-white/20 text-white flex items-center justify-center font-bold text-xl ring-2 ring-white/50">
+                          #{currentUserData.rank}
+                        </div>
+                        <Avatar className="h-12 w-12 border-2 border-white/50">
+                          <AvatarImage src={profile?.profile_picture_url || undefined} />
+                          <AvatarFallback className="bg-transparent text-primary-foreground">
+                            {currentUserData.avatar}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-bold text-lg">{currentUserData.name}</p>
+                          <p className="text-sm text-white/80">{currentUserData.department}</p>
+                        </div>
                       </div>
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={profile?.profile_picture_url || undefined} />
-                        <AvatarFallback className="bg-primary text-primary-foreground">
-                          {profile?.full_name?.split(' ').map(n => n[0]).join('') || user.displayName?.charAt(0) || user.email?.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{profile?.full_name || user.displayName || 'You'}</p>
-                        <p className="text-sm text-muted-foreground">{profile?.department || 'Computer Science'}</p>
+                      <div className="text-center sm:text-right">
+                        <p className="text-3xl font-bold">{currentUserData.points}</p>
+                        <p className="text-sm text-white/80">Activity Points</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-primary">{profile?.engagement?.activity_points || 150}</p>
-                      <p className="text-sm text-muted-foreground">Activity Points</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Top Rankings */}
               <Card className="shadow-lg">
                 <CardHeader>
-                  <CardTitle>Active Users</CardTitle>
+                  <CardTitle>Top Rankings</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {leaderboardData.length > 0 ? (
-                    <div className="space-y-4">
-                      {leaderboardData.map((student) => (
-                        <div key={`${student.name}-${student.rank}`} className={`flex items-center justify-between p-3 rounded-lg ${student.isCurrentUser ? 'bg-primary/10 border border-primary/20' : 'bg-card border'}`}>
-                          <div className="flex items-center space-x-4">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                              student.rank === 1 ? 'bg-yellow-500 text-white' : 
-                              'bg-muted text-muted-foreground'
-                            }`}>
-                              #{student.rank}
-                            </div>
-                            <Avatar className="h-10 w-10">
-                              <AvatarFallback className={student.isCurrentUser ? 'bg-primary text-primary-foreground' : 'bg-muted'}>
-                                {student.avatar}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className={`font-medium ${student.isCurrentUser ? 'text-primary' : ''}`}>
-                                {student.name}
-                              </p>
-                              <p className="text-sm text-muted-foreground">{student.department}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className={`font-bold ${student.isCurrentUser ? 'text-primary' : ''}`}>
-                              {student.points}
-                            </p>
-                            <p className="text-xs text-muted-foreground">points</p>
-                          </div>
-                        </div>
-                      ))}
+                     <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[80px] text-center">Rank</TableHead>
+                            <TableHead>Student</TableHead>
+                            <TableHead className="text-right">Points</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {leaderboardData.map((student) => (
+                            <TableRow key={student.rank} className={student.isCurrentUser ? 'bg-primary/10' : ''}>
+                              <TableCell className="font-bold text-lg text-center">
+                                <span className={`flex items-center justify-center w-10 h-10 mx-auto rounded-full text-base ${
+                                  student.rank === 1 ? 'bg-yellow-400/20 text-yellow-500' : 
+                                  student.rank === 2 ? 'bg-slate-400/20 text-slate-500' : 
+                                  student.rank === 3 ? 'bg-orange-500/20 text-orange-600' :
+                                  'text-muted-foreground'
+                                }`}>
+                                  {student.rank === 1 && '🥇'}
+                                  {student.rank === 2 && '🥈'}
+                                  {student.rank === 3 && '🥉'}
+                                  {student.rank > 3 && `#${student.rank}`}
+                                </span>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center space-x-3 sm:space-x-4">
+                                  <Avatar className="h-10 w-10">
+                                    <AvatarImage src={student.isCurrentUser ? profile?.profile_picture_url || undefined : undefined} />
+                                    <AvatarFallback className={student.isCurrentUser ? 'bg-primary text-primary-foreground' : 'bg-muted'}>
+                                      {student.avatar}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <p className={`font-medium ${student.isCurrentUser ? 'text-primary' : ''}`}>
+                                      {student.name}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground hidden sm:block">{student.department}</p>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <p className={`font-bold text-base sm:text-lg ${student.isCurrentUser ? 'text-primary' : ''}`}>
+                                  {student.points}
+                                </p>
+                                <p className="text-xs text-muted-foreground">points</p>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
                     </div>
                   ) : (
                     <div className="text-center py-8">
@@ -417,7 +446,7 @@ const Dashboard = () => {
                         <Target className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-emerald-500" />
                       </div>
                       <div className="text-center sm:text-left">
-                        <p className="text-lg sm:text-xl lg:text-2xl font-bold">{profile?.engagement?.activity_points || 150}</p>
+                        <p className="text-lg sm:text-xl lg:text-2xl font-bold">{currentUserData?.points || profile?.engagement?.activity_points || 150}</p>
                         <p className="text-xs sm:text-sm text-muted-foreground">Activity Points</p>
                       </div>
                     </div>
