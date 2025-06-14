@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { RotateCcw, Download, Share2, IdCard, QrCode } from 'lucide-react';
+import { RotateCcw, Download, Share2, IdCard as IdCardIcon, QrCode } from 'lucide-react';
 import Logo from "@/components/Logo";
 import { useUserProfile } from "@/hooks/useUserProfile";
 

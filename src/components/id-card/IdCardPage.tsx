@@ -13,7 +13,8 @@ import {
   CreditCard,
   QrCode,
   Wifi,
-  Lock
+  Lock,
+  IdCard as IdCardIcon
 } from 'lucide-react';
 
 export const IdCardPage = () => {
@@ -66,7 +67,7 @@ export const IdCardPage = () => {
       <div className="text-center">
         <div className="flex items-center justify-center mb-4">
           <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center mr-3">
-            <IdCard className="h-6 w-6 text-white" />
+            <IdCardIcon className="h-6 w-6 text-white" />
           </div>
           <h1 className="text-3xl font-bold">Digital Student ID</h1>
         </div>
