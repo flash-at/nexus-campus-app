@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { useAuth } from "@/hooks/useAuth";
 import { Calendar, Users, Search, Plus, Lock, UserCheck, LogOut, MapPin, Clock, Star, TrendingUp } from "lucide-react";
 
 export const EventsAndClubsPage = () => {
@@ -23,6 +23,7 @@ export const EventsAndClubsPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { profile } = useUserProfile();
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchClubs();
@@ -94,12 +95,22 @@ export const EventsAndClubsPage = () => {
   };
 
   const handleJoinClub = async () => {
-    if (!selectedClub || !profile?.id) return;
+    if (!selectedClub || !profile?.id || !user) {
+      setError("User not properly authenticated or profile not loaded");
+      return;
+    }
     
     setLoading(true);
     setError("");
 
     try {
+      console.log("Attempting to join club with:", {
+        clubId: selectedClub.id,
+        userId: profile.id,
+        firebaseUid: user.uid,
+        profileData: profile
+      });
+
       // Check if user has already reached the 3 club limit
       if (myClubs.length >= 3) {
         throw new Error("You can only join up to 3 clubs");
@@ -113,29 +124,50 @@ export const EventsAndClubsPage = () => {
         throw new Error("You are already a member of this club");
       }
 
-      // Verify club join password (updated to use join_password instead of password)
+      // Verify club join password
       const { data: clubData, error: clubError } = await supabase
         .from('clubs')
         .select('join_password')
         .eq('id', selectedClub.id)
         .single();
 
-      if (clubError) throw clubError;
+      if (clubError) {
+        console.error("Error fetching club data:", clubError);
+        throw clubError;
+      }
 
       if (clubData.join_password !== clubPassword) {
         throw new Error("Incorrect club password");
       }
 
+      console.log("About to insert membership with data:", {
+        club_id: selectedClub.id,
+        user_id: profile.id,
+        role: 'member'
+      });
+
       // Join the club
-      const { error: joinError } = await supabase
+      const { error: joinError, data: insertData } = await supabase
         .from('club_memberships')
         .insert({
           club_id: selectedClub.id,
           user_id: profile.id,
           role: 'member'
-        });
+        })
+        .select();
 
-      if (joinError) throw joinError;
+      if (joinError) {
+        console.error("Error joining club - detailed:", {
+          error: joinError,
+          code: joinError.code,
+          message: joinError.message,
+          details: joinError.details,
+          hint: joinError.hint
+        });
+        throw joinError;
+      }
+
+      console.log("Successfully joined club:", insertData);
 
       // Refresh data
       await fetchMyClubs();
@@ -146,7 +178,7 @@ export const EventsAndClubsPage = () => {
       alert('Successfully joined the club!');
     } catch (error) {
       console.error('Error joining club:', error);
-      setError(error.message);
+      setError(error.message || 'Failed to join club. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -182,6 +214,13 @@ export const EventsAndClubsPage = () => {
     event.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Add debugging info to help identify the issue
+  console.log("EventsAndClubsPage debug info:", {
+    user: user?.uid,
+    profile: profile?.id,
+    profileData: profile
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50/30 to-purple-50/30 dark:from-gray-900 dark:to-blue-950/30">
       <div className="container mx-auto px-4 py-8 space-y-8">
@@ -212,6 +251,16 @@ export const EventsAndClubsPage = () => {
             </div>
           </div>
         </div>
+
+        {/* Debug info for troubleshooting */}
+        {(!user || !profile) && (
+          <Alert>
+            <AlertDescription>
+              Debug: User authenticated: {user ? 'Yes' : 'No'}, Profile loaded: {profile ? 'Yes' : 'No'}
+              {user && !profile && ' - Profile is still loading...'}
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
