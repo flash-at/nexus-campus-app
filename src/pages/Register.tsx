@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, Eye, EyeOff, Mail, User, Phone, GraduationCap } from "lucide-react";
+import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { createUserProfile } from "@/services/userService";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -77,6 +79,12 @@ const Register = () => {
       return false;
     }
 
+    // Check required fields
+    if (!formData.department || !formData.academicYear) {
+      toast.error("Please fill in all required fields");
+      return false;
+    }
+
     return true;
   };
 
@@ -88,18 +96,43 @@ const Register = () => {
     setIsLoading(true);
     
     try {
-      // Simulate registration API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Create Firebase user
+      const userCredential = await createUserWithEmailAndPassword(
+        auth, 
+        formData.email, 
+        formData.password
+      );
       
-      toast.success("Registration successful! Please check your email to verify your account.");
+      // Send email verification
+      await sendEmailVerification(userCredential.user);
       
-      // Redirect to login after short delay
-      setTimeout(() => {
-        navigate("/login");
-      }, 2000);
+      // Create user profile in Supabase
+      const profile = await createUserProfile(userCredential.user, {
+        fullName: formData.fullName,
+        hallTicket: formData.hallTicket,
+        department: formData.department,
+        academicYear: formData.academicYear,
+        phoneNumber: formData.phone,
+      });
+
+      if (profile) {
+        toast.success("Registration successful! Please check your email to verify your account before logging in.");
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
+      } else {
+        toast.error("Failed to create user profile. Please try again.");
+      }
       
-    } catch (error) {
-      toast.error("Registration failed. Please try again.");
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      if (error.code === 'auth/email-already-in-use') {
+        toast.error("An account with this email already exists.");
+      } else if (error.code === 'auth/weak-password') {
+        toast.error("Password is too weak.");
+      } else {
+        toast.error("Registration failed. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }

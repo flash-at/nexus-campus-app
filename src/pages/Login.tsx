@@ -8,15 +8,26 @@ import { Separator } from "@/components/ui/separator";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendEmailVerification } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { useAuth } from "@/hooks/useAuth";
+import { getUserProfile, createUserProfile } from "@/services/userService";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: ""
   });
+
+  // Redirect if already logged in
+  if (user && user.emailVerified) {
+    navigate("/dashboard");
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,24 +40,62 @@ const Login = () => {
     setIsLoading(true);
     
     try {
-      // Simulate login API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
       
-      // Check email verification simulation
-      const isEmailVerified = Math.random() > 0.3; // 70% chance of verified email
-      
-      if (!isEmailVerified) {
+      if (!userCredential.user.emailVerified) {
         toast.error("Your email is not verified. Please check your inbox or spam folder.");
+        await sendEmailVerification(userCredential.user);
+        toast.info("A new verification email has been sent.");
+        return;
+      }
+
+      // Check if user profile exists in Supabase
+      const profile = await getUserProfile(userCredential.user.uid);
+      
+      if (!profile) {
+        toast.error("User profile not found. Please contact support.");
         return;
       }
       
       toast.success("Login successful! Welcome to CampusConnect.");
       navigate("/dashboard");
       
-    } catch (error) {
-      toast.error("Login failed. Please check your credentials.");
+    } catch (error: any) {
+      console.error("Login error:", error);
+      if (error.code === 'auth/user-not-found') {
+        toast.error("No account found with this email. Please register first.");
+      } else if (error.code === 'auth/wrong-password') {
+        toast.error("Incorrect password. Please try again.");
+      } else if (error.code === 'auth/invalid-email') {
+        toast.error("Invalid email address.");
+      } else {
+        toast.error("Login failed. Please check your credentials.");
+      }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      
+      // Check if user profile exists, if not redirect to complete registration
+      const profile = await getUserProfile(result.user.uid);
+      
+      if (!profile) {
+        toast.info("Please complete your registration with your academic details.");
+        // You might want to redirect to a profile completion page
+        navigate("/register");
+        return;
+      }
+      
+      toast.success("Google sign-in successful!");
+      navigate("/dashboard");
+    } catch (error: any) {
+      console.error("Google sign-in error:", error);
+      toast.error("Google sign-in failed. Please try again.");
     }
   };
 
@@ -160,7 +209,7 @@ const Login = () => {
                 <Button 
                   variant="outline" 
                   className="w-full bg-white hover:bg-slate-50 border-slate-200"
-                  onClick={() => toast.info("Google Sign-in will be available soon!")}
+                  onClick={handleGoogleSignIn}
                 >
                   <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                     <path
