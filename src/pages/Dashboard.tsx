@@ -42,7 +42,7 @@ const Dashboard = () => {
     const currentUser = {
       name: profile?.full_name || "You",
       department: profile?.department || "Computer Science",
-      points: profile?.engagement?.activity_points || 150,
+      points: profile?.engagement?.activity_points || 0, // Use actual activity points
       avatar: profile?.full_name?.split(' ').map(n => n[0]).join('') || "YO",
       isCurrentUser: true,
       rank: 1
@@ -288,7 +288,7 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-primary">{profile?.engagement?.activity_points || 150}</p>
+                      <p className="text-2xl font-bold text-primary">{profile?.engagement?.activity_points || 0}</p>
                       <p className="text-sm text-muted-foreground">Activity Points</p>
                     </div>
                   </div>
@@ -379,7 +379,7 @@ const Dashboard = () => {
                 <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
                   <CardContent className="p-3 sm:p-4 lg:p-6">
                     <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 lg:space-x-4">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:w-12 rounded-xl lg:rounded-2xl bg-purple-500/20 flex items-center justify-center mx-auto sm:mx-0">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl bg-purple-500/20 flex items-center justify-center mx-auto sm:mx-0">
                         <Calendar className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-purple-500" />
                       </div>
                       <div className="text-center sm:text-left">
@@ -414,7 +414,7 @@ const Dashboard = () => {
                         <Target className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-emerald-500" />
                       </div>
                       <div className="text-center sm:text-left">
-                        <p className="text-lg sm:text-xl lg:text-2xl font-bold">{profile?.engagement?.activity_points || 150}</p>
+                        <p className="text-lg sm:text-xl lg:text-2xl font-bold">{profile?.engagement?.activity_points || 0}</p>
                         <p className="text-xs sm:text-sm text-muted-foreground">Activity Points</p>
                       </div>
                     </div>

@@ -1,24 +1,43 @@
 
-import { useUserProfile } from "@/hooks/useUserProfile";
-import { CreateProfileForm } from "./CreateProfileForm";
-import { ProfileHeader } from "./ProfileHeader";
+import { useState } from "react";
 import { ProfileStats } from "./ProfileStats";
 import { ProfileActivity } from "./ProfileActivity";
-import { EditProfileForm } from "./EditProfileForm";
+import { ProfileDisplay } from "./ProfileDisplay";
+import { ActivityPointsHistory } from "./ActivityPointsHistory";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const ProfileSkeleton = () => (
-  <div className="space-y-4 sm:space-y-6 lg:space-y-8 p-4 sm:p-6">
-    <div className="relative overflow-hidden rounded-lg sm:rounded-xl">
-      <Skeleton className="h-48 sm:h-56 lg:h-64 w-full" />
-    </div>
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-      {[...Array(3)].map((_, i) => (
-        <div key={i} className="space-y-4">
-          <Skeleton className="h-40 sm:h-48 w-full rounded-lg" />
+const ProfilePageSkeleton = () => (
+  <div className="space-y-8">
+    <Card>
+      <CardContent className="p-8">
+        <div className="flex items-center space-x-6">
+          <Skeleton className="w-24 h-24 rounded-full" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-8 w-1/2" />
+            <Skeleton className="h-4 w-1/3" />
+            <div className="flex items-center space-x-4 pt-2">
+              <Skeleton className="h-6 w-24 rounded-md" />
+              <Skeleton className="h-6 w-20 rounded-md" />
+              <Skeleton className="h-6 w-28 rounded-md" />
+            </div>
+          </div>
+          <Skeleton className="h-10 w-24 rounded-md" />
         </div>
+      </CardContent>
+    </Card>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {[...Array(3)].map((_, i) => (
+        <Card key={i}>
+          <CardContent className="p-6">
+            <Skeleton className="h-6 w-3/4 mb-4" />
+            <Skeleton className="h-10 w-full mb-2" />
+            <Skeleton className="h-6 w-full mb-2" />
+            <Skeleton className="h-6 w-full" />
+          </CardContent>
+        </Card>
       ))}
     </div>
   </div>
@@ -26,55 +45,45 @@ const ProfileSkeleton = () => (
 
 export const NewProfilePage = () => {
   const { profile, loading, refetch } = useUserProfile();
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   if (loading) {
-    return <ProfileSkeleton />;
+    return <ProfilePageSkeleton />;
   }
 
   if (!profile) {
     return (
-      <div className="p-4 sm:p-6">
-        <CreateProfileForm onSuccess={refetch} />
+      <div className="text-center py-12">
+        <h2 className="text-2xl font-bold mb-4">Profile Not Found</h2>
+        <p className="text-muted-foreground">Please make sure you're logged in and try again.</p>
       </div>
     );
   }
 
-  const handleUpdateSuccess = () => {
-    refetch();
-    setIsEditDialogOpen(false);
-  };
-
   return (
-    <div className="space-y-4 sm:space-y-6 lg:space-y-8 max-w-7xl mx-auto p-4 sm:p-6">
+    <div className="space-y-8 animate-fade-in max-w-7xl mx-auto">
       {/* Profile Header */}
-      <ProfileHeader 
-        profile={profile} 
-        onEditClick={() => setIsEditDialogOpen(true)} 
-      />
+      <ProfileDisplay profile={profile} onUpdate={refetch} />
 
-      {/* Profile Stats */}
-      <ProfileStats profile={profile} />
-
-      {/* Profile Activity */}
-      <ProfileActivity profile={profile} />
-
-      {/* Edit Profile Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] mx-4">
-          <DialogHeader>
-            <DialogTitle>Edit Profile</DialogTitle>
-            <DialogDescription>
-              Make changes to your profile here. Click save when you're done.
-            </DialogDescription>
-          </DialogHeader>
-          <EditProfileForm 
-            profile={profile} 
-            onSuccess={handleUpdateSuccess} 
-            setOpen={setIsEditDialogOpen} 
-          />
-        </DialogContent>
-      </Dialog>
+      {/* Tabbed Content */}
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="activity">Activity</TabsTrigger>
+          <TabsTrigger value="points">Points History</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="overview" className="space-y-8">
+          <ProfileStats profile={profile} />
+        </TabsContent>
+        
+        <TabsContent value="activity" className="space-y-8">
+          <ProfileActivity profile={profile} />
+        </TabsContent>
+        
+        <TabsContent value="points" className="space-y-8">
+          <ActivityPointsHistory />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
