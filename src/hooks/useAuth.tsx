@@ -2,7 +2,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, onAuthStateChanged, signOut as firebaseSignOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { supabase } from "@/integrations/supabase/client";
 
 interface AuthContextType {
   user: User | null;
@@ -36,19 +35,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       console.log("Auth state changed:", firebaseUser?.uid);
       setUser(firebaseUser);
-      
-      if (firebaseUser) {
-        // Get Firebase token and set it for Supabase
-        const token = await firebaseUser.getIdToken();
-        await supabase.auth.setSession({
-          access_token: token,
-          refresh_token: token,
-        });
-      } else {
-        // Clear Supabase session when Firebase user is null
-        await supabase.auth.signOut();
-      }
-      
       setLoading(false);
     });
 
@@ -58,7 +44,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
-      await supabase.auth.signOut();
     } catch (error) {
       console.error("Error signing out:", error);
     }

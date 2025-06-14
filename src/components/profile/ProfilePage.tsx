@@ -11,6 +11,7 @@ import { EditProfileForm } from "./EditProfileForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { createUserProfile, checkHallTicketExists } from "@/services/userService";
 import { toast } from "sonner";
@@ -64,6 +65,19 @@ export const ProfilePage = () => {
     phoneNumber: "",
   });
 
+  const departments = [
+    "Computer Science & Engineering",
+    "Electronics & Communication Engineering", 
+    "Mechanical Engineering",
+    "Civil Engineering",
+    "Electrical & Electronics Engineering",
+    "Information Technology",
+    "Chemical Engineering",
+    "Biotechnology"
+  ];
+
+  const academicYears = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
+
   if (loading) {
     return <ProfilePageSkeleton />;
   }
@@ -81,8 +95,20 @@ export const ProfilePage = () => {
       return;
     }
 
+    // Basic validation
+    if (hallTicket.length !== 10) {
+      toast.error("Hall ticket must be exactly 10 characters.");
+      return;
+    }
+
+    if (phoneNumber.length !== 10) {
+      toast.error("Phone number must be exactly 10 digits.");
+      return;
+    }
+
     setIsCreatingProfile(true);
     try {
+      // Check if hall ticket already exists
       const hallTicketExists = await checkHallTicketExists(hallTicket);
       if (hallTicketExists) {
         toast.error("This Hall Ticket number is already registered.");
@@ -90,6 +116,7 @@ export const ProfilePage = () => {
         return;
       }
 
+      // Create the profile
       const createdProfile = await createUserProfile(user, newProfileData);
       if (createdProfile) {
         toast.success("Profile created successfully!");
@@ -105,14 +132,13 @@ export const ProfilePage = () => {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setNewProfileData((prev) => ({ ...prev, [id]: value }));
+  const handleInputChange = (field: string, value: string) => {
+    setNewProfileData((prev) => ({ ...prev, [field]: value }));
   };
 
   if (!profile) {
     return (
-      <Card className="soft-shadow animate-fade-in">
+      <Card className="soft-shadow animate-fade-in max-w-2xl mx-auto">
         <CardHeader>
           <CardTitle>Create Your Profile</CardTitle>
           <CardDescription>
@@ -123,23 +149,66 @@ export const ProfilePage = () => {
           <form onSubmit={handleCreateProfile} className="space-y-4">
             <div>
               <Label htmlFor="fullName">Full Name</Label>
-              <Input id="fullName" value={newProfileData.fullName} onChange={handleInputChange} placeholder="e.g., John Doe" required />
+              <Input 
+                id="fullName" 
+                value={newProfileData.fullName} 
+                onChange={(e) => handleInputChange("fullName", e.target.value)}
+                placeholder="e.g., John Doe" 
+                required 
+              />
             </div>
             <div>
               <Label htmlFor="hallTicket">Hall Ticket Number</Label>
-              <Input id="hallTicket" value={newProfileData.hallTicket} onChange={handleInputChange} placeholder="e.g., CS21B0001" required />
+              <Input 
+                id="hallTicket" 
+                value={newProfileData.hallTicket} 
+                onChange={(e) => handleInputChange("hallTicket", e.target.value.toUpperCase())}
+                placeholder="e.g., 2303A52037" 
+                maxLength={10}
+                required 
+              />
             </div>
             <div>
               <Label htmlFor="department">Department</Label>
-              <Input id="department" value={newProfileData.department} onChange={handleInputChange} placeholder="e.g., Computer Science" required />
+              <Select value={newProfileData.department} onValueChange={(value) => handleInputChange("department", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map((dept) => (
+                    <SelectItem key={dept} value={dept}>
+                      {dept}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="academicYear">Academic Year</Label>
-              <Input id="academicYear" value={newProfileData.academicYear} onChange={handleInputChange} placeholder="e.g., 2021-2025" required />
+              <Select value={newProfileData.academicYear} onValueChange={(value) => handleInputChange("academicYear", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {academicYears.map((year) => (
+                    <SelectItem key={year} value={year}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="phoneNumber">Phone Number</Label>
-              <Input id="phoneNumber" type="tel" value={newProfileData.phoneNumber} onChange={handleInputChange} placeholder="e.g., 9876543210" required />
+              <Input 
+                id="phoneNumber" 
+                type="tel" 
+                value={newProfileData.phoneNumber} 
+                onChange={(e) => handleInputChange("phoneNumber", e.target.value.replace(/\D/g, ''))}
+                placeholder="e.g., 9876543210" 
+                maxLength={10}
+                required 
+              />
             </div>
             <Button type="submit" className="w-full" disabled={isCreatingProfile}>
               {isCreatingProfile ? "Creating Profile..." : "Create Profile"}

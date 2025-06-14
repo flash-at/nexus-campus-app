@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "firebase/auth";
 
@@ -61,7 +62,6 @@ export interface UserProfile {
   preferences: Preferences | null;
 }
 
-
 export const checkHallTicketExists = async (hallTicket: string): Promise<boolean> => {
   try {
     console.log("Checking hall ticket:", hallTicket);
@@ -112,7 +112,7 @@ export const createUserProfile = async (
 
     console.log("Inserting data:", insertData);
 
-    // Use the anon key directly without trying to set a session
+    // Insert the user profile using the permissive RLS policy
     const { data, error } = await supabase
       .from("users")
       .insert(insertData)
@@ -132,8 +132,14 @@ export const createUserProfile = async (
 
     console.log("User profile created successfully:", data);
 
-    // After successful creation, fetch the full profile
-    return await getUserProfile(firebaseUser.uid);
+    // Return the created profile data directly since we just created it
+    return {
+      ...data,
+      academic_info: null,
+      engagement: null,
+      documents: [],
+      preferences: null
+    } as UserProfile;
   } catch (error) {
     console.error("Error creating user profile:", error);
     return null;
