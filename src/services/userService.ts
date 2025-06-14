@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "firebase/auth";
 
@@ -20,6 +19,8 @@ export interface Engagement {
     last_login: string | null;
     events_attended: string[] | null;
     feedback_count: number;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface UserDocument {
@@ -70,7 +71,9 @@ const getDefaultEngagement = (userId: string): Engagement => ({
   badges: null,
   last_login: null,
   events_attended: [],
-  feedback_count: 0
+  feedback_count: 0,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString()
 });
 
 export const checkHallTicketExists = async (hallTicket: string): Promise<boolean> => {
@@ -243,7 +246,9 @@ export const getUserProfile = async (firebaseUid: string): Promise<UserProfile |
           badges: null,
           last_login: null,
           events_attended: [],
-          feedback_count: 0
+          feedback_count: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         };
       }
     }
@@ -257,7 +262,9 @@ export const getUserProfile = async (firebaseUid: string): Promise<UserProfile |
         badges: null,
         last_login: null,
         events_attended: [],
-        feedback_count: 0
+        feedback_count: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
     }
 
