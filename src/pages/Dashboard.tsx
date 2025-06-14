@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -59,6 +58,7 @@ const Dashboard = () => {
   const dashboardSections = [
     { id: "overview", label: "Dashboard", icon: TrendingUp },
     { id: "profile", label: "Profile", icon: User },
+    { id: "id-card", label: "Digital ID Card", icon: IdCard },
     { id: "orders", label: "My Orders", icon: Package },
     { id: "leaderboard", label: "Leaderboard", icon: Trophy },
     { id: "services", label: "Services", icon: ShoppingBag },
@@ -224,6 +224,7 @@ const Dashboard = () => {
         <main className="flex-1 p-3 sm:p-6 lg:p-8 min-h-screen">
           {activeSection === "profile" && <NewProfilePage />}
           {activeSection === "events" && <EventsAndClubsPage />}
+          {activeSection === "id-card" && <IdCardPage />}
           
           {activeSection === "orders" && (
             <div className="space-y-4 sm:space-y-6 lg:space-y-8 animate-fade-in">
@@ -568,7 +569,7 @@ const Dashboard = () => {
           )}
 
           {/* Other sections */}
-          {activeSection !== "overview" && activeSection !== "profile" && activeSection !== "orders" && activeSection !== "leaderboard" && activeSection !== "events" && (
+          {activeSection !== "overview" && activeSection !== "profile" && activeSection !== "orders" && activeSection !== "leaderboard" && activeSection !== "events" && activeSection !== "id-card" && (
             <div className="text-center py-12 sm:py-20 animate-fade-in">
               <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 sm:mb-6 rounded-xl sm:rounded-2xl bg-primary/20 flex items-center justify-center">
                 {(() => {
