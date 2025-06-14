@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
-import { UserProfile, getUserProfile } from '@/services/profileService';
+import { UserProfile, getUserProfile } from '@/services/userService';
 
 export const useUserProfile = () => {
   const { user, loading: authLoading } = useAuth();
