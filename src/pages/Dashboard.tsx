@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { SidebarNav } from "@/components/dashboard/SidebarNav";
 import { NewProfilePage } from "@/components/profile/NewProfilePage";
+import { EventsAndClubsPage } from "@/components/events/EventsAndClubsPage";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
 const Dashboard = () => {
@@ -182,6 +183,7 @@ const Dashboard = () => {
         {/* Main Content - Mobile Optimized */}
         <main className="flex-1 p-3 sm:p-6 lg:p-8 min-h-screen">
           {activeSection === "profile" && <NewProfilePage />}
+          {activeSection === "events" && <EventsAndClubsPage />}
           
           {activeSection === "orders" && (
             <div className="space-y-4 sm:space-y-6 lg:space-y-8 animate-fade-in">
@@ -399,9 +401,12 @@ const Dashboard = () => {
                       <FileText className="h-4 w-4 mr-2 sm:mr-3" />
                       Submit Assignment
                     </Button>
-                    <Button className="w-full justify-start bg-green-500/10 hover:bg-green-500/20 text-green-500 border border-green-500/20 text-sm">
+                    <Button 
+                      className="w-full justify-start bg-green-500/10 hover:bg-green-500/20 text-green-500 border border-green-500/20 text-sm"
+                      onClick={() => setActiveSection("events")}
+                    >
                       <Calendar className="h-4 w-4 mr-2 sm:mr-3" />
-                      View Class Schedule
+                      Join Clubs & Events
                     </Button>
                   </CardContent>
                 </Card>
@@ -523,7 +528,7 @@ const Dashboard = () => {
           )}
 
           {/* Other sections */}
-          {activeSection !== "overview" && activeSection !== "profile" && activeSection !== "orders" && activeSection !== "leaderboard" && (
+          {activeSection !== "overview" && activeSection !== "profile" && activeSection !== "orders" && activeSection !== "leaderboard" && activeSection !== "events" && (
             <div className="text-center py-12 sm:py-20 animate-fade-in">
               <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 sm:mb-6 rounded-xl sm:rounded-2xl bg-primary/20 flex items-center justify-center">
                 {(() => {
