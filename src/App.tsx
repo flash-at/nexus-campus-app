@@ -36,7 +36,9 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/admin-login" element={<AdminLogin />} />
                 <Route path="/provider-login" element={<ProviderLogin />} />
+                <Route path="/provider/login" element={<ProviderLogin />} />
                 <Route path="/provider-register" element={<ProviderRegister />} />
+                <Route path="/provider/register" element={<ProviderRegister />} />
                 <Route path="/club-admin-login" element={<ClubAdminLogin />} />
                 <Route path="/create-club" element={<CreateClub />} />
                 <Route path="/club-admin" element={<ClubAdmin />} />

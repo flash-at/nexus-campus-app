@@ -1,4 +1,3 @@
-
 import React, { useState, Fragment } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -121,7 +120,7 @@ const ProviderRegister = () => {
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <div className="flex items-center justify-between mb-8">
             <Button variant="ghost" size="sm" asChild className="group">
-                <Link to="/provider/login" className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+                <Link to="/provider-login" className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
                     <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
                     Back to Login
                 </Link>
@@ -348,7 +347,7 @@ const ProviderRegister = () => {
               <div className="mt-8 text-center">
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                       Already a partner?{" "}
-                      <Link to="/provider/login" className="font-semibold text-green-600 dark:text-green-400 hover:underline">
+                      <Link to="/provider-login" className="font-semibold text-green-600 dark:text-green-400 hover:underline">
                           Sign In
                       </Link>
                   </p>
