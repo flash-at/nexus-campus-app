@@ -4,12 +4,16 @@ import { toast } from "sonner";
 
 export interface PartnerProfile {
   id: string;
-  email: string;
+  firebase_uid: string;
   business_name: string;
   category: string;
   description: string;
   status: string;
   created_at: string;
+  updated_at: string;
+  approved_at: string | null;
+  rejected_at: string | null;
+  rejection_reason: string | null;
 }
 
 export const signInPartner = async (email: string, password: string) => {
