@@ -61,26 +61,31 @@ export const ProductManagement = () => {
   });
 
   // Helper: Try to sync Supabase session with Firebase current user if missing
-  const ensureSupabaseSession = async () => {
+  const ensureSupabaseSession = async (): Promise<boolean> => {
     const sessionResult = await supabase.auth.getSession();
     if (!sessionResult?.data?.session || !sessionResult.data.session.user) {
-      // Try to restore session from Firebase
       if (user) {
         console.log("[VendorDebug] Missing Supabase session, attempting to restore using Firebase ID token...");
         const idToken = await user.getIdToken();
-        const { error: supaAuthError, data } = await supabase.auth.signInWithIdToken({
+        const { error: supaAuthError } = await supabase.auth.signInWithIdToken({
           provider: 'firebase',
           token: idToken,
         });
         if (supaAuthError) {
           console.error("[VendorDebug] Failed to re-auth Supabase:", supaAuthError);
+          setVendorError("Authentication session error. Please ensure Firebase is a configured OIDC provider in your Supabase project's Auth settings.");
+          return false;
         } else {
           console.log("[VendorDebug] Supabase session restored successfully!");
+          return true;
         }
       } else {
         console.warn("[VendorDebug] No Firebase user available for re-authentication.");
+        setVendorError("Cannot verify session: No active user found.");
+        return false;
       }
     }
+    return true; // Session was already valid
   };
 
   useEffect(() => {
@@ -103,20 +108,17 @@ export const ProductManagement = () => {
       setVendorError(null);
       setLoading(true);
 
-      // Diagnostic logging
-      console.log("[VendorDebug] Starting vendor fetch for Firebase UID:", user.uid);
+      console.log("[VendorDebug] Starting vendor sync for Firebase UID:", user.uid);
 
-      // Verify Supabase session before interacting
-      const sesResult = await supabase.auth.getSession();
-      console.log("[VendorDebug] Supabase session at vendor fetch:", sesResult);
-      if (!sesResult?.data?.session) {
-        await ensureSupabaseSession();
+      // CRITICAL: Ensure we have a valid Supabase session before proceeding
+      const isSessionValid = await ensureSupabaseSession();
+      if (!isSessionValid) {
+        // ensureSupabaseSession has already set the specific error message
+        setLoading(false);
+        return;
       }
-
-      // Add a small delay to ensure vendor record is created
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Try fetch first
+      // Now that session is confirmed, try to fetch the vendor
       const { data, error } = await supabase
         .from('vendors')
         .select('*')
@@ -130,50 +132,46 @@ export const ProductManagement = () => {
         return;
       }
       
-      if (!data) {
-        // Still no vendor: try to insert, after re-checking session
-        const vendorSession = await supabase.auth.getSession();
-        console.log("[VendorDebug] Supabase session before vendor insert:", vendorSession);
-        // If needed, attempt to restore session again
-        if (!vendorSession?.data?.session || !vendorSession.data.session.user) {
-          await ensureSupabaseSession();
+      if (data) {
+        // Vendor exists
+        if (data.status !== 'approved') {
+          setVendorError('Your vendor account is pending approval.');
+        } else {
+          setCurrentVendor(data);
         }
-        console.log("[VendorDebug] No vendor found, attempting to insert record with firebase_uid:", user.uid);
-
-        const { data: newVendor, error: createError } = await supabase
-          .from('vendors')
-          .insert({
-            firebase_uid: user.uid,
-            business_name: 'Partner Business',
-            category: 'Food & Beverages',
-            description: 'Campus service provider',
-            status: 'approved'
-          })
-          .select()
-          .single();
-
-        console.log("[VendorDebug] Vendor insert result:", { newVendor, createError });
-
-        if (createError) {
-          console.error('[VendorDebug] Error creating vendor:', createError);
-          setVendorError('Failed to create vendor account. Please contact support.');
-          return;
-        }
-        
-        setCurrentVendor(newVendor);
-        toast({ title: "Vendor account created successfully!" });
         return;
       }
 
-      if (data.status !== 'approved') {
-        setVendorError('Your vendor account is pending approval.');
+      // Vendor does not exist, so let's create it.
+      // We already know the session is valid from the check above.
+      console.log("[VendorDebug] No vendor found, attempting to insert record with firebase_uid:", user.uid);
+
+      const { data: newVendor, error: createError } = await supabase
+        .from('vendors')
+        .insert({
+          firebase_uid: user.uid,
+          business_name: 'Partner Business',
+          category: 'Food & Beverages',
+          description: 'Campus service provider',
+          status: 'approved'
+        })
+        .select()
+        .single();
+
+      console.log("[VendorDebug] Vendor insert result:", { newVendor, createError });
+
+      if (createError) {
+        console.error('[VendorDebug] Error creating vendor:', createError);
+        setVendorError(`Failed to create vendor account: ${createError.message}`);
         return;
       }
       
-      setCurrentVendor(data);
+      setCurrentVendor(newVendor);
+      toast({ title: "Vendor account created successfully!" });
+
     } catch (error) {
       console.error('[VendorDebug] Exception in fetchCurrentVendor:', error);
-      setVendorError('Failed to load vendor account.');
+      setVendorError('An unexpected error occurred while setting up your vendor account.');
     } finally {
       setLoading(false);
     }
@@ -374,6 +372,11 @@ export const ProductManagement = () => {
         <p className="text-muted-foreground mb-4">
           {vendorError || 'Unable to access vendor account'}
         </p>
+        {vendorError?.includes("Firebase") && (
+           <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
+            To fix this, go to your Supabase project's Authentication settings, add a new OIDC Provider, and configure it with your Firebase project details.
+          </p>
+        )}
         <Button onClick={handleRetry} className="flex items-center gap-2">
           <RefreshCw className="h-4 w-4" />
           Try Again
