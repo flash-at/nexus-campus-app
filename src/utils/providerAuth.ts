@@ -51,36 +51,30 @@ export const verifyVendorStatus = async (userCredential: any, email: string) => 
   }
 
   if (!vendor) {
-    // For the specific partner email, create the vendor record if it doesn't exist
-    if (email === 'maheshch1094@gmail.com') {
-      console.log("Creating vendor record for partner...");
-      
-      const { data: newVendor, error: createVendorError } = await supabase
-        .from('vendors')
-        .insert({
-          firebase_uid: userCredential.user.uid,
-          business_name: 'Campus Vendor',
-          category: 'Food & Beverages',
-          description: 'Campus service provider',
-          status: 'approved'
-        })
-        .select()
-        .single();
+    // Create the vendor record for any authenticated user
+    console.log("Creating vendor record...");
+    
+    const { data: newVendor, error: createVendorError } = await supabase
+      .from('vendors')
+      .insert({
+        firebase_uid: userCredential.user.uid,
+        business_name: email === 'maheshch1094@gmail.com' ? 'Campus Vendor' : 'Partner Business',
+        category: 'Food & Beverages',
+        description: 'Campus service provider',
+        status: 'approved'
+      })
+      .select()
+      .single();
 
-      if (createVendorError) {
-        console.error('Error creating vendor record:', createVendorError);
-        toast.error("Failed to create partner account. Please contact support.");
-        await auth.signOut();
-        throw new Error("Failed to create partner account");
-      }
-      
-      console.log("Vendor record created:", newVendor);
-      toast.success("Partner account created successfully!");
-    } else {
-      toast.error("This account is not registered as a partner");
+    if (createVendorError) {
+      console.error('Error creating vendor record:', createVendorError);
+      toast.error("Failed to create partner account. Please contact support.");
       await auth.signOut();
-      throw new Error("Account not registered as partner");
+      throw new Error("Failed to create partner account");
     }
+    
+    console.log("Vendor record created:", newVendor);
+    toast.success("Partner account created successfully!");
   } else if (vendor.status !== 'approved') {
     toast.error("Your partner account is pending approval");
     await auth.signOut();

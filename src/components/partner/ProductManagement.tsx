@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Plus, Edit, Trash2, Package, DollarSign, AlertCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Package, DollarSign, AlertCircle, RefreshCw } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -44,6 +43,7 @@ export const ProductManagement = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [currentVendor, setCurrentVendor] = useState<any>(null);
   const [vendorError, setVendorError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -65,7 +65,7 @@ export const ProductManagement = () => {
       fetchCurrentVendor();
       fetchCategories();
     }
-  }, [user]);
+  }, [user, retryCount]);
 
   useEffect(() => {
     if (currentVendor) {
@@ -78,6 +78,11 @@ export const ProductManagement = () => {
     
     try {
       setVendorError(null);
+      setLoading(true);
+      
+      // Add a small delay to ensure vendor record is created
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       const { data, error } = await supabase
         .from('vendors')
         .select('*')
@@ -91,7 +96,28 @@ export const ProductManagement = () => {
       }
       
       if (!data) {
-        setVendorError('No vendor account found. Please contact support.');
+        // Try to create vendor record if it doesn't exist
+        console.log("No vendor found, creating one...");
+        const { data: newVendor, error: createError } = await supabase
+          .from('vendors')
+          .insert({
+            firebase_uid: user.uid,
+            business_name: 'Partner Business',
+            category: 'Food & Beverages',
+            description: 'Campus service provider',
+            status: 'approved'
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Error creating vendor:', createError);
+          setVendorError('Failed to create vendor account. Please contact support.');
+          return;
+        }
+        
+        setCurrentVendor(newVendor);
+        toast({ title: "Vendor account created successfully!" });
         return;
       }
 
@@ -107,6 +133,10 @@ export const ProductManagement = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
   };
 
   const fetchProducts = async () => {
@@ -300,7 +330,8 @@ export const ProductManagement = () => {
         <p className="text-muted-foreground mb-4">
           {vendorError || 'Unable to access vendor account'}
         </p>
-        <Button onClick={fetchCurrentVendor} variant="outline">
+        <Button onClick={handleRetry} className="flex items-center gap-2">
+          <RefreshCw className="h-4 w-4" />
           Try Again
         </Button>
       </div>
