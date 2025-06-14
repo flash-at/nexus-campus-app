@@ -64,19 +64,46 @@ export const addActivityPoints = async (
       return false;
     }
 
-    // Record the transaction
-    const { error: transactionError } = await supabase
-      .from('activity_points_history')
-      .insert({
-        user_id: userId,
-        points: transactionType === 'earned' ? points : -points,
-        reason,
-        transaction_type: transactionType
+    // Record the transaction using rpc or direct SQL
+    try {
+      const { error: transactionError } = await supabase.rpc('insert_activity_points_history', {
+        p_user_id: userId,
+        p_points: transactionType === 'earned' ? points : -points,
+        p_reason: reason,
+        p_transaction_type: transactionType
       });
 
-    if (transactionError) {
-      console.error('Error recording transaction:', transactionError);
-      // Don't fail the whole operation if history recording fails
+      if (transactionError) {
+        console.error('Error recording transaction via RPC:', transactionError);
+        // Fallback: try direct insert with type assertion
+        const { error: directInsertError } = await (supabase as any)
+          .from('activity_points_history')
+          .insert({
+            user_id: userId,
+            points: transactionType === 'earned' ? points : -points,
+            reason,
+            transaction_type: transactionType
+          });
+
+        if (directInsertError) {
+          console.error('Error recording transaction via direct insert:', directInsertError);
+        }
+      }
+    } catch (rpcError) {
+      console.error('RPC function not available, using direct insert:', rpcError);
+      // Fallback: try direct insert with type assertion
+      const { error: directInsertError } = await (supabase as any)
+        .from('activity_points_history')
+        .insert({
+          user_id: userId,
+          points: transactionType === 'earned' ? points : -points,
+          reason,
+          transaction_type: transactionType
+        });
+
+      if (directInsertError) {
+        console.error('Error recording transaction via direct insert:', directInsertError);
+      }
     }
 
     console.log(`Successfully updated points. New total: ${newPoints}`);
@@ -89,7 +116,8 @@ export const addActivityPoints = async (
 
 export const getActivityPointsHistory = async (userId: string): Promise<ActivityPointsTransaction[]> => {
   try {
-    const { data, error } = await supabase
+    // Use type assertion to work around TypeScript issues
+    const { data, error } = await (supabase as any)
       .from('activity_points_history')
       .select('*')
       .eq('user_id', userId)
@@ -100,7 +128,15 @@ export const getActivityPointsHistory = async (userId: string): Promise<Activity
       return [];
     }
 
-    return data || [];
+    // Ensure data matches our interface
+    return (data || []).map((item: any): ActivityPointsTransaction => ({
+      id: item.id,
+      user_id: item.user_id,
+      points: item.points,
+      reason: item.reason,
+      transaction_type: item.transaction_type,
+      created_at: item.created_at
+    }));
   } catch (error) {
     console.error('Error in getActivityPointsHistory:', error);
     return [];
