@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, Fragment } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -150,7 +150,7 @@ const ProviderRegister = () => {
                   <div className="max-w-md mx-auto">
                     <div className="flex justify-between items-center mb-4">
                       {steps.map((step, index) => (
-                        <React.Fragment key={step.number}>
+                        <Fragment key={step.number}>
                           <div className="flex flex-col items-center">
                             <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
                               currentStep >= step.number 
@@ -162,7 +162,7 @@ const ProviderRegister = () => {
                             <span className="text-xs mt-2 text-gray-600 dark:text-gray-400 font-medium">{step.title}</span>
                           </div>
                           {index < steps.length - 1 && <div className="flex-1 h-0.5 mx-4 bg-gray-200 dark:bg-gray-700 mt-[-1rem]"></div>}
-                        </React.Fragment>
+                        </Fragment>
                       ))}
                     </div>
                   </div>

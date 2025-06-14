@@ -9,6 +9,50 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      academic_info: {
+        Row: {
+          cgpa: number | null
+          created_at: string | null
+          current_semester: number | null
+          id: string
+          mentor_email: string | null
+          mentor_name: string | null
+          subjects_enrolled: string[] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          cgpa?: number | null
+          created_at?: string | null
+          current_semester?: number | null
+          id?: string
+          mentor_email?: string | null
+          mentor_name?: string | null
+          subjects_enrolled?: string[] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          cgpa?: number | null
+          created_at?: string | null
+          current_semester?: number | null
+          id?: string
+          mentor_email?: string | null
+          mentor_name?: string | null
+          subjects_enrolled?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "academic_info_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_applications: {
         Row: {
           approved_at: string | null
@@ -103,6 +147,91 @@ export type Database = {
             foreignKeyName: "complaints_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          created_at: string | null
+          doc_type: string
+          doc_url: string
+          file_name: string
+          id: string
+          updated_at: string | null
+          user_id: string
+          verified_by_admin: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          doc_type: string
+          doc_url: string
+          file_name: string
+          id?: string
+          updated_at?: string | null
+          user_id: string
+          verified_by_admin?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          doc_type?: string
+          doc_url?: string
+          file_name?: string
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+          verified_by_admin?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      engagement: {
+        Row: {
+          activity_points: number | null
+          badges: Json | null
+          created_at: string | null
+          events_attended: string[] | null
+          feedback_count: number | null
+          id: string
+          last_login: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          activity_points?: number | null
+          badges?: Json | null
+          created_at?: string | null
+          events_attended?: string[] | null
+          feedback_count?: number | null
+          id?: string
+          last_login?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          activity_points?: number | null
+          badges?: Json | null
+          created_at?: string | null
+          events_attended?: string[] | null
+          feedback_count?: number | null
+          id?: string
+          last_login?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engagement_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -206,6 +335,47 @@ export type Database = {
         }
         Relationships: []
       }
+      preferences: {
+        Row: {
+          created_at: string | null
+          id: string
+          language: string | null
+          notifications_enabled: boolean | null
+          theme: string | null
+          updated_at: string | null
+          user_id: string
+          widgets_enabled: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          language?: string | null
+          notifications_enabled?: boolean | null
+          theme?: string | null
+          updated_at?: string | null
+          user_id: string
+          widgets_enabled?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          language?: string | null
+          notifications_enabled?: boolean | null
+          theme?: string | null
+          updated_at?: string | null
+          user_id?: string
+          widgets_enabled?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_items: {
         Row: {
           available: boolean
@@ -253,7 +423,9 @@ export type Database = {
           full_name: string
           hall_ticket: string
           id: string
+          is_active: boolean | null
           phone_number: string
+          profile_picture_url: string | null
           role: string
           updated_at: string | null
         }
@@ -267,7 +439,9 @@ export type Database = {
           full_name: string
           hall_ticket: string
           id?: string
+          is_active?: boolean | null
           phone_number: string
+          profile_picture_url?: string | null
           role?: string
           updated_at?: string | null
         }
@@ -281,7 +455,9 @@ export type Database = {
           full_name?: string
           hall_ticket?: string
           id?: string
+          is_active?: boolean | null
           phone_number?: string
+          profile_picture_url?: string | null
           role?: string
           updated_at?: string | null
         }
