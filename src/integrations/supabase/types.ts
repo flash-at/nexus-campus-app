@@ -240,6 +240,7 @@ export type Database = {
           created_by: string | null
           description: string | null
           id: string
+          join_password: string | null
           max_members: number | null
           name: string
           password: string
@@ -253,6 +254,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          join_password?: string | null
           max_members?: number | null
           name: string
           password: string
@@ -266,6 +268,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          join_password?: string | null
           max_members?: number | null
           name?: string
           password?: string

@@ -6,6 +6,7 @@ export interface Club {
   category: string;
   max_members: number;
   password: string;
+  join_password?: string;
   auth_code?: string;
   created_by?: string;
   created_at?: string;

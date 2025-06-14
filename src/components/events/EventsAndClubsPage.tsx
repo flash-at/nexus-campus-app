@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -113,16 +112,16 @@ export const EventsAndClubsPage = () => {
         throw new Error("You are already a member of this club");
       }
 
-      // Verify club password
+      // Verify club join password (updated to use join_password instead of password)
       const { data: clubData, error: clubError } = await supabase
         .from('clubs')
-        .select('password')
+        .select('join_password')
         .eq('id', selectedClub.id)
         .single();
 
       if (clubError) throw clubError;
 
-      if (clubData.password !== clubPassword) {
+      if (clubData.join_password !== clubPassword) {
         throw new Error("Incorrect club password");
       }
 
@@ -261,18 +260,21 @@ export const EventsAndClubsPage = () => {
                           </DialogHeader>
                           <div className="space-y-4">
                             <div className="space-y-2">
-                              <Label htmlFor="password">Club Password</Label>
+                              <Label htmlFor="password">Club Join Password</Label>
                               <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                                 <Input
                                   id="password"
                                   type="password"
-                                  placeholder="Enter club password"
+                                  placeholder="Enter club join password"
                                   value={clubPassword}
                                   onChange={(e) => setClubPassword(e.target.value)}
                                   className="pl-10"
                                 />
                               </div>
+                              <p className="text-xs text-muted-foreground">
+                                Contact the club administrators to get the join password
+                              </p>
                             </div>
                             
                             {error && (

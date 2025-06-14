@@ -8,492 +8,361 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { ArrowLeft, ArrowRight, Users, Info, Shield, Eye, EyeOff } from "lucide-react";
+import { Plus, ArrowLeft, ArrowRight, Eye, EyeOff, Users, Shield, Key, Lock } from "lucide-react";
 
 const CreateClub = () => {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [showAdminPassword, setShowAdminPassword] = useState(false);
-  const [showJoinPassword, setShowJoinPassword] = useState(false);
+  const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
   const { profile } = useUserProfile();
 
-  // Step 1: Club Details
-  const [clubDetails, setClubDetails] = useState({
-    name: "",
-    description: "",
-    category: "",
-    maxMembers: 50
-  });
-
-  // Step 2: Committee Details
-  const [committeeDetails, setCommitteeDetails] = useState({
-    chairHallTicket: "",
-    chairName: "",
-    viceChairHallTicket: "",
-    viceChairName: "",
-    coreMemberHallTickets: ["", "", ""],
-    coreMemberNames: ["", "", ""]
-  });
-
-  // Step 3: Authentication - Updated with separate passwords
-  const [authDetails, setAuthDetails] = useState({
-    authCode: "",
-    adminPassword: "",
-    joinPassword: ""
-  });
+  // Form data
+  const [clubName, setClubName] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("");
+  const [maxMembers, setMaxMembers] = useState("50");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [joinPassword, setJoinPassword] = useState("");
+  const [authCode, setAuthCode] = useState("");
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
+  const [showJoinPassword, setShowJoinPassword] = useState(false);
 
   const categories = [
-    "Technical", "Cultural", "Sports", "Literary", "Social Service", 
-    "Arts", "Music", "Dance", "Drama", "Photography", "Other"
+    "Technical", "Cultural", "Sports", "Academic", "Social Service", 
+    "Arts", "Music", "Dance", "Drama", "Photography", "Literature", "Other"
   ];
 
-  const validateStep1 = () => {
-    return clubDetails.name && clubDetails.description && clubDetails.category;
+  const handleNext = () => {
+    if (step < 3) setStep(step + 1);
   };
 
-  const validateStep2 = () => {
-    return committeeDetails.chairHallTicket && committeeDetails.chairName &&
-           committeeDetails.viceChairHallTicket && committeeDetails.viceChairName;
+  const handlePrevious = () => {
+    if (step > 1) setStep(step - 1);
   };
 
-  const validateStep3 = () => {
-    return authDetails.authCode && authDetails.adminPassword && authDetails.joinPassword;
-  };
-
-  const verifyHallTicket = async (hallTicket) => {
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, full_name')
-        .eq('hall_ticket', hallTicket)
-        .single();
-      
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      return null;
-    }
-  };
-
-  const handleNext = async () => {
-    if (currentStep === 1 && validateStep1()) {
-      setCurrentStep(2);
-    } else if (currentStep === 2 && validateStep2()) {
-      setCurrentStep(3);
-    } else if (currentStep === 3 && validateStep3()) {
-      await handleSubmit();
+  const validateStep = () => {
+    switch (step) {
+      case 1:
+        return clubName.trim() && description.trim() && category;
+      case 2:
+        return maxMembers && parseInt(maxMembers) > 0;
+      case 3:
+        return adminPassword.trim() && joinPassword.trim() && authCode.trim() && authCode.startsWith('CC-');
+      default:
+        return false;
     }
   };
 
   const handleSubmit = async () => {
+    if (!profile?.id) {
+      setError("Please log in to create a club");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
     try {
-      // Verify auth code (in real implementation, this would check against CampusConnect team)
-      if (!authDetails.authCode.startsWith('CC-')) {
-        throw new Error('Invalid auth code format. Contact CampusConnect team.');
-      }
-
-      // Verify all hall tickets exist
-      const chairUser = await verifyHallTicket(committeeDetails.chairHallTicket);
-      const viceChairUser = await verifyHallTicket(committeeDetails.viceChairHallTicket);
-      
-      if (!chairUser) throw new Error('Chair hall ticket not found');
-      if (!viceChairUser) throw new Error('Vice Chair hall ticket not found');
-
-      // Create club with separate passwords
-      const { data: clubData, error: clubError } = await supabase
+      const { data, error: insertError } = await supabase
         .from('clubs')
         .insert({
-          name: clubDetails.name,
-          description: clubDetails.description,
-          category: clubDetails.category,
-          max_members: clubDetails.maxMembers,
-          password: authDetails.adminPassword, // Admin password for management
-          join_password: authDetails.joinPassword, // Separate password for students to join
-          auth_code: authDetails.authCode,
-          created_by: profile?.id
+          name: clubName,
+          description,
+          category,
+          max_members: parseInt(maxMembers),
+          password: adminPassword,
+          join_password: joinPassword,
+          auth_code: authCode,
+          created_by: profile.id
         })
         .select()
         .single();
 
-      if (clubError) throw clubError;
+      if (insertError) throw insertError;
 
-      // Add chair role
-      await supabase.from('club_roles').insert({
-        club_id: clubData.id,
-        user_id: chairUser.id,
-        role: 'chair'
-      });
+      // Create club role for the creator as chair
+      const { error: roleError } = await supabase
+        .from('club_roles')
+        .insert({
+          club_id: data.id,
+          user_id: profile.id,
+          role: 'chair'
+        });
 
-      // Add vice chair role
-      await supabase.from('club_roles').insert({
-        club_id: clubData.id,
-        user_id: viceChairUser.id,
-        role: 'vice_chair'
-      });
+      if (roleError) throw roleError;
 
-      // Add core members
-      const coreMembers = [];
-      for (let i = 0; i < 3; i++) {
-        if (committeeDetails.coreMemberHallTickets[i]) {
-          const memberUser = await verifyHallTicket(committeeDetails.coreMemberHallTickets[i]);
-          if (memberUser) {
-            coreMembers.push({
-              club_id: clubData.id,
-              user_id: memberUser.id,
-              role: 'core_member'
-            });
-          }
-        }
-      }
+      // Create club membership for the creator
+      const { error: membershipError } = await supabase
+        .from('club_memberships')
+        .insert({
+          club_id: data.id,
+          user_id: profile.id,
+          role: 'chair'
+        });
 
-      if (coreMembers.length > 0) {
-        await supabase.from('club_roles').insert(coreMembers);
-      }
+      if (membershipError) throw membershipError;
 
-      alert('Club created successfully! You can now login to manage your club.');
-      navigate('/club-admin-login');
+      setSuccess(true);
+      setTimeout(() => {
+        navigate('/club-admin-login');
+      }, 2000);
     } catch (error) {
-      console.error('Error creating club:', error);
-      setError(error.message);
+      console.error('Club creation error:', error);
+      setError(error.message || "Failed to create club. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const renderStep1 = () => (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-3 text-primary">
-        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-          <Info className="h-4 w-4" />
-        </div>
-        <h3 className="text-lg font-semibold">Club Details</h3>
-      </div>
-      
-      <div className="grid gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="name" className="text-sm font-medium">Club Name *</Label>
-          <Input
-            id="name"
-            value={clubDetails.name}
-            onChange={(e) => setClubDetails({...clubDetails, name: e.target.value})}
-            placeholder="Enter your club name"
-            className="h-10"
-            required
-          />
-        </div>
+  const progressPercentage = (step / 3) * 100;
 
-        <div className="space-y-2">
-          <Label htmlFor="category" className="text-sm font-medium">Category *</Label>
-          <Select 
-            value={clubDetails.category} 
-            onValueChange={(value) => setClubDetails({...clubDetails, category: value})}
-          >
-            <SelectTrigger className="h-10">
-              <SelectValue placeholder="Select a category" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((cat) => (
-                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="description" className="text-sm font-medium">Description *</Label>
-          <Textarea
-            id="description"
-            value={clubDetails.description}
-            onChange={(e) => setClubDetails({...clubDetails, description: e.target.value})}
-            placeholder="Describe your club's mission and activities"
-            rows={4}
-            className="resize-none"
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="maxMembers" className="text-sm font-medium">Maximum Members</Label>
-          <Input
-            id="maxMembers"
-            type="number"
-            value={clubDetails.maxMembers}
-            onChange={(e) => setClubDetails({...clubDetails, maxMembers: parseInt(e.target.value)})}
-            min="10"
-            max="200"
-            className="h-10"
-          />
-          <p className="text-xs text-muted-foreground">Recommended: 20-100 members</p>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderStep2 = () => (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-3 text-primary">
-        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-          <Users className="h-4 w-4" />
-        </div>
-        <h3 className="text-lg font-semibold">Committee Structure</h3>
-      </div>
-
-      <div className="space-y-6">
-        <div className="p-4 bg-muted/50 rounded-lg">
-          <h4 className="font-medium mb-3 text-primary">Leadership Positions</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Chair Hall Ticket *</Label>
-              <Input
-                value={committeeDetails.chairHallTicket}
-                onChange={(e) => setCommitteeDetails({...committeeDetails, chairHallTicket: e.target.value})}
-                placeholder="e.g., 21A31A0501"
-                className="h-10"
-                required
-              />
+  if (success) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-950 dark:to-green-950 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center shadow-2xl border-0">
+          <CardContent className="pt-12 pb-8">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-green-500 to-blue-600 flex items-center justify-center">
+              <Plus className="h-10 w-10 text-white" />
             </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Chair Full Name *</Label>
-              <Input
-                value={committeeDetails.chairName}
-                onChange={(e) => setCommitteeDetails({...committeeDetails, chairName: e.target.value})}
-                placeholder="Enter full name"
-                className="h-10"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Vice Chair Hall Ticket *</Label>
-              <Input
-                value={committeeDetails.viceChairHallTicket}
-                onChange={(e) => setCommitteeDetails({...committeeDetails, viceChairHallTicket: e.target.value})}
-                placeholder="e.g., 21A31A0502"
-                className="h-10"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Vice Chair Full Name *</Label>
-              <Input
-                value={committeeDetails.viceChairName}
-                onChange={(e) => setCommitteeDetails({...committeeDetails, viceChairName: e.target.value})}
-                placeholder="Enter full name"
-                className="h-10"
-                required
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="p-4 bg-muted/50 rounded-lg">
-          <h4 className="font-medium mb-3 text-muted-foreground">Core Members (Optional)</h4>
-          <div className="space-y-3">
-            {[0, 1, 2].map((index) => (
-              <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  value={committeeDetails.coreMemberHallTickets[index]}
-                  onChange={(e) => {
-                    const newTickets = [...committeeDetails.coreMemberHallTickets];
-                    newTickets[index] = e.target.value;
-                    setCommitteeDetails({...committeeDetails, coreMemberHallTickets: newTickets});
-                  }}
-                  placeholder={`Core member ${index + 1} hall ticket`}
-                  className="h-10"
-                />
-                <Input
-                  value={committeeDetails.coreMemberNames[index]}
-                  onChange={(e) => {
-                    const newNames = [...committeeDetails.coreMemberNames];
-                    newNames[index] = e.target.value;
-                    setCommitteeDetails({...committeeDetails, coreMemberNames: newNames});
-                  }}
-                  placeholder={`Core member ${index + 1} name`}
-                  className="h-10"
-                />
-              </div>
-            ))}
-          </div>
-        </div>
+            <h2 className="text-2xl font-bold mb-4 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+              Club Created Successfully!
+            </h2>
+            <p className="text-muted-foreground mb-4">
+              Your club "{clubName}" has been created. You'll be redirected to the admin login page.
+            </p>
+          </CardContent>
+        </Card>
       </div>
-    </div>
-  );
-
-  const renderStep3 = () => (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-3 text-primary">
-        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-          <Shield className="h-4 w-4" />
-        </div>
-        <h3 className="text-lg font-semibold">Security & Access</h3>
-      </div>
-
-      <Alert className="border-blue-200 bg-blue-50/50">
-        <Info className="h-4 w-4" />
-        <AlertDescription>
-          <strong>Need an auth code?</strong> Contact CampusConnect team at: <strong>CampusConnect@mahesh.contact</strong>
-        </AlertDescription>
-      </Alert>
-
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="authCode" className="text-sm font-medium">CampusConnect Auth Code *</Label>
-          <Input
-            id="authCode"
-            value={authDetails.authCode}
-            onChange={(e) => setAuthDetails({...authDetails, authCode: e.target.value})}
-            placeholder="CC-XXXXXXXX"
-            className="h-10 font-mono"
-            required
-          />
-          <p className="text-xs text-muted-foreground">Obtained from CampusConnect team</p>
-        </div>
-
-        <div className="grid gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="adminPassword" className="text-sm font-medium">Club Admin Password *</Label>
-            <div className="relative">
-              <Input
-                id="adminPassword"
-                type={showAdminPassword ? "text" : "password"}
-                value={authDetails.adminPassword}
-                onChange={(e) => setAuthDetails({...authDetails, adminPassword: e.target.value})}
-                placeholder="Create admin password"
-                className="h-10 pr-10"
-                required
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-10 w-10 px-2"
-                onClick={() => setShowAdminPassword(!showAdminPassword)}
-              >
-                {showAdminPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">For chair, vice chair, and core members to access admin panel</p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="joinPassword" className="text-sm font-medium">Club Join Password *</Label>
-            <div className="relative">
-              <Input
-                id="joinPassword"
-                type={showJoinPassword ? "text" : "password"}
-                value={authDetails.joinPassword}
-                onChange={(e) => setAuthDetails({...authDetails, joinPassword: e.target.value})}
-                placeholder="Create join password"
-                className="h-10 pr-10"
-                required
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-10 w-10 px-2"
-                onClick={() => setShowJoinPassword(!showJoinPassword)}
-              >
-                {showJoinPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">Students will use this password to join your club</p>
-          </div>
-        </div>
-
-        <Alert className="border-orange-200 bg-orange-50/50">
-          <Shield className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Important:</strong> Keep both passwords secure. The admin password is for management access, 
-            while the join password is shared with students who want to join your club.
-          </AlertDescription>
-        </Alert>
-      </div>
-    </div>
-  );
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-950 dark:to-blue-950 flex items-center justify-center p-4">
-      <Card className="w-full max-w-3xl shadow-2xl">
-        <CardHeader className="text-center space-y-4 pb-6">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute top-4 left-4"
-            onClick={() => navigate('/club-admin-login')}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <div className="space-y-2">
-            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Create New Club
-            </CardTitle>
-            <p className="text-muted-foreground">Build your campus community</p>
-          </div>
-          <div className="space-y-2">
-            <Progress value={(currentStep / 3) * 100} className="w-full h-2" />
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span className={currentStep >= 1 ? "text-primary font-medium" : ""}>Details</span>
-              <span className={currentStep >= 2 ? "text-primary font-medium" : ""}>Committee</span>
-              <span className={currentStep >= 3 ? "text-primary font-medium" : ""}>Security</span>
+      <div className="w-full max-w-2xl">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mb-4"
+          onClick={() => navigate('/dashboard')}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Dashboard
+        </Button>
+
+        <Card className="shadow-2xl border-0">
+          <CardHeader className="text-center space-y-4">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+              <Plus className="h-8 w-8 text-white" />
             </div>
-          </div>
-        </CardHeader>
-        
-        <CardContent className="space-y-8 px-8 pb-8">
-          {currentStep === 1 && renderStep1()}
-          {currentStep === 2 && renderStep2()}
-          {currentStep === 3 && renderStep3()}
+            <div className="space-y-2">
+              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Create New Club
+              </CardTitle>
+              <p className="text-muted-foreground">Set up your campus club in 3 easy steps</p>
+            </div>
+            <div className="w-full">
+              <Progress value={progressPercentage} className="h-2" />
+              <p className="text-sm text-muted-foreground mt-2">Step {step} of 3</p>
+            </div>
+          </CardHeader>
 
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+          <CardContent className="space-y-6">
+            {step === 1 && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="clubName" className="text-sm font-medium">Club Name *</Label>
+                  <Input
+                    id="clubName"
+                    value={clubName}
+                    onChange={(e) => setClubName(e.target.value)}
+                    placeholder="Enter your club name"
+                    className="h-11"
+                  />
+                </div>
 
-          <div className="flex justify-between pt-4 border-t">
-            <Button
-              variant="outline"
-              onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
-              disabled={currentStep === 1}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Previous
-            </Button>
-            
-            <Button
-              onClick={handleNext}
-              disabled={
-                loading ||
-                (currentStep === 1 && !validateStep1()) ||
-                (currentStep === 2 && !validateStep2()) ||
-                (currentStep === 3 && !validateStep3())
-              }
-              className="flex items-center gap-2 min-w-[120px]"
-            >
-              {loading ? (
-                "Creating..."
-              ) : currentStep === 3 ? (
-                "Create Club"
-              ) : (
-                <>
-                  Next
-                  <ArrowRight className="h-4 w-4" />
-                </>
+                <div className="space-y-2">
+                  <Label htmlFor="description" className="text-sm font-medium">Description *</Label>
+                  <Textarea
+                    id="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Describe your club's purpose and activities"
+                    className="min-h-[100px] resize-none"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="category" className="text-sm font-medium">Category *</Label>
+                  <Select value={category} onValueChange={setCategory}>
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Select club category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {step === 2 && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="maxMembers" className="text-sm font-medium">Maximum Members</Label>
+                  <div className="relative">
+                    <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      id="maxMembers"
+                      type="number"
+                      value={maxMembers}
+                      onChange={(e) => setMaxMembers(e.target.value)}
+                      placeholder="50"
+                      min="1"
+                      max="500"
+                      className="h-11 pl-10"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Set the maximum number of members for your club (1-500)
+                  </p>
+                </div>
+
+                <Alert>
+                  <Users className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Club Structure:</strong> You'll be automatically assigned as the Club Chair. 
+                    You can later assign Vice Chairs and Core Members through the admin dashboard.
+                  </AlertDescription>
+                </Alert>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="adminPassword" className="text-sm font-medium">Admin Password *</Label>
+                  <div className="relative">
+                    <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      id="adminPassword"
+                      type={showAdminPassword ? "text" : "password"}
+                      value={adminPassword}
+                      onChange={(e) => setAdminPassword(e.target.value)}
+                      placeholder="Create admin password"
+                      className="h-11 pl-10 pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-11 w-10 px-2"
+                      onClick={() => setShowAdminPassword(!showAdminPassword)}
+                    >
+                      {showAdminPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    This password will be used by club admins to access the management dashboard
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="joinPassword" className="text-sm font-medium">Club Join Password *</Label>
+                  <div className="relative">
+                    <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      id="joinPassword"
+                      type={showJoinPassword ? "text" : "password"}
+                      value={joinPassword}
+                      onChange={(e) => setJoinPassword(e.target.value)}
+                      placeholder="Create join password"
+                      className="h-11 pl-10 pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-11 w-10 px-2"
+                      onClick={() => setShowJoinPassword(!showJoinPassword)}
+                    >
+                      {showJoinPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Students will use this password to join your club
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="authCode" className="text-sm font-medium">Auth Code *</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      id="authCode"
+                      value={authCode}
+                      onChange={(e) => setAuthCode(e.target.value)}
+                      placeholder="CC-XXXXXXXX"
+                      className="h-11 pl-10 font-mono"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Contact CampusConnect team at <strong>CampusConnect@mahesh.contact</strong> to get your auth code
+                  </p>
+                </div>
+
+                <Alert>
+                  <Shield className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Security:</strong> Keep both passwords secure. The admin password grants 
+                    management access, while the join password allows students to join your club.
+                  </AlertDescription>
+                </Alert>
+              </div>
+            )}
+
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="flex gap-3">
+              {step > 1 && (
+                <Button variant="outline" onClick={handlePrevious} className="flex-1">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Previous
+                </Button>
               )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+              
+              {step < 3 ? (
+                <Button 
+                  onClick={handleNext} 
+                  disabled={!validateStep()}
+                  className="flex-1"
+                >
+                  Next
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              ) : (
+                <Button 
+                  onClick={handleSubmit}
+                  disabled={!validateStep() || loading}
+                  className="flex-1"
+                >
+                  {loading ? "Creating Club..." : "Create Club"}
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
