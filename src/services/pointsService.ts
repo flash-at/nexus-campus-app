@@ -69,18 +69,25 @@ export const getPointsHistory = async (userId: string): Promise<PointsTransactio
 
 export const getCurrentPoints = async (firebaseUid: string): Promise<number> => {
   try {
-    // Use the custom function we created
-    const { data, error } = await supabase.rpc('get_user_points', {
-      user_firebase_uid: firebaseUid
-    });
+    // First get the user's internal ID
+    const { data: userData } = await supabase
+      .from('users')
+      .select('id')
+      .eq('firebase_uid', firebaseUid)
+      .single();
 
-    if (error) {
-      console.error('Error fetching current points:', error);
+    if (!userData) {
       return 0;
     }
 
-    // Ensure we return a number
-    return typeof data === 'number' ? data : parseInt(data) || 0;
+    // Get current points from engagement table
+    const { data: engagementData } = await supabase
+      .from('engagement')
+      .select('activity_points')
+      .eq('user_id', userData.id)
+      .single();
+
+    return engagementData?.activity_points || 0;
   } catch (error) {
     console.error('Error fetching current points:', error);
     return 0;
@@ -89,19 +96,22 @@ export const getCurrentPoints = async (firebaseUid: string): Promise<number> => 
 
 export const getAvailableVouchers = async (): Promise<Voucher[]> => {
   try {
-    // Query using raw SQL since the table might not be in types yet
+    // Use raw query since vouchers table might not be in types yet
     const { data, error } = await supabase
-      .from('vouchers')
-      .select('*')
-      .eq('is_active', true)
-      .order('points_required', { ascending: true });
+      .rpc('exec_sql', { 
+        query: `
+          SELECT * FROM vouchers 
+          WHERE is_active = true 
+          ORDER BY points_required ASC
+        `
+      });
 
     if (error) {
       console.error('Error fetching vouchers:', error);
       return [];
     }
 
-    return data || [];
+    return (data || []) as Voucher[];
   } catch (error) {
     console.error('Error fetching vouchers:', error);
     return [];
@@ -110,21 +120,53 @@ export const getAvailableVouchers = async (): Promise<Voucher[]> => {
 
 export const getUserRedemptions = async (userId: string): Promise<VoucherRedemption[]> => {
   try {
+    // Use raw query for voucher_redemptions
     const { data, error } = await supabase
-      .from('voucher_redemptions')
-      .select(`
-        *,
-        voucher:vouchers(*)
-      `)
-      .eq('user_id', userId)
-      .order('redeemed_at', { ascending: false });
+      .rpc('exec_sql', { 
+        query: `
+          SELECT 
+            vr.*,
+            v.title as voucher_title,
+            v.description as voucher_description,
+            v.value as voucher_value,
+            v.category as voucher_category
+          FROM voucher_redemptions vr
+          LEFT JOIN vouchers v ON vr.voucher_id = v.id
+          WHERE vr.user_id = '${userId}'
+          ORDER BY vr.redeemed_at DESC
+        `
+      });
 
     if (error) {
       console.error('Error fetching user redemptions:', error);
       return [];
     }
 
-    return data || [];
+    return (data || []).map((item: any) => ({
+      id: item.id,
+      user_id: item.user_id,
+      voucher_id: item.voucher_id,
+      points_spent: item.points_spent,
+      redemption_code: item.redemption_code,
+      status: item.status,
+      redeemed_at: item.redeemed_at,
+      used_at: item.used_at,
+      expires_at: item.expires_at,
+      voucher: item.voucher_title ? {
+        id: item.voucher_id,
+        title: item.voucher_title,
+        description: item.voucher_description,
+        value: item.voucher_value,
+        category: item.voucher_category,
+        points_required: 0, // Will be filled separately if needed
+        image_url: '',
+        max_redemptions: 0,
+        current_redemptions: 0,
+        is_active: true,
+        created_at: '',
+        updated_at: ''
+      } : undefined
+    }));
   } catch (error) {
     console.error('Error fetching user redemptions:', error);
     return [];
@@ -139,16 +181,17 @@ export const redeemVoucher = async (
     // Generate unique redemption code
     const redemptionCode = `CC-${Date.now()}-${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
     
-    // Get voucher details first
-    const { data: voucher, error: voucherError } = await supabase
-      .from('vouchers')
-      .select('*')
-      .eq('id', voucherId)
-      .single();
+    // Get voucher details using raw query
+    const { data: voucherData, error: voucherError } = await supabase
+      .rpc('exec_sql', { 
+        query: `SELECT * FROM vouchers WHERE id = '${voucherId}' AND is_active = true`
+      });
 
-    if (voucherError || !voucher) {
+    if (voucherError || !voucherData || voucherData.length === 0) {
       return { success: false, error: 'Voucher not found' };
     }
+
+    const voucher = voucherData[0] as Voucher;
 
     // Check if user has enough points
     const { data: userData } = await supabase
@@ -170,51 +213,70 @@ export const redeemVoucher = async (
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
 
-    // Create redemption record
-    const { data: redemption, error: redemptionError } = await supabase
-      .from('voucher_redemptions')
-      .insert({
-        user_id: userId,
-        voucher_id: voucherId,
-        points_spent: voucher.points_required,
-        redemption_code: redemptionCode,
-        expires_at: expiresAt.toISOString()
-      })
-      .select()
-      .single();
+    // Create redemption record using raw query
+    const { data: redemptionData, error: redemptionError } = await supabase
+      .rpc('exec_sql', { 
+        query: `
+          INSERT INTO voucher_redemptions (
+            user_id, voucher_id, points_spent, redemption_code, expires_at
+          ) VALUES (
+            '${userId}', '${voucherId}', ${voucher.points_required}, 
+            '${redemptionCode}', '${expiresAt.toISOString()}'
+          ) RETURNING *
+        `
+      });
 
     if (redemptionError) {
       console.error('Error creating redemption:', redemptionError);
       return { success: false, error: 'Failed to process redemption' };
     }
 
-    // Deduct points using secure function
-    const { error: pointsError } = await supabase.rpc('add_activity_points', {
-      target_user_id: userId,
-      points_amount: -voucher.points_required,
-      transaction_reason: `Redeemed: ${voucher.title}`,
-      transaction_type: 'redeemed',
-      reference_id: redemption.id
-    });
+    // Deduct points from user's engagement record
+    const { error: pointsError } = await supabase
+      .from('engagement')
+      .update({ 
+        activity_points: currentPoints - voucher.points_required,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId);
 
     if (pointsError) {
       console.error('Error deducting points:', pointsError);
-      // Try to rollback redemption
-      await supabase
-        .from('voucher_redemptions')
-        .delete()
-        .eq('id', redemption.id);
       return { success: false, error: 'Failed to deduct points' };
     }
 
+    // Add transaction record
+    await supabase
+      .from('activity_points_history')
+      .insert({
+        user_id: userId,
+        points: -voucher.points_required,
+        transaction_type: 'redeemed',
+        reason: `Redeemed: ${voucher.title}`,
+        reference_id: redemptionData?.[0]?.id
+      });
+
     // Update voucher redemption count
     await supabase
-      .from('vouchers')
-      .update({ 
-        current_redemptions: voucher.current_redemptions + 1,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', voucherId);
+      .rpc('exec_sql', { 
+        query: `
+          UPDATE vouchers 
+          SET current_redemptions = current_redemptions + 1,
+              updated_at = now()
+          WHERE id = '${voucherId}'
+        `
+      });
+
+    const redemption: VoucherRedemption = {
+      id: redemptionData?.[0]?.id || '',
+      user_id: userId,
+      voucher_id: voucherId,
+      points_spent: voucher.points_required,
+      redemption_code: redemptionCode,
+      status: 'active',
+      redeemed_at: new Date().toISOString(),
+      expires_at: expiresAt.toISOString()
+    };
 
     return { success: true, redemption };
   } catch (error) {
@@ -231,16 +293,42 @@ export const addPoints = async (
   referenceId?: string
 ): Promise<boolean> => {
   try {
-    const { error } = await supabase.rpc('add_activity_points', {
-      target_user_id: userId,
-      points_amount: points,
-      transaction_reason: reason,
-      transaction_type: transactionType,
-      reference_id: referenceId
-    });
+    // Add to points history
+    const { error: historyError } = await supabase
+      .from('activity_points_history')
+      .insert({
+        user_id: userId,
+        points: points,
+        transaction_type: transactionType,
+        reason: reason,
+        reference_id: referenceId
+      });
 
-    if (error) {
-      console.error('Error adding points:', error);
+    if (historyError) {
+      console.error('Error adding points history:', historyError);
+      return false;
+    }
+
+    // Update user's total points in engagement table
+    const { data: currentData } = await supabase
+      .from('engagement')
+      .select('activity_points')
+      .eq('user_id', userId)
+      .single();
+
+    const currentPoints = currentData?.activity_points || 0;
+    const newPoints = currentPoints + points;
+
+    const { error: updateError } = await supabase
+      .from('engagement')
+      .update({ 
+        activity_points: newPoints,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId);
+
+    if (updateError) {
+      console.error('Error updating points:', updateError);
       return false;
     }
 
