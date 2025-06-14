@@ -37,10 +37,10 @@ interface SidebarNavProps {
 
 export const SidebarNav: React.FC<SidebarNavProps> = ({ activeSection, setActiveSection, handleSignOut }) => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Core Features */}
       <div>
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3 px-4">
+        <h3 className="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2 sm:mb-3 px-2 sm:px-4">
           Core Features
         </h3>
         <div className="space-y-1">
@@ -50,11 +50,11 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeSection, setActive
               <Button
                 key={section.id}
                 variant={activeSection === section.id ? "secondary" : "ghost"}
-                className="w-full justify-start"
+                className="w-full justify-start text-sm sm:text-base h-9 sm:h-10 px-3 sm:px-4"
                 onClick={() => setActiveSection(section.id)}
               >
-                <Icon className="h-4 w-4 mr-3" />
-                {section.label}
+                <Icon className="h-4 w-4 mr-2 sm:mr-3 flex-shrink-0" />
+                <span className="truncate">{section.label}</span>
               </Button>
             );
           })}
@@ -63,7 +63,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeSection, setActive
 
       {/* Advanced Features */}
       <div>
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3 px-4">
+        <h3 className="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2 sm:mb-3 px-2 sm:px-4">
           Advanced Features
         </h3>
         <div className="space-y-1">
@@ -73,11 +73,11 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeSection, setActive
               <Button
                 key={feature.id}
                 variant={activeSection === feature.id ? "secondary" : "ghost"}
-                className="w-full justify-start"
+                className="w-full justify-start text-sm sm:text-base h-9 sm:h-10 px-3 sm:px-4"
                 onClick={() => setActiveSection(feature.id)}
               >
-                <Icon className="h-4 w-4 mr-3" />
-                {feature.label}
+                <Icon className="h-4 w-4 mr-2 sm:mr-3 flex-shrink-0" />
+                <span className="truncate">{feature.label}</span>
               </Button>
             );
           })}
@@ -85,19 +85,19 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeSection, setActive
       </div>
 
       {/* Settings */}
-      <div className="pt-6 border-t border-border">
+      <div className="pt-4 sm:pt-6 border-t border-border">
         <div className="space-y-1">
-          <Button variant="ghost" className="w-full justify-start">
-            <Settings className="h-4 w-4 mr-3" />
-            Settings
+          <Button variant="ghost" className="w-full justify-start text-sm sm:text-base h-9 sm:h-10 px-3 sm:px-4">
+            <Settings className="h-4 w-4 mr-2 sm:mr-3 flex-shrink-0" />
+            <span className="truncate">Settings</span>
           </Button>
           <Button
             variant="ghost"
-            className="w-full justify-start text-destructive hover:text-destructive"
+            className="w-full justify-start text-destructive hover:text-destructive text-sm sm:text-base h-9 sm:h-10 px-3 sm:px-4"
             onClick={handleSignOut}
           >
-            <LogOut className="h-4 w-4 mr-3" />
-            Sign Out
+            <LogOut className="h-4 w-4 mr-2 sm:mr-3 flex-shrink-0" />
+            <span className="truncate">Sign Out</span>
           </Button>
         </div>
       </div>
