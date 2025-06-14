@@ -29,6 +29,15 @@ export const authenticateProvider = async (email: string, password: string) => {
     userCredential = await signInWithEmailAndPassword(auth, email, password);
   }
 
+  // Set the Supabase session with Firebase token
+  if (userCredential?.user) {
+    const token = await userCredential.user.getIdToken();
+    await supabase.auth.setSession({
+      access_token: token,
+      refresh_token: token
+    });
+  }
+
   return userCredential;
 };
 
