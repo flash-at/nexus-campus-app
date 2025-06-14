@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -29,6 +30,10 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Error signing out:", error);
     }
+  };
+
+  const handleProfileClick = () => {
+    setActiveSection("profile");
   };
 
   // Generate leaderboard data with only real users
@@ -135,12 +140,40 @@ const Dashboard = () => {
               </span>
             </Button>
             
-            <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
-              <AvatarImage src={profile?.profile_picture_url || undefined} />
-              <AvatarFallback className="bg-primary text-primary-foreground text-xs sm:text-sm">
-                {profile?.full_name?.split(' ').map(n => n[0]).join('') || user.displayName?.charAt(0) || user.email?.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-full p-0">
+                  <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
+                    <AvatarImage src={profile?.profile_picture_url || undefined} />
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xs sm:text-sm">
+                      {profile?.full_name?.split(' ').map(n => n[0]).join('') || user.displayName?.charAt(0) || user.email?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <div className="flex items-center justify-start gap-2 p-2">
+                  <div className="flex flex-col space-y-1 leading-none">
+                    <p className="font-medium text-sm">
+                      {profile?.full_name || user.displayName || user.email?.split('@')[0]}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {profile?.hall_ticket || 'CS21B0001'}
+                    </p>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleProfileClick}>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>My Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             
             <div className="hidden sm:block text-right">
               <p className="text-sm font-medium truncate max-w-32 lg:max-w-none">
