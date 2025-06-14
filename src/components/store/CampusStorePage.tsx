@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, ShoppingCart, Star, Clock, MapPin } from 'lucide-react';
+import { Search, ShoppingCart, Star, Clock, MapPin, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { Cart } from './Cart';
 import { ProductDetails } from './ProductDetails';
 
@@ -44,66 +45,89 @@ export const CampusStorePage = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showCart, setShowCart] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
-    fetchCategories();
-    fetchProducts();
-  }, []);
+    if (user) {
+      fetchCategories();
+      fetchProducts();
+    } else {
+      setError('Please log in to access the Campus Store');
+      setLoading(false);
+    }
+  }, [user]);
 
   const fetchCategories = async () => {
-    const { data, error } = await supabase
-      .from('store_categories')
-      .select('*')
-      .eq('active', true)
-      .order('display_order');
+    try {
+      const { data, error } = await supabase
+        .from('store_categories')
+        .select('*')
+        .eq('active', true)
+        .order('display_order');
 
-    if (error) {
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
       toast({
         title: "Error",
         description: "Failed to load categories",
         variant: "destructive"
       });
-    } else {
-      setCategories(data || []);
     }
   };
 
   const fetchProducts = async () => {
+    if (!user) return;
+    
     setLoading(true);
-    let query = supabase
-      .from('products')
-      .select(`
-        *,
-        vendors (business_name)
-      `)
-      .eq('is_active', true);
+    setError(null);
+    
+    try {
+      let query = supabase
+        .from('products')
+        .select(`
+          *,
+          vendors (business_name)
+        `)
+        .eq('is_active', true);
 
-    if (selectedCategory) {
-      query = query.eq('category_id', selectedCategory);
-    }
+      if (selectedCategory) {
+        query = query.eq('category_id', selectedCategory);
+      }
 
-    if (searchQuery) {
-      query = query.ilike('name', `%${searchQuery}%`);
-    }
+      if (searchQuery) {
+        query = query.ilike('name', `%${searchQuery}%`);
+      }
 
-    const { data, error } = await query;
+      const { data, error } = await query;
 
-    if (error) {
+      if (error) throw error;
+      setProducts(data || []);
+      
+      if (data?.length === 0 && !selectedCategory && !searchQuery) {
+        setError('No products available at the moment. Please check back later.');
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      setError('Failed to load products. Please try again.');
       toast({
         title: "Error",
         description: "Failed to load products",
         variant: "destructive"
       });
-    } else {
-      setProducts(data || []);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
-    fetchProducts();
-  }, [selectedCategory, searchQuery]);
+    if (user) {
+      fetchProducts();
+    }
+  }, [selectedCategory, searchQuery, user]);
 
   const addToCart = (product: Product, quantity: number = 1) => {
     const existingItem = cartItems.find(item => item.id === product.id);
@@ -142,12 +166,25 @@ export const CampusStorePage = () => {
   };
 
   const getServiceFee = (subtotal: number) => {
-    // Service fee: ₹5 – ₹16 per order (based on total amount)
     if (subtotal < 100) return 5;
     if (subtotal < 300) return 8;
     if (subtotal < 500) return 12;
     return 16;
   };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-6 text-center">
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-semibold mb-2">Authentication Required</h3>
+            <p className="text-muted-foreground">Please log in to access the Campus Store</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (showCart) {
     return (
@@ -234,6 +271,16 @@ export const CampusStorePage = () => {
           </div>
         </div>
 
+        {/* Error State */}
+        {error && (
+          <div className="text-center py-12">
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-semibold mb-2">Something went wrong</h3>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={fetchProducts}>Try Again</Button>
+          </div>
+        )}
+
         {/* Products Grid */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -248,7 +295,7 @@ export const CampusStorePage = () => {
               </Card>
             ))}
           </div>
-        ) : (
+        ) : !error && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {products.map((product) => {
               const discountedPrice = product.price * (1 - product.discount_percentage / 100);
@@ -319,7 +366,7 @@ export const CampusStorePage = () => {
           </div>
         )}
 
-        {products.length === 0 && !loading && (
+        {products.length === 0 && !loading && !error && (
           <div className="text-center py-12">
             <p className="text-muted-foreground">No products found</p>
           </div>

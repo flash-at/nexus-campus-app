@@ -2,15 +2,14 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { ArrowLeft, Minus, Plus, Trash2, Clock } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Minus, Plus, Trash2, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 interface CartItem {
   id: string;
@@ -42,25 +41,29 @@ export const Cart: React.FC<CartProps> = ({
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [notes, setNotes] = useState('');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const { toast } = useToast();
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const total = subtotal + serviceFee;
+
+  // Group items by vendor
+  const groupedItems = items.reduce((acc, item) => {
+    const vendorId = item.vendor_id;
+    if (!acc[vendorId]) {
+      acc[vendorId] = {
+        vendor: item.vendors?.business_name || 'Unknown Vendor',
+        items: []
+      };
+    }
+    acc[vendorId].items.push(item);
+    return acc;
+  }, {} as Record<string, { vendor: string; items: CartItem[] }>);
 
   const handlePlaceOrder = async () => {
     if (!user) {
       toast({
         title: "Authentication Required",
-        description: "Please login to place an order",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (items.length === 0) {
-      toast({
-        title: "Empty Cart",
-        description: "Please add items to cart before placing order",
+        description: "Please log in to place an order",
         variant: "destructive"
       });
       return;
@@ -69,7 +72,7 @@ export const Cart: React.FC<CartProps> = ({
     setIsPlacingOrder(true);
 
     try {
-      // Get user ID from users table
+      // Get current user ID from the users table
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('id')
@@ -80,36 +83,30 @@ export const Cart: React.FC<CartProps> = ({
         throw new Error('User not found');
       }
 
-      // Group items by vendor
-      const itemsByVendor = items.reduce((acc, item) => {
-        if (!acc[item.vendor_id]) {
-          acc[item.vendor_id] = [];
-        }
-        acc[item.vendor_id].push(item);
-        return acc;
-      }, {} as Record<string, CartItem[]>);
-
-      // Create separate orders for each vendor
-      for (const [vendorId, vendorItems] of Object.entries(itemsByVendor)) {
-        const vendorSubtotal = vendorItems.reduce((sum, item) => {
+      // Create orders for each vendor
+      for (const [vendorId, group] of Object.entries(groupedItems)) {
+        const vendorSubtotal = group.items.reduce((sum, item) => {
           const discountedPrice = item.price * (1 - item.discount_percentage / 100);
           return sum + (discountedPrice * item.quantity);
         }, 0);
 
-        // Generate QR code (simple UUID for now)
-        const qrCode = crypto.randomUUID();
+        const vendorServiceFee = serviceFee / Object.keys(groupedItems).length; // Split service fee
 
-        // Create order
+        // Generate QR code for the order
+        const qrCode = `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+        // Create the order
         const { data: orderData, error: orderError } = await supabase
           .from('campus_orders')
           .insert({
             student_id: userData.id,
             vendor_id: vendorId,
-            total_price: vendorSubtotal + serviceFee,
-            service_fee: serviceFee,
+            total_price: vendorSubtotal + vendorServiceFee,
+            service_fee: vendorServiceFee,
             payment_method: paymentMethod,
             qr_code: qrCode,
-            notes: notes || null
+            notes: notes || null,
+            pickup_deadline: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 minutes from now
           })
           .select()
           .single();
@@ -117,12 +114,12 @@ export const Cart: React.FC<CartProps> = ({
         if (orderError) throw orderError;
 
         // Create order items
-        const orderItems = vendorItems.map(item => ({
+        const orderItems = group.items.map(item => ({
           order_id: orderData.id,
           product_id: item.id,
           quantity: item.quantity,
           unit_price: item.price * (1 - item.discount_percentage / 100),
-          subtotal: item.price * (1 - item.discount_percentage / 100) * item.quantity
+          subtotal: (item.price * (1 - item.discount_percentage / 100)) * item.quantity
         }));
 
         const { error: itemsError } = await supabase
@@ -134,7 +131,7 @@ export const Cart: React.FC<CartProps> = ({
 
       toast({
         title: "Order Placed Successfully!",
-        description: "Your order has been sent to the vendors. You'll receive updates soon.",
+        description: `Your order${Object.keys(groupedItems).length > 1 ? 's' : ''} ${Object.keys(groupedItems).length > 1 ? 'have' : 'has'} been placed. You'll receive updates as vendors accept your order.`,
       });
 
       // Clear cart and go back
@@ -144,7 +141,7 @@ export const Cart: React.FC<CartProps> = ({
     } catch (error) {
       console.error('Error placing order:', error);
       toast({
-        title: "Order Failed",
+        title: "Error",
         description: "Failed to place order. Please try again.",
         variant: "destructive"
       });
@@ -155,16 +152,15 @@ export const Cart: React.FC<CartProps> = ({
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-6">
-          <Button variant="ghost" onClick={onBack} className="mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Store
-          </Button>
-          <div className="text-center py-12">
-            <h2 className="text-xl font-semibold mb-2">Your cart is empty</h2>
-            <p className="text-muted-foreground">Add some items to get started!</p>
-          </div>
+      <div className="min-h-screen bg-background p-4">
+        <Button variant="ghost" onClick={onBack} className="mb-4">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Store
+        </Button>
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-bold mb-4">Your Cart is Empty</h2>
+          <p className="text-muted-foreground mb-6">Add some items to get started</p>
+          <Button onClick={onBack}>Continue Shopping</Button>
         </div>
       </div>
     );
@@ -178,76 +174,84 @@ export const Cart: React.FC<CartProps> = ({
           Back to Store
         </Button>
 
+        <h1 className="text-2xl font-bold mb-6">Your Cart</h1>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Cart Items */}
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Cart Items ({items.length})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {items.map((item) => {
+          <div className="lg:col-span-2 space-y-4">
+            {Object.entries(groupedItems).map(([vendorId, group]) => (
+              <Card key={vendorId}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    <CardTitle className="text-lg">{group.vendor}</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {group.items.map((item) => {
                     const discountedPrice = item.price * (1 - item.discount_percentage / 100);
                     const itemTotal = discountedPrice * item.quantity;
 
                     return (
-                      <div key={item.id} className="flex items-center gap-4 p-4 border rounded-lg">
-                        <div className="h-16 w-16 bg-muted rounded-lg flex items-center justify-center">
-                          📦
-                        </div>
+                      <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex-1">
-                          <h3 className="font-medium">{item.name}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {item.vendors?.business_name}
-                          </p>
+                          <h4 className="font-medium">{item.name}</h4>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="font-bold">₹{discountedPrice.toFixed(2)}</span>
                             {item.discount_percentage > 0 && (
-                              <span className="text-sm text-muted-foreground line-through">
-                                ₹{item.price.toFixed(2)}
-                              </span>
+                              <>
+                                <span className="text-sm text-muted-foreground line-through">
+                                  ₹{item.price.toFixed(2)}
+                                </span>
+                                <Badge variant="secondary" className="text-xs">
+                                  {item.discount_percentage}% OFF
+                                </Badge>
+                              </>
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
-                          >
-                            <Minus className="h-4 w-4" />
-                          </Button>
-                          <span className="w-8 text-center">{item.quantity}</span>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold">₹{itemTotal.toFixed(2)}</p>
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => onUpdateQuantity(item.id, Math.max(0, item.quantity - 1))}
+                            >
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <span className="w-8 text-center">{item.quantity}</span>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          <div className="text-right min-w-[80px]">
+                            <p className="font-bold">₹{itemTotal.toFixed(2)}</p>
+                          </div>
                           <Button
                             variant="ghost"
-                            size="sm"
+                            size="icon"
+                            className="h-8 w-8 text-red-500 hover:text-red-700"
                             onClick={() => onUpdateQuantity(item.id, 0)}
-                            className="text-red-500 hover:text-red-700"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
                       </div>
                     );
                   })}
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
           {/* Order Summary */}
-          <div>
+          <div className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Order Summary</CardTitle>
@@ -271,50 +275,44 @@ export const Cart: React.FC<CartProps> = ({
                 </div>
 
                 <div className="space-y-3">
-                  <Label>Payment Method</Label>
-                  <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="cod" id="cod" />
-                      <Label htmlFor="cod">Cash on Delivery</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="wallet" id="wallet" />
-                      <Label htmlFor="wallet">Campus Wallet</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="upi" id="upi" />
-                      <Label htmlFor="upi">UPI</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="card" id="card" />
-                      <Label htmlFor="card">Card</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Payment Method</label>
+                    <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cod">Cash on Delivery</SelectItem>
+                        <SelectItem value="wallet">Campus Wallet</SelectItem>
+                        <SelectItem value="upi">UPI</SelectItem>
+                        <SelectItem value="card">Card</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Special Instructions (Optional)</Label>
-                  <Textarea
-                    id="notes"
-                    placeholder="Any special requests or instructions..."
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={3}
-                  />
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Special Instructions (Optional)</label>
+                    <Textarea
+                      placeholder="Any special requests or instructions..."
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
                 </div>
 
                 <Button
                   className="w-full"
+                  size="lg"
                   onClick={handlePlaceOrder}
                   disabled={isPlacingOrder}
                 >
                   {isPlacingOrder ? 'Placing Order...' : 'Place Order'}
                 </Button>
 
-                <div className="text-xs text-muted-foreground text-center">
-                  <Clock className="h-3 w-3 inline mr-1" />
-                  Estimated pickup: 15-30 minutes
-                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  Orders will be split by vendor. You'll receive separate QR codes for each vendor.
+                </p>
               </CardContent>
             </Card>
           </div>
