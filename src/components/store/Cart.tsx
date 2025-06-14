@@ -46,7 +46,7 @@ const Cart = ({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem, total, s
         return;
       }
 
-      // Create order
+      // Create order - temporarily remove qr_code field until database is updated
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -61,7 +61,7 @@ const Cart = ({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem, total, s
             quantity: item.quantity
           })),
           subtotal: total,
-          service_fee: serviceFee,
+          surge_fee: serviceFee,
           total: grandTotal,
           status: 'pending',
           payment_method: 'wallet'
@@ -70,15 +70,6 @@ const Cart = ({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem, total, s
         .single();
 
       if (orderError) throw orderError;
-
-      // Generate QR code for pickup - simplified version
-      const qrCode = `CC${Date.now()}${Math.random().toString(36).substr(2, 5)}`;
-      
-      // For now, we'll store the QR code in the order itself until the pickup_confirmations table is available
-      await supabase
-        .from('orders')
-        .update({ qr_code: qrCode })
-        .eq('id', order.id);
 
       toast.success("Order placed successfully! You'll receive a notification when it's accepted.");
       

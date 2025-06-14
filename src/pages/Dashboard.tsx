@@ -197,15 +197,13 @@ const Dashboard = () => {
           <div className="h-full lg:h-screen flex flex-col">
             <div className="flex-1 p-4 lg:p-6 lg:pt-6 pt-0 min-h-0">
               <SidebarNav
-                activeSection={activeSection}
-                setActiveSection={handleSectionSelect}
-                handleSignOut={handleMobileSignOut}
+                onSectionSelect={handleSectionSelect}
+                onSignOut={handleMobileSignOut}
               />
             </div>
           </div>
         </aside>
 
-        {/* Main Content - Mobile Optimized */}
         <main className="flex-1 p-3 sm:p-6 lg:p-8 min-h-screen">
           {activeSection === "profile" && <NewProfilePage />}
           {activeSection === "events" && <EventsAndClubsPage />}
@@ -224,7 +222,6 @@ const Dashboard = () => {
                 </Button>
               </div>
 
-              {/* Empty State for Orders */}
               <div className="text-center py-12 sm:py-20">
                 <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">
                   <Package className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
@@ -464,7 +461,6 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* Other sections */}
           {activeSection !== "overview" && activeSection !== "profile" && activeSection !== "orders" && activeSection !== "leaderboard" && activeSection !== "events" && activeSection !== "id-card" && (
             <div className="text-center py-12 sm:py-20 animate-fade-in">
               <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 sm:mb-6 rounded-xl sm:rounded-2xl bg-primary/20 flex items-center justify-center">

@@ -17,7 +17,9 @@ const ProductManagement = ({ vendorId }: ProductManagementProps) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchProducts();
+    if (vendorId) {
+      fetchProducts();
+    }
   }, [vendorId]);
 
   const fetchProducts = async () => {

@@ -17,7 +17,9 @@ const LiveOrders = ({ vendorId, onOrderUpdate }: LiveOrdersProps) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchOrders();
+    if (vendorId) {
+      fetchOrders();
+    }
   }, [vendorId]);
 
   const fetchOrders = async () => {
@@ -103,7 +105,7 @@ const LiveOrders = ({ vendorId, onOrderUpdate }: LiveOrdersProps) => {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {orders.map((order) => (
+          {orders.map((order: any) => (
             <Card key={order.id} className="border-l-4 border-l-orange-500">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
