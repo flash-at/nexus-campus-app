@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { 
   User, ShoppingBag, Calendar, CreditCard, FileText, Store, MessageSquare, Users,
   TrendingUp, BookOpen, Target, Newspaper, MessageCircle, Bot, Briefcase, Shield,
-  Settings, LogOut, Bell, Clock, Zap, Menu, X, Package, Trophy
+  Settings, LogOut, Bell, Clock, Zap, Menu, X, Package, Trophy, UserCog
 } from "lucide-react";
 import { SidebarNav } from "@/components/dashboard/SidebarNav";
 import { NewProfilePage } from "@/components/profile/NewProfilePage";
@@ -56,6 +56,7 @@ const Dashboard = () => {
     { id: "leaderboard", label: "Leaderboard", icon: Trophy },
     { id: "services", label: "Services", icon: ShoppingBag },
     { id: "events", label: "Events & Clubs", icon: Calendar },
+    { id: "club-admin", label: "Club Admin", icon: UserCog },
     { id: "payments", label: "Payments", icon: CreditCard },
     { id: "forms", label: "Forms", icon: FileText },
     { id: "store", label: "Campus Store", icon: Store },
@@ -528,7 +529,7 @@ const Dashboard = () => {
           )}
 
           {/* Other sections */}
-          {activeSection !== "overview" && activeSection !== "profile" && activeSection !== "orders" && activeSection !== "leaderboard" && activeSection !== "events" && (
+          {activeSection !== "overview" && activeSection !== "profile" && activeSection !== "orders" && activeSection !== "leaderboard" && activeSection !== "events" && activeSection !== "club-admin" && (
             <div className="text-center py-12 sm:py-20 animate-fade-in">
               <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 sm:mb-6 rounded-xl sm:rounded-2xl bg-primary/20 flex items-center justify-center">
                 {(() => {

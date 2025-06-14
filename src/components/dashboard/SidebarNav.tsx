@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import {
   TrendingUp, User, ShoppingBag, Calendar, CreditCard, FileText, Store, MessageSquare, Users,
-  BookOpen, Target, Newspaper, MessageCircle, Bot, Briefcase, Shield, Settings, LogOut, Package, Trophy
+  BookOpen, Target, Newspaper, MessageCircle, Bot, Briefcase, Shield, Settings, LogOut, Package, Trophy, UserCog
 } from "lucide-react";
 
 const dashboardSections = [
@@ -13,6 +13,7 @@ const dashboardSections = [
     { id: "leaderboard", label: "Leaderboard", icon: Trophy },
     { id: "services", label: "Services", icon: ShoppingBag },
     { id: "events", label: "Events & Clubs", icon: Calendar },
+    { id: "club-admin", label: "Club Admin", icon: UserCog },
     { id: "payments", label: "Payments", icon: CreditCard },
     { id: "forms", label: "Forms", icon: FileText },
     { id: "store", label: "Campus Store", icon: Store },
