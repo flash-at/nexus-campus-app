@@ -1,241 +1,279 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { 
-  ArrowRight, 
-  Feather,
-  BookOpen,
-  Briefcase,
-  University,
-  Star,
-  CheckCircle,
-  Quote,
-  ShieldCheck
-} from "lucide-react";
 import Logo from "@/components/Logo";
+import { ArrowRight, BookOpen, Utensils, Printer, ShoppingCart, Calendar, GraduationCap, Users, Menu } from 'lucide-react';
 import ThemeToggle from "@/components/ThemeToggle";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const Index = () => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   const features = [
     {
-      icon: University,
-      title: "Unified Campus Hub",
-      description: "Access all campus services, from dining to printing, in one centralized platform.",
-      color: "text-blue-500",
+      icon: <Utensils className="h-8 w-8 text-primary-600" />,
+      title: "Campus Eats",
+      description: "Order delicious and healthy meals from campus canteens and cafes.",
+      color: "blue"
     },
     {
-      icon: BookOpen,
-      title: "Academic Excellence",
-      description: "Tools and resources to support your studies, track progress, and collaborate.",
-      color: "text-purple-500",
+      icon: <Printer className="h-8 w-8 text-primary-600" />,
+      title: "Printing Services",
+      description: "Submit documents for printing from anywhere and collect them hassle-free.",
+      color: "green"
     },
     {
-      icon: Briefcase,
-      title: "Career Development",
-      description: "Connect with mentors, find internships, and prepare for your future career.",
-      color: "text-emerald-500",
+      icon: <ShoppingCart className="h-8 w-8 text-primary-600" />,
+      title: "Campus Store",
+      description: "Get your stationery, snacks, and other essentials delivered to you.",
+      color: "purple"
     },
     {
-      icon: Feather,
-      title: "Student Life",
-      description: "Discover events, join clubs, and engage with the vibrant campus community.",
-      color: "text-amber-500",
+      icon: <Calendar className="h-8 w-8 text-primary-600" />,
+      title: "Events & Clubs",
+      description: "Discover and join exciting events, workshops, and clubs on campus.",
+      color: "red"
     },
   ];
 
+  const benefits = [
+    {
+      icon: <GraduationCap className="h-8 w-8 text-primary" />,
+      title: "Streamline Your Day",
+      description: "Access all campus services from a single app, saving you time and effort."
+    },
+    {
+      icon: <Users className="h-8 w-8 text-primary" />,
+      title: "Stay Connected",
+      description: "Never miss an update on campus life, from events to important announcements."
+    },
+    {
+      icon: <BookOpen className="h-8 w-8 text-primary" />,
+      title: "Focus on Studies",
+      description: "With daily hassles managed, you can dedicate more time to what matters most."
+    },
+  ];
+  
   const testimonials = [
     {
-      name: "Ananya Sharma",
-      role: "Engineering, 2nd Year",
-      text: "CampusConnect has truly streamlined my college life. It's the one app I use every single day for everything from academics to social events.",
+      name: "Priya Sharma",
+      role: "B.Tech, CSE Student",
+      quote: "CampusConnect has been a game-changer! I can order food and get my notes printed without leaving the library. It saves me so much time.",
+      avatar: "/placeholder.svg"
     },
     {
-      name: "Rohan Gupta",
-      role: "Business, Final Year",
-      text: "The career hub is a fantastic resource. I found my summer internship through the platform and connected with amazing mentors.",
+      name: "Rahul Verma",
+      role: "President, Tech Club",
+      quote: "Organizing events is so much easier now. We can reach more students and manage registrations seamlessly through the app.",
+      avatar: "/placeholder.svg"
     },
+    {
+      name: "Dr. Anjali Mehta",
+      role: "Professor, ECE Dept.",
+      quote: "The platform enhances student engagement and simplifies access to campus resources. A brilliant initiative for a modern university.",
+      avatar: "/placeholder.svg"
+    }
   ];
 
   return (
-    <div className="bg-background text-foreground font-sans">
+    <div className="min-h-screen bg-background text-foreground antialiased font-sans">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-6 h-20 flex justify-between items-center">
-          <Link to="/" className="flex items-center space-x-3 group">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-              <Logo className="text-white" width={22} height={22} />
-            </div>
-            <span className="text-xl font-semibold">
-              CampusConnect
-            </span>
+        <div className="container flex h-16 items-center justify-between">
+          <Link to="/" className="flex items-center gap-3">
+            <Logo className="h-8 w-8 text-primary" />
+            <span className="text-xl font-bold tracking-tight">CampusConnect</span>
           </Link>
-          
-          <nav className="hidden lg:flex items-center space-x-8">
-            <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a>
-            <a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-colors">Testimonials</a>
-            <a href="#cta" className="text-muted-foreground hover:text-foreground transition-colors">Join Us</a>
-          </nav>
-          
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2">
+            <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+              <a href="#features" className="text-muted-foreground transition-colors hover:text-foreground">Features</a>
+              <a href="#benefits" className="text-muted-foreground transition-colors hover:text-foreground">Benefits</a>
+              <a href="#testimonials" className="text-muted-foreground transition-colors hover:text-foreground">Testimonials</a>
+            </nav>
+            <div className="hidden md:flex items-center gap-2">
+              <Button variant="outline" asChild>
+                <Link to="/login">Student Login</Link>
+              </Button>
+              <Button asChild>
+                <Link to="/provider/login">Partner Login</Link>
+              </Button>
+            </div>
             <ThemeToggle />
-            <Button variant="ghost" asChild>
-              <Link to="/login">Sign In</Link>
-            </Button>
-            <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm">
-              <Link to="/register">Get Started</Link>
-            </Button>
+            <div className="md:hidden">
+              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Menu className="h-6 w-6" />
+                    <span className="sr-only">Toggle Menu</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[300px] sm:w-[400px] p-6">
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-center justify-between">
+                      <Link to="/" className="flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
+                        <Logo className="h-7 w-7 text-primary" />
+                        <span className="text-lg font-bold">CampusConnect</span>
+                      </Link>
+                    </div>
+                    <nav className="flex flex-col gap-6 mt-10">
+                      <a href="#features" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium hover:text-primary transition-colors">Features</a>
+                      <a href="#benefits" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium hover:text-primary transition-colors">Benefits</a>
+                      <a href="#testimonials" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium hover:text-primary transition-colors">Testimonials</a>
+                    </nav>
+                    <div className="mt-auto pt-6 flex flex-col gap-4">
+                       <Button variant="outline" asChild>
+                        <Link to="/login">Student Login</Link>
+                      </Button>
+                      <Button asChild>
+                        <Link to="/provider/login">Partner Login</Link>
+                      </Button>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative py-28 lg:py-40 border-b">
-        <div className="absolute inset-0 bg-grid-slate-900/[0.04] bg-[bottom_1px_center] dark:bg-grid-slate-400/[0.05] dark:bg-bottom_1px_center"></div>
-        <div className="container mx-auto px-6 text-center relative">
-          <h1 className="text-5xl md:text-7xl font-serif font-bold mb-6 text-gray-900 dark:text-gray-100 animate-fade-in">
-            Elevate Your Campus Experience.
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 animate-fade-in" style={{animationDelay: '200ms'}}>
-            CampusConnect is the essential platform for modern students, bringing together academics, services, and community into one seamless, intelligent hub.
-          </p>
-          <div className="flex gap-4 justify-center animate-fade-in" style={{animationDelay: '400ms'}}>
-            <Button size="lg" asChild className="h-12 px-8 text-base">
-              <Link to="/register">
-                Join Now <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild className="h-12 px-8 text-base">
-              <Link to="/provider/register">Partner with Us</Link>
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className="py-24 bg-secondary/50">
-        <div className="container mx-auto px-6">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-4xl font-serif font-bold mb-4">A Foundation for Success</h2>
-            <p className="text-muted-foreground text-lg">
-              We provide the tools and connections you need to thrive during your academic journey and beyond.
+      <main>
+        {/* Hero Section */}
+        <section className="py-20 md:py-32 lg:py-40 relative overflow-hidden">
+          <div className="absolute inset-0 bg-grid-slate-900/[0.04] bg-[bottom_1px_center] dark:bg-grid-slate-400/[0.05] dark:bg-bottom mask-gradient"></div>
+          <div className="container relative z-10 text-center animate-fade-in">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif font-bold tracking-tighter mb-6">
+              The <span className="text-gradient">Smart Campus</span> Experience
+            </h1>
+            <p className="max-w-3xl mx-auto text-lg md:text-xl text-muted-foreground mb-10">
+              CampusConnect is your all-in-one platform for a seamless university life. Order food, print documents, buy essentials, and stay updated with campus events - all in one place.
             </p>
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
+              <Button size="lg" asChild>
+                <Link to="/register">
+                  Get Started <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild>
+                <Link to="/provider/register">Become a Partner</Link>
+              </Button>
+            </div>
           </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <div key={index} className="text-center p-8 bg-background rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 animate-slide-up" style={{animationDelay: `${index * 100}ms`}}>
-                <div className={`inline-flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/50 dark:to-purple-900/50 mb-5`}>
-                  <feature.icon className={`h-7 w-7 ${feature.color}`} />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                <p className="text-muted-foreground">{feature.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Testimonials Section */}
-      <section id="testimonials" className="py-24">
-        <div className="container mx-auto px-6">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-4xl font-serif font-bold mb-4">From Our Students</h2>
-            <p className="text-muted-foreground text-lg">
-              Hear what the CampusConnect community has to say about their experience.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {testimonials.map((testimonial, index) => (
-              <Card key={index} className="p-8 border-border/60 shadow-sm animate-fade-in" style={{animationDelay: `${index * 150}ms`}}>
-                <Quote className="w-10 h-10 text-blue-200 dark:text-blue-900 mb-4" fill="currentColor" />
-                <p className="text-muted-foreground text-lg mb-6 italic">"{testimonial.text}"</p>
-                <div className="flex items-center">
-                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold mr-4">
-                    {testimonial.name.split(' ').map(n => n[0]).join('')}
-                  </div>
-                  <div>
-                    <div className="font-semibold text-foreground">{testimonial.name}</div>
-                    <div className="text-muted-foreground text-sm">{testimonial.role}</div>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section id="cta" className="py-24 bg-secondary/50">
-        <div className="container mx-auto px-6">
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl p-12 text-center shadow-xl">
-            <h3 className="text-4xl font-serif font-bold mb-4">Ready to Connect?</h3>
-            <p className="text-lg text-blue-100 max-w-2xl mx-auto mb-8">
-              Create your free account today and unlock a smarter way to navigate campus life.
-            </p>
-            <Button size="lg" variant="secondary" asChild className="bg-white text-blue-600 hover:bg-gray-100 h-14 px-10 text-lg font-semibold shadow-2xl hover:shadow-none transition-shadow transform hover:-translate-y-1">
-              <Link to="/register">
-                <CheckCircle className="mr-3 h-6 w-6" />
-                Create Your Account
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-background border-t">
-        <div className="container mx-auto px-6 py-12">
-          <div className="grid md:grid-cols-12 gap-8 mb-8">
-            <div className="col-span-12 md:col-span-4">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-9 h-9 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                  <Logo className="text-white" width={20} height={20} />
-                </div>
-                <span className="text-lg font-semibold">CampusConnect</span>
-              </div>
-              <p className="text-muted-foreground">
-                The essential platform for modern campus life.
+        {/* Features Section */}
+        <section id="features" className="py-20 md:py-28 bg-muted/50">
+          <div className="container">
+            <div className="text-center max-w-3xl mx-auto">
+              <h2 className="text-3xl md:text-4xl font-serif font-bold">All-in-One Campus Solution</h2>
+              <p className="mt-4 text-lg text-muted-foreground">
+                Everything you need for your campus life, right at your fingertips.
               </p>
             </div>
-            
-            <div className="col-span-6 md:col-span-2">
-              <h4 className="font-semibold mb-4 text-foreground">Platform</h4>
-              <ul className="space-y-3">
-                <li><a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a></li>
-                <li><Link to="/register" className="text-muted-foreground hover:text-foreground transition-colors">For Students</Link></li>
-                <li><Link to="/provider/register" className="text-muted-foreground hover:text-foreground transition-colors">For Partners</Link></li>
-              </ul>
-            </div>
-            
-            <div className="col-span-6 md:col-span-2">
-              <h4 className="font-semibold mb-4 text-foreground">Company</h4>
-              <ul className="space-y-3">
-                <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">About Us</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Careers</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Contact</a></li>
-              </ul>
-            </div>
-
-            <div className="col-span-6 md:col-span-2">
-              <h4 className="font-semibold mb-4 text-foreground">Login</h4>
-              <ul className="space-y-3">
-                <li><Link to="/login" className="text-muted-foreground hover:text-foreground transition-colors">Student Portal</Link></li>
-                <li><Link to="/provider/login" className="text-muted-foreground hover:text-foreground transition-colors">Partner Portal</Link></li>
-                <li><Link to="/admin/login" className="text-muted-foreground hover:text-foreground transition-colors">Admin Portal</Link></li>
-              </ul>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mt-12">
+              {features.map((feature, index) => (
+                <Card key={index} className="bg-background shadow-lg hover:shadow-xl transition-shadow duration-300 hover:-translate-y-1 animate-slide-up" style={{ animationDelay: `${index * 100}ms` }}>
+                  <CardContent className="p-6 text-center">
+                    <div className={`inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary-100 mb-6`}>
+                      {feature.icon}
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
+                    <p className="text-muted-foreground">{feature.description}</p>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </div>
-          
-          <div className="border-t pt-8 flex flex-col md:flex-row justify-between items-center text-sm">
-            <p className="text-muted-foreground mb-4 md:mb-0">
-              © 2025 CampusConnect. All rights reserved.
-            </p>
-            <div className="flex space-x-4 text-muted-foreground">
-                <a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a>
-                <a href="#" className="hover:text-foreground transition-colors">Terms of Service</a>
+        </section>
+
+        {/* Benefits Section */}
+        <section id="benefits" className="py-20 md:py-28">
+          <div className="container">
+            <div className="text-center max-w-3xl mx-auto">
+              <h2 className="text-3xl md:text-4xl font-serif font-bold">Why You'll Love CampusConnect</h2>
+              <p className="mt-4 text-lg text-muted-foreground">
+                We focus on simplifying your university experience so you can focus on your growth.
+              </p>
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+              {benefits.map((benefit, index) => (
+                <div key={index} className="flex items-start gap-4 animate-fade-in" style={{ animationDelay: `${index * 150}ms` }}>
+                  <div className="flex-shrink-0 h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                    {benefit.icon}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold">{benefit.title}</h3>
+                    <p className="mt-2 text-muted-foreground">{benefit.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Testimonials Section */}
+        <section id="testimonials" className="py-20 md:py-28 bg-muted/50">
+          <div className="container">
+            <div className="text-center max-w-3xl mx-auto">
+              <h2 className="text-3xl md:text-4xl font-serif font-bold">From Our Community</h2>
+              <p className="mt-4 text-lg text-muted-foreground">
+                See what students and faculty are saying about CampusConnect.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
+              {testimonials.map((testimonial, index) => (
+                <Card key={index} className="bg-background shadow-lg animate-fade-in" style={{ animationDelay: `${index * 150}ms` }}>
+                  <CardContent className="p-6">
+                    <p className="text-muted-foreground mb-6">"{testimonial.quote}"</p>
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                        <Users className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="font-bold">{testimonial.name}</p>
+                        <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+        
+        {/* CTA Section */}
+        <section className="py-20 md:py-28">
+          <div className="container text-center">
+            <div className="max-w-3xl mx-auto">
+              <h2 className="text-4xl md:text-5xl font-serif font-bold tracking-tight mb-6">
+                Ready to <span className="text-gradient">Upgrade</span> Your Campus Life?
+              </h2>
+              <p className="text-lg md:text-xl text-muted-foreground mb-10">
+                Join thousands of students and partners who are already part of the smart campus revolution.
+              </p>
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
+                <Button size="lg" asChild>
+                  <Link to="/register">
+                    Create Student Account
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" asChild>
+                  <Link to="/provider/register">Join as a Partner</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t">
+        <div className="container py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} CampusConnect. All rights reserved.</p>
+          <div className="flex items-center gap-4">
+            <Link to="#" className="text-sm text-muted-foreground hover:text-foreground">Privacy Policy</Link>
+            <Link to="#" className="text-sm text-muted-foreground hover:text-foreground">Terms of Service</Link>
           </div>
         </div>
       </footer>
