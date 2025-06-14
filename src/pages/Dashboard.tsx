@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserProfile } from "@/hooks/useUserProfile";
@@ -29,7 +28,7 @@ import {
 } from "lucide-react";
 import { NewProfilePage } from "@/components/profile/NewProfilePage";
 import { EventsAndClubsPage } from "@/components/events/EventsAndClubsPage";
-import { NotificationDropdown } from "@/components/NotificationDropdown";
+import NotificationDropdown from "@/components/NotificationDropdown";
 
 const Dashboard = () => {
   const [activeSection, setActiveSection] = useState("overview");

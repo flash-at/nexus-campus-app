@@ -128,13 +128,13 @@ export const getActivityPointsHistory = async (userId: string): Promise<Activity
       return [];
     }
 
-    // Ensure data matches our interface
+    // Ensure data matches our interface with proper type casting
     return (data || []).map((item: any): ActivityPointsTransaction => ({
       id: item.id,
       user_id: item.user_id,
       points: item.points,
       reason: item.reason,
-      transaction_type: item.transaction_type,
+      transaction_type: item.transaction_type as 'earned' | 'spent', // Type assertion for proper typing
       created_at: item.created_at
     }));
   } catch (error) {
