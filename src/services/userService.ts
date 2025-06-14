@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "firebase/auth";
 
@@ -231,14 +232,33 @@ export const getUserProfile = async (firebaseUid: string): Promise<UserProfile |
         .eq("firebase_uid", firebaseUid)
         .maybeSingle();
 
-      if (updatedData) {
-        data.engagement = updatedData.engagement || getDefaultEngagement(data.id);
+      if (updatedData && updatedData.engagement) {
+        data.engagement = updatedData.engagement;
+      } else {
+        // Fallback to ensure we always have engagement data
+        data.engagement = {
+          id: '',
+          user_id: data.id,
+          activity_points: 150,
+          badges: null,
+          last_login: null,
+          events_attended: [],
+          feedback_count: 0
+        };
       }
     }
 
-    // Ensure engagement is properly structured
+    // Ensure engagement is properly structured as a final fallback
     if (!data.engagement) {
-      data.engagement = getDefaultEngagement(data.id);
+      data.engagement = {
+        id: '',
+        user_id: data.id,
+        activity_points: 150,
+        badges: null,
+        last_login: null,
+        events_attended: [],
+        feedback_count: 0
+      };
     }
 
     console.log("User profile fetched successfully:", data);
