@@ -48,7 +48,7 @@ const NotifyStudentsDialog = ({ clubId, clubName, members }: NotifyStudentsDialo
 
       console.log('Notifications to insert:', notifications);
 
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('notifications')
         .insert(notifications);
 

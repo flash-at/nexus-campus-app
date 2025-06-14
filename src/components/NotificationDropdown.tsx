@@ -34,11 +34,30 @@ const NotificationDropdown = ({ clubId, userId }: NotificationDropdownProps) => 
     try {
       console.log('Fetching notifications for user:', userId, 'club:', clubId);
       
-      // Create the base query
-      let query = (supabase as any)
+      // Get the current user's internal ID from the users table
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('firebase_uid', userId)
+        .single();
+
+      if (userError) {
+        console.error('Error fetching user data:', userError);
+        return;
+      }
+
+      if (!userData?.id) {
+        console.error('No user found with firebase_uid:', userId);
+        return;
+      }
+
+      console.log('Found user ID:', userData.id);
+
+      // Create the base query for notifications
+      let query = supabase
         .from('notifications')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', userData.id)
         .order('created_at', { ascending: false })
         .limit(10);
 
@@ -56,13 +75,9 @@ const NotificationDropdown = ({ clubId, userId }: NotificationDropdownProps) => 
       
       console.log('Fetched notifications:', data);
       
-      // Remove duplicates based on title and message
-      const uniqueNotifications = data?.filter((notification: any, index: number, self: any[]) => 
-        index === self.findIndex(n => n.title === notification.title && n.message === notification.message)
-      ) || [];
-      
-      setNotifications(uniqueNotifications);
-      setUnreadCount(uniqueNotifications.filter((n: any) => !n.read).length);
+      const notificationData = data || [];
+      setNotifications(notificationData);
+      setUnreadCount(notificationData.filter(n => !n.read).length);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
@@ -70,7 +85,7 @@ const NotificationDropdown = ({ clubId, userId }: NotificationDropdownProps) => 
 
   const markAsRead = async (notificationId: string) => {
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('notifications')
         .update({ read: true })
         .eq('id', notificationId);
@@ -88,7 +103,7 @@ const NotificationDropdown = ({ clubId, userId }: NotificationDropdownProps) => 
 
   const deleteNotification = async (notificationId: string) => {
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('notifications')
         .delete()
         .eq('id', notificationId);
@@ -131,7 +146,7 @@ const NotificationDropdown = ({ clubId, userId }: NotificationDropdownProps) => 
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-80 max-h-96 overflow-y-auto" align="end">
-        <div className="p-2 font-semibold text-sm border-b">
+        <div className="p-2 font-semibold text-sm border-b bg-background">
           Notifications
           {unreadCount > 0 && (
             <span className="ml-2 text-xs text-muted-foreground">
