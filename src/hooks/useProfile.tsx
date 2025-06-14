@@ -12,7 +12,7 @@ export const useProfile = () => {
     if (user) {
       try {
         setLoading(true);
-        const userProfile = await getUserProfile(user.uid);
+        const userProfile = await getUserProfile(user.id);
         setProfile(userProfile);
       } catch (error) {
         console.error("Failed to fetch profile:", error);
