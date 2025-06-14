@@ -1,12 +1,12 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, Eye, EyeOff, Mail, Lock, Briefcase, Building } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Mail, Lock } from "lucide-react";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -48,12 +48,14 @@ const ProviderLogin = () => {
                   CampusConnect
                 </h1>
               </div>
-               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Partner Portal</h2>
-               <p className="text-gray-600 dark:text-gray-400">Sign in to manage your services</p>
             </div>
 
             <Card className="shadow-2xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
-              <CardContent className="p-8">
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100">Partner Portal</CardTitle>
+                <CardDescription>Sign in to manage your services</CardDescription>
+              </CardHeader>
+              <CardContent className="p-8 pt-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2">
                     <Label htmlFor="email" className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -104,16 +106,15 @@ const ProviderLogin = () => {
                     {isLoading ? "Signing In..." : "Sign In"}
                   </Button>
                 </form>
-
-                <div className="mt-8 text-center pt-6 border-t border-gray-200 dark:border-gray-700">
+              </CardContent>
+              <CardFooter className="flex justify-center text-center pt-0 pb-8">
                   <p className="text-gray-600 dark:text-gray-400">
                     Not a partner yet?{" "}
                     <Link to="/provider/register" className="text-green-600 dark:text-green-400 hover:underline font-semibold">
                       Register Here
                     </Link>
                   </p>
-                </div>
-              </CardContent>
+              </CardFooter>
             </Card>
           </div>
         </div>
