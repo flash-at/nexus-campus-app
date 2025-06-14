@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "firebase/auth";
 
@@ -61,6 +60,17 @@ export interface UserProfile {
   documents: UserDocument[];
   preferences: Preferences | null;
 }
+
+// Helper function to get default engagement data
+const getDefaultEngagement = (userId: string): Engagement => ({
+  id: '',
+  user_id: userId,
+  activity_points: 150, // Default starting points
+  badges: null,
+  last_login: null,
+  events_attended: [],
+  feedback_count: 0
+});
 
 export const checkHallTicketExists = async (hallTicket: string): Promise<boolean> => {
   try {
@@ -131,14 +141,49 @@ export const createUserProfile = async (
 
     console.log("User profile created successfully:", data);
 
-    // After creating the user profile, fetch the complete profile with relations
-    // The trigger should have automatically created related data
+    // After creating the user profile, manually create engagement data if it doesn't exist
+    await ensureEngagementData(data.id);
+
+    // Fetch the complete profile with relations
     const completeProfile = await getUserProfile(firebaseUser.uid);
     
     return completeProfile;
   } catch (error) {
     console.error("Error creating user profile:", error);
     return null;
+  }
+};
+
+// Function to ensure engagement data exists for a user
+const ensureEngagementData = async (userId: string): Promise<void> => {
+  try {
+    // Check if engagement data exists
+    const { data: existingEngagement } = await supabase
+      .from("engagement")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (!existingEngagement) {
+      // Create engagement data with default values
+      const { error } = await supabase
+        .from("engagement")
+        .insert({
+          user_id: userId,
+          activity_points: 150,
+          feedback_count: 0,
+          events_attended: [],
+          last_login: new Date().toISOString()
+        });
+
+      if (error) {
+        console.error("Error creating engagement data:", error);
+      } else {
+        console.log("Created engagement data for user:", userId);
+      }
+    }
+  } catch (error) {
+    console.error("Error ensuring engagement data:", error);
   }
 };
 
@@ -166,6 +211,34 @@ export const getUserProfile = async (firebaseUid: string): Promise<UserProfile |
     if (!data) {
       console.log("No user profile found for UID:", firebaseUid);
       return null;
+    }
+
+    // Ensure engagement data exists if it's null
+    if (!data.engagement) {
+      console.log("Engagement data is null, ensuring it exists for user:", data.id);
+      await ensureEngagementData(data.id);
+      
+      // Refetch the profile to get the newly created engagement data
+      const { data: updatedData } = await supabase
+        .from("users")
+        .select(`
+          *,
+          academic_info(*),
+          engagement(*),
+          documents(*),
+          preferences(*)
+        `)
+        .eq("firebase_uid", firebaseUid)
+        .maybeSingle();
+
+      if (updatedData) {
+        data.engagement = updatedData.engagement || getDefaultEngagement(data.id);
+      }
+    }
+
+    // Ensure engagement is properly structured
+    if (!data.engagement) {
+      data.engagement = getDefaultEngagement(data.id);
     }
 
     console.log("User profile fetched successfully:", data);
