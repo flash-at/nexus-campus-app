@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -128,7 +129,7 @@ export const IdCard: React.FC<IdCardProps> = ({ className = "" }) => {
   return (
     <div className={`w-full max-w-sm mx-auto font-sans ${className}`}>
       {/* Card Container */}
-      <div className="relative w-full h-56 perspective-[1200px] mb-6">
+      <div className="relative w-full h-52 sm:h-56 perspective-[1200px] mb-6">
         <div 
           className={`
             relative w-full h-full transition-transform duration-700 ease-in-out transform-style-preserve-3d
@@ -141,34 +142,34 @@ export const IdCard: React.FC<IdCardProps> = ({ className = "" }) => {
               <CardContent className="p-4 h-full flex flex-col justify-between relative z-10">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="text-lg font-bold">CampusConnect</h3>
-                    <p className="text-xs text-slate-400">Digital Student ID</p>
+                    <h3 className="text-base sm:text-lg font-bold">CampusConnect</h3>
+                    <p className="text-[11px] sm:text-xs text-slate-400">Digital Student ID</p>
                   </div>
                   <Logo className="h-8 w-8 text-cyan-400" />
                 </div>
                 
-                <div className="flex items-center space-x-4">
-                  <Avatar className="h-20 w-20 border-2 border-slate-600">
+                <div className="flex items-center space-x-3 sm:space-x-4">
+                  <Avatar className="h-16 w-16 sm:h-20 sm:w-20 border-2 border-slate-600">
                     <AvatarImage src={profile?.profile_picture_url || undefined} />
                     <AvatarFallback className="bg-slate-700 text-slate-300">
                       {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'ST'}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <h2 className="font-bold text-lg truncate">{profile?.full_name || 'Student Name'}</h2>
-                    <p className="text-sm text-slate-300">{profile?.hall_ticket || 'CS21B0001'}</p>
-                    <p className="text-xs text-slate-400 truncate">{profile?.department || 'Computer Science'}</p>
+                    <h2 className="font-bold text-base sm:text-lg truncate">{profile?.full_name || 'Student Name'}</h2>
+                    <p className="text-xs sm:text-sm text-slate-300">{profile?.hall_ticket || 'CS21B0001'}</p>
+                    <p className="text-[11px] sm:text-xs text-slate-400 truncate">{profile?.department || 'Computer Science'}</p>
                   </div>
                 </div>
 
                 <div className="flex justify-between items-end">
-                  <Cpu className="h-8 w-8 text-slate-600" />
+                  <Cpu className="h-7 w-7 sm:h-8 sm:w-8 text-slate-600" />
                   <div className="text-right">
-                    <Badge variant="outline" className="border-cyan-400 text-cyan-400 bg-cyan-400/10">
+                    <Badge variant="outline" className="border-cyan-400 text-cyan-400 bg-cyan-400/10 text-[11px] sm:text-xs px-2 py-0.5 sm:px-2.5 sm:py-1">
                       <ShieldCheck className="h-3 w-3 mr-1" />
                       Verified
                     </Badge>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-[11px] sm:text-xs text-slate-400 mt-1">
                       Valid: {profile?.academic_year || '2021-2025'}
                     </p>
                   </div>
@@ -183,10 +184,10 @@ export const IdCard: React.FC<IdCardProps> = ({ className = "" }) => {
              <Card className="w-full h-full bg-slate-900 text-slate-100 border-slate-700 shadow-2xl shadow-cyan-500/10 rounded-2xl overflow-hidden relative bg-grid-slate-400/[0.05]">
               <div className="absolute top-4 left-0 w-full h-10 bg-slate-950"></div>
               <CardContent className="p-4 h-full flex flex-col justify-center items-center relative z-10">
-                <div className="w-32 h-32 p-2 bg-white rounded-lg animate-glow">
+                <div className="w-28 h-28 sm:w-32 sm:h-32 p-2 bg-white rounded-lg animate-glow">
                   <img src={generateQRCodeUrl()} alt="QR Code" className="w-full h-full" />
                 </div>
-                <p className="text-sm text-slate-300 mt-4 text-center">
+                <p className="text-xs sm:text-sm text-slate-300 mt-4 text-center">
                   Scan for verification and campus access.
                 </p>
                 <p className="text-xs text-slate-500 mt-2 absolute bottom-4">
