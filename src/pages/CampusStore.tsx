@@ -26,48 +26,27 @@ const CampusStore = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchCategories();
-    fetchProducts();
+    // For now, we'll use mock data until the database tables are created
+    setCategories([
+      { id: 'food', name: 'Food & Beverages', description: 'Snacks, meals, and drinks', icon: 'utensils', display_order: 1 },
+      { id: 'xerox', name: 'Xerox & Printing', description: 'Document printing and copying services', icon: 'printer', display_order: 2 },
+      { id: 'stationery', name: 'Stationery', description: 'Notebooks, pens, and office supplies', icon: 'pencil', display_order: 3 },
+      { id: 'electronics', name: 'Electronics', description: 'Gadgets and tech accessories', icon: 'smartphone', display_order: 4 },
+      { id: 'merchandise', name: 'Merchandise', description: 'College branded items and apparel', icon: 'shirt', display_order: 5 },
+      { id: 'essentials', name: 'Essentials', description: 'Daily necessities and personal care', icon: 'shopping-bag', display_order: 6 }
+    ]);
+
+    // Mock products
+    setProducts([
+      { id: '1', name: 'Samosa', price: 15, category_id: 'food', available: true, in_stock: true, description: 'Crispy fried samosa', image_url: null },
+      { id: '2', name: 'Tea', price: 10, category_id: 'food', available: true, in_stock: true, description: 'Hot tea', image_url: null },
+      { id: '3', name: 'A4 Printing', price: 2, category_id: 'xerox', available: true, in_stock: true, description: 'Single side A4 printing', image_url: null },
+      { id: '4', name: 'Notebook', price: 50, category_id: 'stationery', available: true, in_stock: true, description: '200 pages notebook', image_url: null }
+    ]);
+
+    setIsLoading(false);
     fetchActiveOrders();
   }, []);
-
-  const fetchCategories = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('store_categories')
-        .select('*')
-        .eq('active', true)
-        .order('display_order');
-
-      if (error) throw error;
-      setCategories(data || []);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-      toast.error('Failed to load categories');
-    }
-  };
-
-  const fetchProducts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('store_items')
-        .select(`
-          *,
-          store_categories(name, icon),
-          vendors(business_name)
-        `)
-        .eq('available', true)
-        .eq('in_stock', true);
-
-      if (error) throw error;
-      setProducts(data || []);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      toast.error('Failed to load products');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const fetchActiveOrders = async () => {
     try {
@@ -126,7 +105,7 @@ const CampusStore = () => {
   });
 
   const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const serviceeFee = cartTotal > 0 ? (cartTotal < 100 ? 5 : cartTotal < 500 ? 10 : 16) : 0;
+  const serviceFee = cartTotal > 0 ? (cartTotal < 100 ? 5 : cartTotal < 500 ? 10 : 16) : 0;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -203,7 +182,7 @@ const CampusStore = () => {
         onUpdateQuantity={updateCartQuantity}
         onRemoveItem={removeFromCart}
         total={cartTotal}
-        serviceFee={serviceeFee}
+        serviceFee={serviceFee}
       />
     </div>
   );

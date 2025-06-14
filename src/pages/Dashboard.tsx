@@ -11,7 +11,7 @@ import {
   TrendingUp, BookOpen, Target, Newspaper, MessageCircle, Bot, Briefcase, Shield,
   Settings, LogOut, Bell, Clock, Zap, Menu, X, Package, Trophy, UserCog, IdCard
 } from "lucide-react";
-import { SidebarNav } from "@/components/dashboard/SidebarNav";
+import SidebarNav from "@/components/dashboard/SidebarNav";
 import { NewProfilePage } from "@/components/profile/NewProfilePage";
 import { EventsAndClubsPage } from "@/components/events/EventsAndClubsPage";
 import { IdCardPage } from "@/components/id-card/IdCardPage";

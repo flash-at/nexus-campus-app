@@ -1,3 +1,4 @@
+
 import {
   Calendar,
   CreditCard,
@@ -10,7 +11,7 @@ import {
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
-import { Icons } from "@/components/icons";
+import Logo from "@/components/Logo";
 import { useAuth } from "@/hooks/useAuth";
 import {
   DropdownMenu,
@@ -20,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -37,7 +39,7 @@ const sidebarItems: SidebarNavItem[] = [
   { id: "points", label: "Points & Vouchers", icon: Gift },
   { id: "events", label: "Events & Clubs", icon: Calendar },
   { id: "leaderboard", label: "Leaderboard", icon: Trophy },
-  { id: "campus-store", label: "Campus Store", icon: ShoppingBag }, // Add this line
+  { id: "campus-store", label: "Campus Store", icon: ShoppingBag },
 ];
 
 interface Props {
@@ -46,19 +48,19 @@ interface Props {
 
 const SidebarNav = ({ className }: Props) => {
   const { signOut, user } = useAuth();
-  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(
-    null
-  );
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchProfilePicture = async () => {
       setIsLoading(true);
       try {
+        if (!user?.uid) return;
+
         const { data, error } = await supabase
           .from("users")
-          .select("profile_picture_url")
-          .eq("id", user?.id)
+          .select("profile_picture_url, full_name")
+          .eq("firebase_uid", user.uid)
           .single();
 
         if (error) {
@@ -74,12 +76,12 @@ const SidebarNav = ({ className }: Props) => {
     };
 
     fetchProfilePicture();
-  }, [user?.id]);
+  }, [user?.uid]);
 
   return (
     <div className="flex flex-col h-full px-3 py-4 border-r bg-background">
       <NavLink to="/" className="flex items-center gap-2 space-x-2">
-        <Icons.logo className="h-6 w-6" />
+        <Logo className="h-6 w-6" />
         <span className="font-bold">CampusConnect</span>
       </NavLink>
       <div className="flex-1 space-y-1">
@@ -87,7 +89,7 @@ const SidebarNav = ({ className }: Props) => {
           {sidebarItems.map((item) => (
             <li key={item.id}>
               <NavLink
-                to={item.id === "profile" ? "/profile" : `/dashboard/${item.id}`}
+                to={item.id === "profile" ? "/profile" : item.id === "campus-store" ? "/campus-store" : `/dashboard/${item.id}`}
                 className={({ isActive }) =>
                   `flex items-center w-full p-2 text-sm font-medium transition-colors rounded-md hover:bg-secondary/50 ${
                     isActive ? "bg-secondary/50" : "text-muted-foreground"
@@ -112,13 +114,12 @@ const SidebarNav = ({ className }: Props) => {
                       <AvatarImage src={profilePictureUrl} alt="Profile" />
                     ) : (
                       <AvatarFallback>
-                        {user?.full_name?.charAt(0).toUpperCase()}
-                        {user?.full_name?.split(" ")[1]?.charAt(0).toUpperCase()}
+                        {user?.displayName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     )}
                   </Avatar>
                 )}
-                <span>{user?.full_name}</span>
+                <span>{user?.displayName || user?.email?.split('@')[0]}</span>
                 <Settings className="w-4 h-4 ml-auto" />
               </Button>
             </DropdownMenuTrigger>

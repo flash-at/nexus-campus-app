@@ -15,6 +15,7 @@ interface Order {
   pickup_deadline?: string;
   created_at: string;
   items: any[];
+  qr_code?: string;
 }
 
 interface OrderTrackingProps {
@@ -23,7 +24,6 @@ interface OrderTrackingProps {
 
 const OrderTracking = ({ order }: OrderTrackingProps) => {
   const [timeRemaining, setTimeRemaining] = useState<string>("");
-  const [qrCode, setQrCode] = useState<string>("");
 
   useEffect(() => {
     if (order.pickup_deadline) {
@@ -45,25 +45,6 @@ const OrderTracking = ({ order }: OrderTrackingProps) => {
       return () => clearInterval(timer);
     }
   }, [order.pickup_deadline]);
-
-  useEffect(() => {
-    fetchQrCode();
-  }, [order.id]);
-
-  const fetchQrCode = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('pickup_confirmations')
-        .select('qr_code')
-        .eq('order_id', order.id)
-        .single();
-
-      if (error) throw error;
-      if (data) setQrCode(data.qr_code);
-    } catch (error) {
-      console.error('Error fetching QR code:', error);
-    }
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -126,11 +107,11 @@ const OrderTracking = ({ order }: OrderTrackingProps) => {
           </div>
         </div>
 
-        {order.status === 'ready' && qrCode && (
+        {order.status === 'ready' && order.qr_code && (
           <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
             <QrCode className="h-8 w-8 mx-auto mb-2 text-green-600" />
             <p className="text-sm font-medium mb-2">Show this code for pickup:</p>
-            <p className="font-mono text-lg font-bold text-green-600">{qrCode}</p>
+            <p className="font-mono text-lg font-bold text-green-600">{order.qr_code}</p>
           </div>
         )}
 

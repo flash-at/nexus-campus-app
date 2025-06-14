@@ -71,15 +71,14 @@ const Cart = ({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem, total, s
 
       if (orderError) throw orderError;
 
-      // Generate QR code for pickup
+      // Generate QR code for pickup - simplified version
       const qrCode = `CC${Date.now()}${Math.random().toString(36).substr(2, 5)}`;
       
+      // For now, we'll store the QR code in the order itself until the pickup_confirmations table is available
       await supabase
-        .from('pickup_confirmations')
-        .insert({
-          order_id: order.id,
-          qr_code: qrCode
-        });
+        .from('orders')
+        .update({ qr_code: qrCode })
+        .eq('id', order.id);
 
       toast.success("Order placed successfully! You'll receive a notification when it's accepted.");
       
