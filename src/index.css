@@ -80,6 +80,10 @@
     animation: slideUp 0.6s ease-out;
   }
 
+  .animate-spin-slow {
+    animation: spin 8s linear infinite;
+  }
+
   .text-gradient {
     @apply bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent;
   }
@@ -138,6 +142,19 @@
   .transition-all {
     transition: all 0.3s ease;
   }
+
+  /* Glass morphism effect */
+  .backdrop-blur-sm {
+    backdrop-filter: blur(4px);
+  }
+
+  .backdrop-blur-md {
+    backdrop-filter: blur(12px);
+  }
+
+  .backdrop-blur-lg {
+    backdrop-filter: blur(16px);
+  }
 }
 
 @keyframes fadeIn {
@@ -159,5 +176,14 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
