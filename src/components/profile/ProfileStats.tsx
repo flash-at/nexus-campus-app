@@ -52,27 +52,27 @@ export const ProfileStats = ({ profile }: ProfileStatsProps) => {
   ];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
       {stats.map((section) => {
         const Icon = section.icon;
         return (
           <Card key={section.title} className={`hover:shadow-2xl transition-all duration-500 hover:scale-105 border-2 ${section.borderColor} ${section.bgColor} backdrop-blur-sm`}>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center text-xl font-bold">
-                <div className={`w-12 h-12 rounded-2xl ${section.bgColor} flex items-center justify-center mr-4 shadow-lg`}>
-                  <Icon className={`h-6 w-6 ${section.color}`} />
+            <CardHeader className="pb-3 sm:pb-4">
+              <CardTitle className="flex items-center text-lg sm:text-xl font-bold">
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl ${section.bgColor} flex items-center justify-center mr-3 sm:mr-4 shadow-lg`}>
+                  <Icon className={`h-5 w-5 sm:h-6 sm:w-6 ${section.color}`} />
                 </div>
-                <span className={section.color}>{section.title}</span>
+                <span className={`${section.color} text-sm sm:text-base lg:text-lg`}>{section.title}</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3 sm:space-y-4">
               {section.items.map((item, index) => (
-                <div key={index} className="flex justify-between items-center p-4 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-white/20 hover:bg-white/70 dark:hover:bg-gray-800/70 transition-all duration-300">
-                  <div className="flex items-center">
-                    <span className="text-lg mr-3">{item.icon}</span>
-                    <span className="text-sm text-muted-foreground font-semibold">{item.label}</span>
+                <div key={index} className="flex justify-between items-center p-3 sm:p-4 rounded-lg sm:rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-white/20 hover:bg-white/70 dark:hover:bg-gray-800/70 transition-all duration-300">
+                  <div className="flex items-center min-w-0 flex-1">
+                    <span className="text-base sm:text-lg mr-2 sm:mr-3 flex-shrink-0">{item.icon}</span>
+                    <span className="text-xs sm:text-sm text-muted-foreground font-semibold truncate">{item.label}</span>
                   </div>
-                  <span className="text-sm font-bold text-right max-w-[60%] truncate">
+                  <span className="text-xs sm:text-sm font-bold text-right max-w-[45%] sm:max-w-[60%] truncate ml-2">
                     {item.value}
                   </span>
                 </div>

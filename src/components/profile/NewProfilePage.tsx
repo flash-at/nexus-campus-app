@@ -10,14 +10,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useState } from "react";
 
 const ProfileSkeleton = () => (
-  <div className="space-y-8">
-    <div className="relative overflow-hidden rounded-lg">
-      <Skeleton className="h-64 w-full" />
+  <div className="space-y-4 sm:space-y-6 lg:space-y-8 p-4 sm:p-6">
+    <div className="relative overflow-hidden rounded-lg sm:rounded-xl">
+      <Skeleton className="h-48 sm:h-56 lg:h-64 w-full" />
     </div>
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
       {[...Array(3)].map((_, i) => (
         <div key={i} className="space-y-4">
-          <Skeleton className="h-48 w-full rounded-lg" />
+          <Skeleton className="h-40 sm:h-48 w-full rounded-lg" />
         </div>
       ))}
     </div>
@@ -33,7 +33,11 @@ export const NewProfilePage = () => {
   }
 
   if (!profile) {
-    return <CreateProfileForm onSuccess={refetch} />;
+    return (
+      <div className="p-4 sm:p-6">
+        <CreateProfileForm onSuccess={refetch} />
+      </div>
+    );
   }
 
   const handleUpdateSuccess = () => {
@@ -42,7 +46,7 @@ export const NewProfilePage = () => {
   };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8 max-w-7xl mx-auto p-4 sm:p-6">
       {/* Profile Header */}
       <ProfileHeader 
         profile={profile} 
@@ -57,7 +61,7 @@ export const NewProfilePage = () => {
 
       {/* Edit Profile Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] mx-4">
           <DialogHeader>
             <DialogTitle>Edit Profile</DialogTitle>
             <DialogDescription>

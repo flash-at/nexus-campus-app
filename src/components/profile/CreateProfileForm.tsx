@@ -1,61 +1,14 @@
 
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { createUserProfile, checkHallTicketExists } from "@/services/userService";
 import { toast } from "sonner";
-import { useState } from "react";
-import { GraduationCap, User, Building, Calendar, Phone, IdCard } from "lucide-react";
-
-const profileFormSchema = z.object({
-  fullName: z.string().min(2, "Full name must be at least 2 characters.").max(60),
-  hallTicket: z.string().min(8, "Hall ticket must be at least 8 characters.").max(15),
-  department: z.string().min(2, "Please select a department."),
-  academicYear: z.string().min(4, "Please select your academic year."),
-  phoneNumber: z.string().length(10, "Phone number must be 10 digits."),
-});
-
-type ProfileFormValues = z.infer<typeof profileFormSchema>;
-
-const departments = [
-  "Computer Science and Engineering",
-  "Electronics and Communication Engineering",
-  "Mechanical Engineering",
-  "Civil Engineering",
-  "Electrical and Electronics Engineering",
-  "Information Technology",
-  "Chemical Engineering",
-  "Biotechnology",
-  "Aerospace Engineering",
-  "Automobile Engineering"
-];
-
-const academicYears = [
-  "1st Year",
-  "2nd Year", 
-  "3rd Year",
-  "4th Year",
-  "5th Year"
-];
+import { User, GraduationCap, Phone, IdCard, Building } from "lucide-react";
 
 interface CreateProfileFormProps {
   onSuccess: () => void;
@@ -63,218 +16,204 @@ interface CreateProfileFormProps {
 
 export const CreateProfileForm = ({ onSuccess }: CreateProfileFormProps) => {
   const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
-
-  const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileFormSchema),
-    defaultValues: {
-      fullName: "",
-      hallTicket: "",
-      department: "",
-      academicYear: "",
-      phoneNumber: "",
-    },
-    mode: "onChange",
+  const [isCreating, setIsCreating] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName: "",
+    hallTicket: "",
+    department: "",
+    academicYear: "",
+    phoneNumber: "",
   });
 
-  async function onSubmit(data: ProfileFormValues) {
+  const departments = [
+    "Computer Science & Engineering",
+    "Electronics & Communication Engineering", 
+    "Mechanical Engineering",
+    "Civil Engineering",
+    "Electrical & Electronics Engineering",
+    "Information Technology",
+    "Chemical Engineering",
+    "Biotechnology"
+  ];
+
+  const academicYears = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!user) {
       toast.error("You must be logged in to create a profile.");
       return;
     }
 
-    setIsLoading(true);
-    const toastId = toast.loading("Creating your profile...");
+    const { fullName, hallTicket, department, academicYear, phoneNumber } = formData;
+    if (!fullName || !hallTicket || !department || !academicYear || !phoneNumber) {
+      toast.error("Please fill all fields.");
+      return;
+    }
 
+    if (hallTicket.length !== 10) {
+      toast.error("Hall ticket must be exactly 10 characters.");
+      return;
+    }
+
+    if (phoneNumber.length !== 10) {
+      toast.error("Phone number must be exactly 10 digits.");
+      return;
+    }
+
+    setIsCreating(true);
     try {
-      // Check if hall ticket already exists
-      const hallTicketExists = await checkHallTicketExists(data.hallTicket);
+      const hallTicketExists = await checkHallTicketExists(hallTicket);
       if (hallTicketExists) {
-        toast.dismiss(toastId);
-        toast.error("Hall ticket already exists. Please use a different hall ticket.");
-        setIsLoading(false);
+        toast.error("This Hall Ticket number is already registered.");
+        setIsCreating(false);
         return;
       }
 
-      const profile = await createUserProfile(user, {
-        fullName: data.fullName,
-        hallTicket: data.hallTicket,
-        department: data.department,
-        academicYear: data.academicYear,
-        phoneNumber: data.phoneNumber,
-      });
-
-      toast.dismiss(toastId);
-
-      if (profile) {
+      const createdProfile = await createUserProfile(user, formData);
+      if (createdProfile) {
         toast.success("🎉 Welcome to CampusConnect! Your profile has been created successfully!");
         onSuccess();
       } else {
         toast.error("Failed to create profile. Please try again.");
       }
     } catch (error) {
-      toast.dismiss(toastId);
       console.error("Profile creation error:", error);
-      toast.error("Failed to create profile. Please try again.");
+      toast.error("An unexpected error occurred during profile creation.");
     } finally {
-      setIsLoading(false);
+      setIsCreating(false);
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-950 dark:via-blue-950 dark:to-purple-950 p-4 flex items-center justify-center">
-      <Card className="w-full max-w-2xl shadow-2xl border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
-        <CardHeader className="text-center pb-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-lg">
-          <div className="w-20 h-20 mx-auto mb-4 bg-white/20 rounded-full flex items-center justify-center">
-            <GraduationCap className="w-10 h-10" />
+    <div className="max-w-2xl mx-auto p-4 sm:p-6">
+      <Card className="shadow-2xl border-0 bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 dark:from-gray-900 dark:via-blue-950/30 dark:to-purple-950/30 backdrop-blur-xl">
+        <CardHeader className="text-center space-y-4 pb-6">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-xl">
+            <GraduationCap className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
           </div>
-          <CardTitle className="text-3xl font-bold mb-2">Join CampusConnect</CardTitle>
-          <p className="text-blue-100">Create your profile to get your unique CampusConnect ID</p>
+          <div>
+            <CardTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Welcome to CampusConnect! 🎓
+            </CardTitle>
+            <CardDescription className="text-base sm:text-lg mt-2 text-muted-foreground">
+              Complete your profile to unlock all campus services and features
+            </CardDescription>
+          </div>
         </CardHeader>
         
-        <CardContent className="p-8">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="fullName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center text-gray-700 dark:text-gray-300 font-medium">
-                      <User className="w-4 h-4 mr-2 text-blue-600" />
-                      Full Name
-                    </FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Enter your full name" 
-                        className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-colors"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+        <CardContent className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="fullName" className="text-sm sm:text-base font-semibold flex items-center">
+                <User className="w-4 h-4 mr-2 text-blue-500" />
+                Full Name
+              </Label>
+              <Input 
+                id="fullName" 
+                value={formData.fullName} 
+                onChange={(e) => handleInputChange("fullName", e.target.value)}
+                placeholder="e.g., John Doe" 
+                className="h-11 sm:h-12 text-sm sm:text-base border-2 border-blue-200 focus:border-blue-500 rounded-xl"
+                required 
               />
+            </div>
 
-              <FormField
-                control={form.control}
-                name="hallTicket"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center text-gray-700 dark:text-gray-300 font-medium">
-                      <IdCard className="w-4 h-4 mr-2 text-purple-600" />
-                      Hall Ticket Number
-                    </FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="e.g., CS21B0001" 
-                        className="h-12 border-2 border-gray-200 focus:border-purple-500 rounded-xl transition-colors"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            <div className="space-y-2">
+              <Label htmlFor="hallTicket" className="text-sm sm:text-base font-semibold flex items-center">
+                <IdCard className="w-4 h-4 mr-2 text-purple-500" />
+                CampusConnect ID (Hall Ticket)
+              </Label>
+              <Input 
+                id="hallTicket" 
+                value={formData.hallTicket} 
+                onChange={(e) => handleInputChange("hallTicket", e.target.value.toUpperCase())}
+                placeholder="e.g., 2303A52037" 
+                maxLength={10}
+                className="h-11 sm:h-12 text-sm sm:text-base border-2 border-purple-200 focus:border-purple-500 rounded-xl font-mono"
+                required 
               />
+              <p className="text-xs sm:text-sm text-muted-foreground">This will be your unique CampusConnect ID</p>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="department"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center text-gray-700 dark:text-gray-300 font-medium">
-                        <Building className="w-4 h-4 mr-2 text-green-600" />
-                        Department
-                      </FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-green-500 rounded-xl">
-                            <SelectValue placeholder="Select department" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {departments.map((dept) => (
-                            <SelectItem key={dept} value={dept}>
-                              {dept}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            <div className="space-y-2">
+              <Label htmlFor="department" className="text-sm sm:text-base font-semibold flex items-center">
+                <Building className="w-4 h-4 mr-2 text-green-500" />
+                Department
+              </Label>
+              <Select value={formData.department} onValueChange={(value) => handleInputChange("department", value)}>
+                <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base border-2 border-green-200 focus:border-green-500 rounded-xl">
+                  <SelectValue placeholder="Select Your Department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map((dept) => (
+                    <SelectItem key={dept} value={dept} className="text-sm sm:text-base">
+                      {dept}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-                <FormField
-                  control={form.control}
-                  name="academicYear"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center text-gray-700 dark:text-gray-300 font-medium">
-                        <Calendar className="w-4 h-4 mr-2 text-orange-600" />
-                        Academic Year
-                      </FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-orange-500 rounded-xl">
-                            <SelectValue placeholder="Select year" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {academicYears.map((year) => (
-                            <SelectItem key={year} value={year}>
-                              {year}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="academicYear" className="text-sm sm:text-base font-semibold flex items-center">
+                <GraduationCap className="w-4 h-4 mr-2 text-orange-500" />
+                Academic Year
+              </Label>
+              <Select value={formData.academicYear} onValueChange={(value) => handleInputChange("academicYear", value)}>
+                <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base border-2 border-orange-200 focus:border-orange-500 rounded-xl">
+                  <SelectValue placeholder="Select Academic Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {academicYears.map((year) => (
+                    <SelectItem key={year} value={year} className="text-sm sm:text-base">
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-              <FormField
-                control={form.control}
-                name="phoneNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center text-gray-700 dark:text-gray-300 font-medium">
-                      <Phone className="w-4 h-4 mr-2 text-pink-600" />
-                      Phone Number
-                    </FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Enter 10-digit phone number" 
-                        className="h-12 border-2 border-gray-200 focus:border-pink-500 rounded-xl transition-colors"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            <div className="space-y-2">
+              <Label htmlFor="phoneNumber" className="text-sm sm:text-base font-semibold flex items-center">
+                <Phone className="w-4 h-4 mr-2 text-pink-500" />
+                Phone Number
+              </Label>
+              <Input 
+                id="phoneNumber" 
+                type="tel" 
+                value={formData.phoneNumber} 
+                onChange={(e) => handleInputChange("phoneNumber", e.target.value.replace(/\D/g, ''))}
+                placeholder="e.g., 9876543210" 
+                maxLength={10}
+                className="h-11 sm:h-12 text-sm sm:text-base border-2 border-pink-200 focus:border-pink-500 rounded-xl"
+                required 
               />
+            </div>
 
-              <Button 
-                type="submit" 
-                disabled={isLoading || !form.formState.isValid}
-                className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                {isLoading ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                    Creating Profile...
-                  </div>
-                ) : (
-                  <div className="flex items-center">
-                    <GraduationCap className="w-5 h-5 mr-3" />
-                    Get My CampusConnect ID
-                  </div>
-                )}
-              </Button>
-            </form>
-          </Form>
+            <Button 
+              type="submit" 
+              className="w-full h-12 sm:h-14 text-base sm:text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105" 
+              disabled={isCreating}
+            >
+              {isCreating ? (
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                  Creating Your Profile...
+                </div>
+              ) : (
+                "🚀 Create My CampusConnect Profile"
+              )}
+            </Button>
+          </form>
+
+          <div className="text-center text-xs sm:text-sm text-muted-foreground pt-4 border-t border-gray-200 dark:border-gray-700">
+            Your information is secure and will only be used for campus services
+          </div>
         </CardContent>
       </Card>
     </div>
