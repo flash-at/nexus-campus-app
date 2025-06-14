@@ -241,7 +241,7 @@ export const ProfilePage = () => {
               <h2 className="text-3xl font-bold mb-2">{profile.full_name}</h2>
               <p className="text-muted-foreground mb-4">{profile.department}</p>
               
-              <div className="flex items-center justify-center md:justify-start gap-2 md:gap-4 flex-wrap">
+              <div className="flex items-center justify-center md:justify-start space-x-2 md:space-x-4 flex-wrap">
                 <Badge variant="outline" className="text-primary border-primary/30">
                   {profile.hall_ticket}
                 </Badge>

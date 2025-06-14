@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { UserProfile } from "@/services/userService";
@@ -61,7 +62,7 @@ export const ProfileStats = ({ profile }: ProfileStatsProps) => {
                 <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl ${section.bgColor} flex items-center justify-center mr-3 sm:mr-4 shadow-lg`}>
                   <Icon className={`h-5 w-5 sm:h-6 sm:w-6 ${section.color}`} />
                 </div>
-                <span className={`${section.color}`}>{section.title}</span>
+                <span className={`${section.color} text-sm sm:text-base lg:text-lg`}>{section.title}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 sm:space-y-4">

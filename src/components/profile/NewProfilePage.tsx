@@ -59,7 +59,7 @@ export const NewProfilePage = () => {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="points">Points History</TabsTrigger>
@@ -100,4 +100,3 @@ export const NewProfilePage = () => {
     </div>
   );
 };
-
