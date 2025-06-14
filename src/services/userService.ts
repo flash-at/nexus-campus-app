@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "firebase/auth";
 
@@ -64,6 +65,7 @@ export interface UserProfile {
 
 export const checkHallTicketExists = async (hallTicket: string): Promise<boolean> => {
   try {
+    console.log("Checking hall ticket:", hallTicket);
     const { data, error } = await supabase
       .from("users")
       .select("hall_ticket")
@@ -75,6 +77,7 @@ export const checkHallTicketExists = async (hallTicket: string): Promise<boolean
       return false;
     }
 
+    console.log("Hall ticket check result:", data !== null);
     return data !== null;
   } catch (error) {
     console.error("Error checking hall ticket:", error);
@@ -93,23 +96,58 @@ export const createUserProfile = async (
   }
 ): Promise<UserProfile | null> => {
   try {
-    const { error } = await supabase
+    console.log("Creating user profile for Firebase UID:", firebaseUser.uid);
+    console.log("Firebase user email:", firebaseUser.email);
+    console.log("Additional data:", additionalData);
+
+    // Get Firebase token first to ensure we're authenticated
+    const token = await firebaseUser.getIdToken();
+    console.log("Got Firebase token, length:", token?.length);
+
+    // Set the session with the Firebase token
+    const { error: sessionError } = await supabase.auth.setSession({
+      access_token: token,
+      refresh_token: token,
+    });
+
+    if (sessionError) {
+      console.error("Session error:", sessionError);
+      return null;
+    }
+
+    console.log("Session set successfully");
+
+    const insertData = {
+      firebase_uid: firebaseUser.uid,
+      full_name: additionalData.fullName,
+      hall_ticket: additionalData.hallTicket,
+      email: firebaseUser.email!,
+      department: additionalData.department,
+      academic_year: additionalData.academicYear,
+      phone_number: additionalData.phoneNumber,
+      email_verified: firebaseUser.emailVerified,
+    };
+
+    console.log("Inserting data:", insertData);
+
+    const { data, error } = await supabase
       .from("users")
-      .insert({
-        firebase_uid: firebaseUser.uid,
-        full_name: additionalData.fullName,
-        hall_ticket: additionalData.hallTicket,
-        email: firebaseUser.email!,
-        department: additionalData.department,
-        academic_year: additionalData.academicYear,
-        phone_number: additionalData.phoneNumber,
-        email_verified: firebaseUser.emailVerified,
-      });
+      .insert(insertData)
+      .select()
+      .single();
 
     if (error) {
       console.error("Error creating user profile:", error);
+      console.error("Error details:", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
       return null;
     }
+
+    console.log("User profile created successfully:", data);
 
     // After successful creation, fetch the full profile
     return await getUserProfile(firebaseUser.uid);
@@ -121,6 +159,8 @@ export const createUserProfile = async (
 
 export const getUserProfile = async (firebaseUid: string): Promise<UserProfile | null> => {
   try {
+    console.log("Fetching user profile for UID:", firebaseUid);
+    
     const { data, error } = await supabase
       .from("users")
       .select(`
@@ -142,6 +182,7 @@ export const getUserProfile = async (firebaseUid: string): Promise<UserProfile |
       return null;
     }
 
+    console.log("User profile fetched successfully:", data);
     return data as UserProfile;
   } catch (error) {
     console.error("Error fetching user profile:", error);
