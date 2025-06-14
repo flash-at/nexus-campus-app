@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 
 const Login = () => {
@@ -32,47 +33,23 @@ const Login = () => {
 
     try {
       if (isLogin) {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) {
-          if (error.message.includes('Invalid login credentials')) {
-            toast.error("Invalid email or password");
-          } else {
-            toast.error(error.message);
-          }
-          return;
-        }
-
-        if (data.user) {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        
+        if (userCredential.user) {
           toast.success("Welcome back!");
           navigate("/dashboard");
         }
       } else {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`
-          }
-        });
-
-        if (error) {
-          toast.error(error.message);
-          return;
-        }
-
-        if (data.user && !data.session) {
-          toast.success("Please check your email to confirm your account");
-        } else if (data.session) {
-          toast.success("Account created successfully!");
-          navigate("/dashboard");
-        }
+        // Redirect to register page for signup
+        navigate("/register");
       }
     } catch (error: any) {
-      toast.error("Authentication failed. Please try again.");
+      console.error("Authentication error:", error);
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
+        toast.error("Invalid email or password");
+      } else {
+        toast.error("Authentication failed. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }

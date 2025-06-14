@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, Eye, EyeOff, Mail, User, Phone, GraduationCap, Sparkles, Shield, Users, BookOpen, AlertCircle, CheckCircle } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Mail, User, Phone, GraduationCap, Sparkles, Shield, Users, BookOpen, AlertCircle } from "lucide-react";
 import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { createUserProfile, checkHallTicketExists } from "@/services/userService";
@@ -188,9 +188,15 @@ const Register = () => {
         // Continue with registration even if email verification fails
       }
       
-      // Create user profile in Supabase
+      // Create user profile in Supabase - convert Firebase user to the expected format
       console.log("Creating user profile...");
-      const profile = await createUserProfile(userCredential.user, {
+      const supabaseUser = {
+        id: userCredential.user.uid,
+        email: userCredential.user.email,
+        email_confirmed_at: userCredential.user.emailVerified ? new Date().toISOString() : null
+      };
+      
+      const profile = await createUserProfile(supabaseUser as any, {
         fullName: formData.fullName,
         hallTicket: formData.hallTicket,
         department: formData.department,
