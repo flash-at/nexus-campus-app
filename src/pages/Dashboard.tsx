@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { 
   User, ShoppingBag, Calendar, CreditCard, FileText, Store, MessageSquare, Users,
   TrendingUp, BookOpen, Target, Newspaper, MessageCircle, Bot, Briefcase, Shield,
-  Settings, LogOut, Bell, Clock, Zap, Menu, X
+  Settings, LogOut, Bell, Clock, Zap, Menu, X, Package
 } from "lucide-react";
 import { SidebarNav } from "@/components/dashboard/SidebarNav";
 import { NewProfilePage } from "@/components/profile/NewProfilePage";
@@ -34,6 +33,7 @@ const Dashboard = () => {
   const dashboardSections = [
     { id: "overview", label: "Dashboard", icon: TrendingUp },
     { id: "profile", label: "Profile", icon: User },
+    { id: "orders", label: "My Orders", icon: Package },
     { id: "services", label: "Services", icon: ShoppingBag },
     { id: "events", label: "Events & Clubs", icon: Calendar },
     { id: "payments", label: "Payments", icon: CreditCard },
@@ -163,6 +163,132 @@ const Dashboard = () => {
         {/* Main Content - Mobile Optimized */}
         <main className="flex-1 p-3 sm:p-6 lg:p-8 min-h-screen">
           {activeSection === "profile" && <NewProfilePage />}
+          
+          {activeSection === "orders" && (
+            <div className="space-y-4 sm:space-y-6 lg:space-y-8 animate-fade-in">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+                <div>
+                  <h2 className="text-2xl sm:text-3xl font-bold">My Orders</h2>
+                  <p className="text-muted-foreground text-sm sm:text-base">Track and manage your orders</p>
+                </div>
+                <Button className="bg-primary hover:bg-primary/90 text-sm sm:text-base">
+                  <Package className="h-4 w-4 mr-2" />
+                  New Order
+                </Button>
+              </div>
+
+              {/* Orders Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">Order #1234</CardTitle>
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                        Delivered
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                        <ShoppingBag className="h-6 w-6 text-blue-500" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Campus Canteen</p>
+                        <p className="text-sm text-muted-foreground">Chicken Biryani, Coke</p>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center pt-2">
+                      <p className="text-sm text-muted-foreground">June 13, 2025</p>
+                      <p className="font-semibold">₹180</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">Order #1235</CardTitle>
+                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                        In Progress
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                        <Store className="h-6 w-6 text-purple-500" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Campus Store</p>
+                        <p className="text-sm text-muted-foreground">Notebooks, Pens</p>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center pt-2">
+                      <p className="text-sm text-muted-foreground">June 14, 2025</p>
+                      <p className="font-semibold">₹245</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">Order #1236</CardTitle>
+                      <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                        Pending
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 rounded-lg bg-green-500/20 flex items-center justify-center">
+                        <FileText className="h-6 w-6 text-green-500" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Print Shop</p>
+                        <p className="text-sm text-muted-foreground">Document Printing</p>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center pt-2">
+                      <p className="text-sm text-muted-foreground">June 14, 2025</p>
+                      <p className="font-semibold">₹50</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Order Summary */}
+              <Card className="shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <TrendingUp className="h-5 w-5 mr-2 text-primary" />
+                    Order Summary
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center p-4 rounded-lg bg-blue-50 dark:bg-blue-950/20">
+                      <p className="text-2xl font-bold text-blue-600">12</p>
+                      <p className="text-sm text-muted-foreground">Total Orders</p>
+                    </div>
+                    <div className="text-center p-4 rounded-lg bg-green-50 dark:bg-green-950/20">
+                      <p className="text-2xl font-bold text-green-600">8</p>
+                      <p className="text-sm text-muted-foreground">Delivered</p>
+                    </div>
+                    <div className="text-center p-4 rounded-lg bg-orange-50 dark:bg-orange-950/20">
+                      <p className="text-2xl font-bold text-orange-600">3</p>
+                      <p className="text-sm text-muted-foreground">In Progress</p>
+                    </div>
+                    <div className="text-center p-4 rounded-lg bg-purple-50 dark:bg-purple-950/20">
+                      <p className="text-2xl font-bold text-purple-600">₹2,340</p>
+                      <p className="text-sm text-muted-foreground">Total Spent</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
           
           {activeSection === "overview" && (
             <div className="space-y-4 sm:space-y-6 lg:space-y-8 animate-fade-in">
@@ -384,7 +510,7 @@ const Dashboard = () => {
           )}
 
           {/* Other sections */}
-          {activeSection !== "overview" && activeSection !== "profile" && (
+          {activeSection !== "overview" && activeSection !== "profile" && activeSection !== "orders" && (
             <div className="text-center py-12 sm:py-20 animate-fade-in">
               <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 sm:mb-6 rounded-xl sm:rounded-2xl bg-primary/20 flex items-center justify-center">
                 {(() => {
