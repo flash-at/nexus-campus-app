@@ -5,7 +5,10 @@ import { ProfileHeader } from "./ProfileHeader";
 import { ProfileStats } from "./ProfileStats";
 import { ProfileActivity } from "./ProfileActivity";
 import { EditProfileForm } from "./EditProfileForm";
+import { PointsHistoryCard } from "@/components/points/PointsHistoryCard";
+import { usePoints } from "@/hooks/usePoints";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useState } from "react";
 
@@ -26,6 +29,7 @@ const ProfileSkeleton = () => (
 
 export const NewProfilePage = () => {
   const { profile, loading, refetch } = useUserProfile();
+  const { pointsHistory, loading: pointsLoading } = usePoints();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   if (loading) {
@@ -53,11 +57,29 @@ export const NewProfilePage = () => {
         onEditClick={() => setIsEditDialogOpen(true)} 
       />
 
-      {/* Profile Stats */}
-      <ProfileStats profile={profile} />
+      {/* Main Content Tabs */}
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="activity">Activity</TabsTrigger>
+          <TabsTrigger value="points">Points History</TabsTrigger>
+        </TabsList>
 
-      {/* Profile Activity */}
-      <ProfileActivity profile={profile} />
+        <TabsContent value="overview" className="space-y-6">
+          <ProfileStats profile={profile} />
+        </TabsContent>
+
+        <TabsContent value="activity" className="space-y-6">
+          <ProfileActivity profile={profile} />
+        </TabsContent>
+
+        <TabsContent value="points" className="space-y-6">
+          <PointsHistoryCard 
+            transactions={pointsHistory} 
+            loading={pointsLoading}
+          />
+        </TabsContent>
+      </Tabs>
 
       {/* Edit Profile Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
