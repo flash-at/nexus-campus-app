@@ -1,16 +1,19 @@
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "firebase/auth";
-import { Database } from "@/integrations/supabase/types";
 
-type UserProfileTable = Database['public']['Tables']['users']['Row'];
-type AcademicInfoTable = Database['public']['Tables']['academic_info']['Row'];
-type EngagementTable = Database['public']['Tables']['engagement']['Row'];
-
-export type UserProfile = UserProfileTable;
-
-export interface FullUserProfile extends UserProfile {
-  academic_info: AcademicInfoTable | null;
-  engagement: EngagementTable | null;
+export interface UserProfile {
+  id: string;
+  firebase_uid: string;
+  full_name: string;
+  hall_ticket: string;
+  email: string;
+  department: string;
+  academic_year: string;
+  phone_number: string;
+  role: string;
+  email_verified: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export const checkHallTicketExists = async (hallTicket: string): Promise<boolean> => {
@@ -71,16 +74,11 @@ export const createUserProfile = async (
   }
 };
 
-export const getUserProfile = async (firebaseUid: string): Promise<FullUserProfile | null> => {
+export const getUserProfile = async (firebaseUid: string): Promise<UserProfile | null> => {
   try {
-    // Note: one-to-one relations are returned as objects, not arrays if you .single()
     const { data, error } = await supabase
       .from("users")
-      .select(`
-        *,
-        academic_info(*),
-        engagement(*)
-      `)
+      .select("*")
       .eq("firebase_uid", firebaseUid)
       .single();
 
@@ -89,7 +87,7 @@ export const getUserProfile = async (firebaseUid: string): Promise<FullUserProfi
       return null;
     }
 
-    return data as FullUserProfile;
+    return data;
   } catch (error) {
     console.error("Error fetching user profile:", error);
     return null;

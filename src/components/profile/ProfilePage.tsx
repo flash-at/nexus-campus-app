@@ -3,69 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { User, Mail, Phone, BookOpen, Award, FileText, Settings, Shield } from "lucide-react";
+import { User, Mail, Phone, MapPin, Calendar, BookOpen, Award } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
-
-const ProfileSkeleton = () => (
-    <div className="space-y-8">
-        <Card>
-            <CardContent className="p-8">
-                <div className="flex items-center space-x-6">
-                    <Skeleton className="w-24 h-24 rounded-full" />
-                    <div className="flex-1 space-y-2">
-                        <Skeleton className="h-8 w-48" />
-                        <Skeleton className="h-4 w-64" />
-                        <div className="flex space-x-4 pt-2">
-                           <Skeleton className="h-6 w-24" />
-                           <Skeleton className="h-6 w-24" />
-                           <Skeleton className="h-6 w-24" />
-                        </div>
-                    </div>
-                    <Skeleton className="h-10 w-24" />
-                </div>
-            </CardContent>
-        </Card>
-        <div className="grid grid-cols-5 gap-4">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-        </div>
-        <Card>
-            <CardHeader><Skeleton className="h-8 w-48" /></CardHeader>
-            <CardContent className="space-y-4">
-                <Skeleton className="h-6 w-full" />
-                <Skeleton className="h-6 w-full" />
-                <Skeleton className="h-6 w-full" />
-            </CardContent>
-        </Card>
-    </div>
-);
 
 export const ProfilePage = () => {
-  const { profile, loading } = useProfile();
+  const { profile } = useProfile();
   const { user } = useAuth();
-
-  if (loading) {
-    return <ProfileSkeleton />;
-  }
-
-  if (!profile || !user) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile not found</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>We couldn't load your profile information. Please try again later.</p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -74,32 +18,26 @@ export const ProfilePage = () => {
         <CardContent className="p-8">
           <div className="flex items-center space-x-6">
             <Avatar className="w-24 h-24">
-              <AvatarImage src={profile.profile_picture_url || undefined} />
+              <AvatarImage src={profile?.profile_picture} />
               <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
-                {profile.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
               </AvatarFallback>
             </Avatar>
             
             <div className="flex-1">
-              <h2 className="text-3xl font-bold mb-1">{profile.full_name}</h2>
-              <p className="text-muted-foreground mb-2">{profile.department}</p>
+              <h2 className="text-3xl font-bold mb-2">{profile?.full_name || 'Student Name'}</h2>
+              <p className="text-muted-foreground mb-4">Computer Science Engineering</p>
               
               <div className="flex items-center space-x-4">
                 <Badge variant="outline" className="text-primary border-primary/30">
-                  {profile.hall_ticket}
+                  {profile?.hall_ticket || 'CS21B0001'}
                 </Badge>
                 <Badge variant="outline" className="text-accent border-accent/30">
-                  {profile.academic_year}
+                  Final Year
                 </Badge>
-                {profile.email_verified ? (
-                   <Badge variant="outline" className="text-emerald-500 border-emerald-500/30">
-                     Email Verified
-                   </Badge>
-                ) : (
-                    <Badge variant="destructive">
-                     Email Not Verified
-                   </Badge>
-                )}
+                <Badge variant="outline" className="text-emerald-500 border-emerald-500/30">
+                  Active Student
+                </Badge>
               </div>
             </div>
             
@@ -108,103 +46,113 @@ export const ProfilePage = () => {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="personal" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="personal">Personal</TabsTrigger>
-                <TabsTrigger value="academic">Academic</TabsTrigger>
-                <TabsTrigger value="documents">Documents</TabsTrigger>
-                <TabsTrigger value="engagement">Engagement</TabsTrigger>
-                <TabsTrigger value="settings">Settings</TabsTrigger>
-            </TabsList>
+      {/* Academic Info */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="soft-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <BookOpen className="h-5 w-5 mr-2 text-primary" />
+              Academic Performance
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">CGPA</span>
+                <span className="text-2xl font-bold text-primary">{profile?.cgpa?.toFixed(1) || '8.7'}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Semester</span>
+                <span className="font-semibold">8th</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Credits Completed</span>
+                <span className="font-semibold">156/160</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-            <TabsContent value="personal" className="mt-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Personal Information</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4 pt-6">
-                         <div className="flex items-center space-x-3">
-                            <Mail className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{profile.email}</span>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                            <Phone className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{profile.phone_number}</span>
-                        </div>
-                    </CardContent>
-                </Card>
-            </TabsContent>
+        <Card className="soft-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Award className="h-5 w-5 mr-2 text-accent" />
+              Activities & Points
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Activity Points</span>
+                <span className="text-2xl font-bold text-accent">{profile?.activity_points || 450}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Events Attended</span>
+                <span className="font-semibold">15</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Clubs Joined</span>
+                <span className="font-semibold">3</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-            <TabsContent value="academic" className="mt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Academic Performance</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4 pt-6">
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">CGPA</span>
-                                <span className="text-2xl font-bold text-primary">{profile.academic_info?.cgpa?.toFixed(1) || 'N/A'}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">Current Semester</span>
-                                <span className="font-semibold">{profile.academic_info?.current_semester || 'N/A'}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">Mentor</span>
-                                <span className="font-semibold">{profile.academic_info?.mentor_name || 'Not Assigned'}</span>
-                            </div>
-                        </CardContent>
-                    </Card>
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>Subjects Enrolled</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-2 pt-6">
-                           {(profile.academic_info?.subjects_enrolled && profile.academic_info.subjects_enrolled.length > 0) ? (
-                                profile.academic_info.subjects_enrolled.map(subject => (
-                                    <Badge key={subject} variant="secondary">{subject}</Badge>
-                                ))
-                           ) : <p className="text-sm text-muted-foreground">No subjects enrolled.</p>}
-                        </CardContent>
-                    </Card>
-                </div>
-            </TabsContent>
+        <Card className="soft-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <User className="h-5 w-5 mr-2 text-emerald-500" />
+              Contact Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">{user?.email || 'student@example.com'}</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">+91 98765 43210</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">Hostel Block A, Room 204</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-            <TabsContent value="documents" className="mt-6">
-                 <Card>
-                    <CardHeader><CardTitle>Documents</CardTitle></CardHeader>
-                    <CardContent className="pt-6"><p>Document management coming soon.</p></CardContent>
-                </Card>
-            </TabsContent>
-
-            <TabsContent value="engagement" className="mt-6">
-                 <Card>
-                    <CardHeader><CardTitle>Engagement</CardTitle></CardHeader>
-                    <CardContent className="space-y-4 pt-6">
-                        <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground">Activity Points</span>
-                            <span className="text-2xl font-bold text-accent">{profile.engagement?.activity_points || 0}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground">Events Attended</span>
-                            <span className="font-semibold">{profile.engagement?.events_attended?.length || 0}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground">Feedback Submitted</span>
-                            <span className="font-semibold">{profile.engagement?.feedback_count || 0}</span>
-                        </div>
-                    </CardContent>
-                </Card>
-            </TabsContent>
-
-            <TabsContent value="settings" className="mt-6">
-                 <Card>
-                    <CardHeader><CardTitle>Preferences & Security</CardTitle></CardHeader>
-                    <CardContent className="pt-6"><p>Settings management coming soon.</p></CardContent>
-                </Card>
-            </TabsContent>
-        </Tabs>
+      {/* Recent Achievements */}
+      <Card className="soft-shadow">
+        <CardHeader>
+          <CardTitle>Recent Achievements</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center space-x-4 p-4 rounded-xl border border-border">
+              <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center">
+                <Award className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h4 className="font-semibold">Dean's List</h4>
+                <p className="text-sm text-muted-foreground">Achieved for semester 7</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4 p-4 rounded-xl border border-border">
+              <div className="w-12 h-12 rounded-2xl bg-accent/20 flex items-center justify-center">
+                <BookOpen className="h-6 w-6 text-accent" />
+              </div>
+              <div>
+                <h4 className="font-semibold">Research Paper Published</h4>
+                <p className="text-sm text-muted-foreground">AI in Education - IEEE Conference</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
