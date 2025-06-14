@@ -56,7 +56,11 @@ export const getPointsHistory = async (userId: string): Promise<PointsTransactio
       return [];
     }
 
-    return data || [];
+    // Type assertion to ensure proper typing
+    return (data || []).map(item => ({
+      ...item,
+      transaction_type: item.transaction_type as 'earned' | 'spent' | 'redeemed'
+    }));
   } catch (error) {
     console.error('Error fetching points history:', error);
     return [];
@@ -65,6 +69,7 @@ export const getPointsHistory = async (userId: string): Promise<PointsTransactio
 
 export const getCurrentPoints = async (firebaseUid: string): Promise<number> => {
   try {
+    // Use the custom function we created
     const { data, error } = await supabase.rpc('get_user_points', {
       user_firebase_uid: firebaseUid
     });
@@ -74,7 +79,8 @@ export const getCurrentPoints = async (firebaseUid: string): Promise<number> => 
       return 0;
     }
 
-    return data || 0;
+    // Ensure we return a number
+    return typeof data === 'number' ? data : parseInt(data) || 0;
   } catch (error) {
     console.error('Error fetching current points:', error);
     return 0;
@@ -83,6 +89,7 @@ export const getCurrentPoints = async (firebaseUid: string): Promise<number> => 
 
 export const getAvailableVouchers = async (): Promise<Voucher[]> => {
   try {
+    // Query using raw SQL since the table might not be in types yet
     const { data, error } = await supabase
       .from('vouchers')
       .select('*')
