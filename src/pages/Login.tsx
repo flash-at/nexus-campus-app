@@ -1,10 +1,9 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail } from "firebase/auth";
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, sendEmailVerification } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { getUserProfile } from "@/services/userService";
@@ -18,7 +17,7 @@ import LoginForm from "@/components/auth/LoginForm";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { theme } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -28,11 +27,12 @@ const Login = () => {
   });
   const [isForgotPassOpen, setIsForgotPassOpen] = useState(false);
 
-  // Redirect if already logged in. Bypassing email verification for testing.
-  if (user) { // if (user && user.emailVerified) {
-    navigate("/dashboard");
-    return null;
-  }
+  useEffect(() => {
+    // Redirect if already logged in and auth state is no longer loading.
+    if (!loading && user) {
+      navigate("/dashboard");
+    }
+  }, [user, loading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,22 +50,22 @@ const Login = () => {
       
       const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
       
-      // Temporarily bypass email verification check for easier testing.
-      // This should be re-enabled for production.
-      /*
       if (!userCredential.user.emailVerified) {
         toast.error("Your email is not verified. Please check your inbox or spam folder.");
         await sendEmailVerification(userCredential.user);
         toast.info("A new verification email has been sent.");
+        await auth.signOut(); // Sign out to prevent stuck state
+        setIsLoading(false);
         return;
       }
-      */
 
       // Check if user profile exists in Supabase
       const profile = await getUserProfile(userCredential.user.uid);
       
       if (!profile) {
         toast.error("User profile not found. Please contact support.");
+        await auth.signOut();
+        setIsLoading(false);
         return;
       }
       
@@ -135,6 +135,14 @@ const Login = () => {
       toast.error("Google sign-in failed. Please try again.");
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-950 dark:via-blue-950 dark:to-purple-950">
+        <div className="w-10 h-10 border-4 border-blue-500/20 dark:border-blue-400/20 border-t-blue-500 dark:border-t-blue-400 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-950 dark:via-blue-950 dark:to-purple-950">
