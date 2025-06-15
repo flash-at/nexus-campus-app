@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, onAuthStateChanged, signOut as firebaseSignOut, getIdToken } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -12,6 +11,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   cleanupAndReload: () => void;
   forceSessionSync: () => Promise<void>;
+  isSessionSyncing: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -21,6 +21,7 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
   cleanupAndReload: () => {},
   forceSessionSync: async () => {},
+  isSessionSyncing: false,
 });
 
 export const useAuth = () => {
@@ -39,6 +40,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [supabaseSession, setSupabaseSession] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSessionSyncing, setIsSessionSyncing] = useState(false);
 
   const cleanupAndReload = () => {
     console.log('[Auth] Manual cleanup and reload triggered');
@@ -49,9 +51,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const forceSessionSync = async () => {
+    if (isSessionSyncing) {
+      console.log('[Auth] ⏳ Session sync already in progress, skipping...');
+      return;
+    }
+
     console.log('[Auth] 🔄 Force session sync triggered');
-    if (user) {
-      try {
+    setIsSessionSyncing(true);
+    
+    try {
+      if (user) {
         console.log('[Auth] 🔑 Getting fresh Firebase ID token for force sync...');
         const idToken = await getIdToken(user, true);
         console.log('[Auth] ✅ Fresh Firebase ID token obtained:', {
@@ -80,16 +89,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           console.error('[Auth] ❌ Force sync returned null session');
           setSupabaseSession(null);
         }
-      } catch (error) {
-        console.error('[Auth] ❌ Force session sync failed:', error);
-        console.error('[Auth] 📋 Error details:', {
-          message: error?.message,
-          stack: error?.stack,
-          timestamp: new Date().toISOString()
-        });
+      } else {
+        console.log('[Auth] ⚠️ Cannot force sync - no Firebase user available');
       }
-    } else {
-      console.log('[Auth] ⚠️ Cannot force sync - no Firebase user available');
+    } catch (error) {
+      console.error('[Auth] ❌ Force session sync failed:', error);
+      console.error('[Auth] 📋 Error details:', {
+        message: error?.message,
+        stack: error?.stack,
+        timestamp: new Date().toISOString()
+      });
+    } finally {
+      setIsSessionSyncing(false);
     }
   };
 
@@ -207,9 +218,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       supabaseUserEmail: supabaseSession?.user?.email,
       hasAccessToken: !!supabaseSession?.access_token,
       loading,
+      isSessionSyncing,
       timestamp: new Date().toISOString()
     });
-  }, [user, supabaseSession, loading]);
+  }, [user, supabaseSession, loading, isSessionSyncing]);
 
   const value = {
     user,
@@ -218,6 +230,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     signOut,
     cleanupAndReload,
     forceSessionSync,
+    isSessionSyncing,
   };
 
   return (

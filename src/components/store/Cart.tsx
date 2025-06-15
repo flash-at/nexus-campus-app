@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,7 +40,7 @@ export const Cart: React.FC<CartProps> = ({
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [notes, setNotes] = useState('');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const { user, supabaseSession, forceSessionSync } = useAuth();
+  const { user, supabaseSession, forceSessionSync, isSessionSyncing } = useAuth();
   const { toast } = useToast();
 
   const total = subtotal + serviceFee;
@@ -61,7 +60,20 @@ export const Cart: React.FC<CartProps> = ({
 
   const handleRetrySession = async () => {
     console.log('[Cart] 🔄 Retrying session sync...');
-    await forceSessionSync();
+    try {
+      await forceSessionSync();
+      toast({
+        title: "Session Sync Attempted",
+        description: "Check the console for detailed logs and try again.",
+      });
+    } catch (error) {
+      console.error('[Cart] ❌ Retry session failed:', error);
+      toast({
+        title: "Session Sync Failed",
+        description: "Check the console for error details. You may need to log out and log back in.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handlePlaceOrder = async () => {
@@ -253,9 +265,14 @@ export const Cart: React.FC<CartProps> = ({
                   <p className="font-medium text-orange-800">Authentication Session Not Ready</p>
                   <p className="text-sm text-orange-700">Please sync your session before placing an order.</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={handleRetrySession}>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Sync Session
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRetrySession}
+                  disabled={isSessionSyncing}
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isSessionSyncing ? 'animate-spin' : ''}`} />
+                  {isSessionSyncing ? 'Syncing...' : 'Sync Session'}
                 </Button>
               </div>
             </CardContent>
