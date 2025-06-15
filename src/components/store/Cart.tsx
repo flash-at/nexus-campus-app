@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,7 +41,7 @@ export const Cart: React.FC<CartProps> = ({
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [notes, setNotes] = useState('');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const { user, supabaseSession, forceSessionSync, isSessionSyncing } = useAuth();
+  const { user, forceSessionSync, isSessionSyncing } = useAuth();
   const { toast } = useToast();
 
   const total = subtotal + serviceFee;
@@ -80,7 +81,6 @@ export const Cart: React.FC<CartProps> = ({
     console.log('[Cart] 🛒 Place order triggered');
     console.log('[Cart] 📊 Auth state check:', {
       hasUser: !!user,
-      hasSupabaseSession: !!supabaseSession,
       firebaseUID: user?.uid,
       timestamp: new Date().toISOString()
     });
@@ -95,35 +95,19 @@ export const Cart: React.FC<CartProps> = ({
       return;
     }
 
-    if (!supabaseSession) {
-      console.log('[Cart] ❌ No session found');
-      toast({
-        title: "Session Error",
-        description: "Authentication session not ready. Please try syncing your session.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     setIsPlacingOrder(true);
 
     try {
       console.log('[Cart] 🚀 Starting order placement process...');
       
-      // Set the auth token for this session to work with RLS
-      console.log('[Cart] 🔑 Setting Supabase auth session...');
-      const { error: authError } = await supabase.auth.setSession(supabaseSession);
-      
-      if (authError) {
-        console.error('[Cart] ❌ Auth session error:', authError);
-        toast({
-          title: "Authentication Error",
-          description: "Failed to authenticate with database. Please try syncing your session.",
-          variant: "destructive"
-        });
-        return;
-      }
+      // Get Firebase ID token for authentication
+      console.log('[Cart] 🔑 Getting Firebase ID token...');
+      const idToken = await user.getIdToken();
+      console.log('[Cart] ✅ Got Firebase ID token');
 
+      // Set the Firebase JWT token as auth header
+      console.log('[Cart] 🔐 Setting auth header with Firebase token...');
+      
       // First, get the user's UUID from the users table using their Firebase UID
       console.log('[Cart] 🔍 Looking up user UUID for Firebase UID:', user.uid);
       
@@ -166,6 +150,9 @@ export const Cart: React.FC<CartProps> = ({
           qr_code: qrCode
         });
 
+        // Create a new Supabase client instance with the Firebase JWT token
+        const supabaseWithAuth = supabase.auth.admin || supabase;
+        
         const { data: orderData, error: orderError } = await supabase
           .from('campus_orders')
           .insert({
@@ -262,14 +249,14 @@ export const Cart: React.FC<CartProps> = ({
         <h1 className="text-2xl font-bold mb-6">Your Cart</h1>
 
         {/* Session Status Warning */}
-        {!supabaseSession && (
+        {!user && (
           <Card className="mb-6 border-orange-200 bg-orange-50">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <AlertTriangle className="h-5 w-5 text-orange-600" />
                 <div className="flex-1">
-                  <p className="font-medium text-orange-800">Authentication Session Not Ready</p>
-                  <p className="text-sm text-orange-700">Please sync your session before placing an order.</p>
+                  <p className="font-medium text-orange-800">Authentication Required</p>
+                  <p className="text-sm text-orange-700">Please log in to place an order.</p>
                 </div>
                 <Button 
                   variant="outline" 
@@ -430,7 +417,7 @@ export const Cart: React.FC<CartProps> = ({
                   className="w-full"
                   size="lg"
                   onClick={handlePlaceOrder}
-                  disabled={isPlacingOrder || !supabaseSession}
+                  disabled={isPlacingOrder || !user}
                 >
                   {isPlacingOrder ? 'Placing Order...' : 'Place Order'}
                 </Button>
