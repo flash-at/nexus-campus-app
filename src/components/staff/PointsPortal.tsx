@@ -2,8 +2,10 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Coins, QrCode, Fingerprint, History } from "lucide-react";
+import { Coins, QrCode, Fingerprint, History, ArrowLeft } from "lucide-react";
 import { ManualPointAllocation } from './ManualPointAllocation';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 const StaffPointBalance = ({ balance }: { balance: number }) => (
     <Card>
@@ -34,6 +36,7 @@ const ManualEntryTab = () => (
 
 export const PointsPortal = () => {
     const [staffPointBalance, setStaffPointBalance] = useState(1000);
+    const navigate = useNavigate();
 
     const handlePointsAllocated = (points: number) => {
         setStaffPointBalance(prevBalance => prevBalance - points);
@@ -41,7 +44,16 @@ export const PointsPortal = () => {
 
     return (
         <div className="w-full max-w-4xl space-y-6 animate-fade-in p-4 sm:p-0">
-            <div className="text-center">
+            <div className="relative text-center">
+                 <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="absolute left-0 top-1/2 -translate-y-1/2"
+                    onClick={() => navigate('/')}
+                >
+                    <ArrowLeft className="h-5 w-5" />
+                    <span className="sr-only">Back to home</span>
+                </Button>
                 <h1 className="text-3xl font-bold">Staff Points Portal</h1>
                 <p className="text-muted-foreground">Allocate activity points to students.</p>
             </div>
