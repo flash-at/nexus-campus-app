@@ -53,8 +53,8 @@ const LoginForm = ({
                         </CardDescription>
                     </CardHeader>
                     
-                    <CardContent className="p-8">
-                        <form onSubmit={handleSubmit} className="space-y-6">
+                    <CardContent className="p-6 md:p-8">
+                        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                             {/* Email */}
                             <div className="space-y-2">
                                 <Label htmlFor="email" className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
