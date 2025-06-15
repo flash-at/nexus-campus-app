@@ -8,11 +8,9 @@ import { LogOut, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import ThemeToggle from '@/components/ThemeToggle';
 import PartnerProtectedRoute from '@/components/partner/PartnerProtectedRoute';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 const PartnerDashboardPage = () => {
   const { user, partner, signOut } = usePartnerAuth();
-  const isMobile = useIsMobile();
 
   const handleLogout = async () => {
     try {
@@ -48,11 +46,12 @@ const PartnerDashboardPage = () => {
               <ThemeToggle />
               <Button
                 variant="ghost"
-                size={isMobile ? 'icon' : 'sm'}
+                size="sm"
                 onClick={handleLogout}
+                className="flex items-center gap-2"
               >
                 <LogOut className="h-4 w-4" />
-                {!isMobile && <span className="ml-2">Logout</span>}
+                Logout
               </Button>
             </div>
           </div>
