@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -24,27 +23,8 @@ export const signInPartner = async (email: string, password: string) => {
     });
 
     if (error) throw error;
-
-    // Check if user has vendor record
-    if (data.user) {
-      const { data: vendor, error: vendorError } = await supabase
-        .from('vendors')
-        .select('*')
-        .eq('firebase_uid', data.user.id)
-        .single();
-
-      if (vendorError || !vendor) {
-        throw new Error("No partner account found");
-      }
-
-      if (vendor.status !== 'approved') {
-        throw new Error("Partner account pending approval");
-      }
-
-      return { user: data.user, vendor };
-    }
-
-    throw new Error("Authentication failed");
+    
+    return data;
   } catch (error: any) {
     console.error("Partner sign in error:", error);
     throw error;
@@ -110,10 +90,6 @@ export const getPartnerAuthErrorMessage = (error: any) => {
       return "Incorrect email or password";
     case 'Email not confirmed':
       return "Please verify your email address";
-    case 'No partner account found':
-      return "No partner account found with this email";
-    case 'Partner account pending approval':
-      return "Your partner account is pending approval";
     default:
       return error.message || "Sign in failed. Please try again.";
   }

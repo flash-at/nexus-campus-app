@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { PartnerProfile } from "@/utils/partnerSupabaseAuth";
+import { toast } from "sonner";
 
 interface PartnerAuthContextType {
   user: User | null;
@@ -57,9 +58,9 @@ export const PartnerAuthProvider = ({ children }: PartnerAuthProviderProps) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user) {
+        if (event === 'SIGNED_IN' && session?.user) {
           await fetchPartnerProfile(session.user.id);
-        } else {
+        } else if (!session?.user) {
           setPartner(null);
           setLoading(false);
         }
@@ -69,7 +70,20 @@ export const PartnerAuthProvider = ({ children }: PartnerAuthProviderProps) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  const signOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      setPartner(null);
+      setUser(null);
+      setSession(null);
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
   const fetchPartnerProfile = async (userId: string) => {
+    setLoading(true);
     try {
       const { data: vendor, error } = await supabase
         .from('vendors')
@@ -78,25 +92,28 @@ export const PartnerAuthProvider = ({ children }: PartnerAuthProviderProps) => {
         .single();
 
       if (error) {
-        console.error("Error fetching partner profile:", error);
         setPartner(null);
+        await signOut();
+        if (error.code === 'PGRST116') { // Not found
+          toast.error("No partner account found with this email.");
+        } else {
+          toast.error("Error fetching your partner profile.");
+          console.error("Error fetching partner profile:", error);
+        }
+      } else if (vendor.status !== 'approved') {
+        setPartner(null);
+        await signOut();
+        toast.error("Your partner account is pending approval.");
       } else {
         setPartner(vendor as PartnerProfile);
       }
     } catch (error) {
-      console.error("Error fetching partner profile:", error);
+      console.error("Critical error fetching partner profile:", error);
       setPartner(null);
+      await signOut();
+      toast.error("A critical error occurred while verifying your status.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-    } catch (error) {
-      console.error("Error signing out:", error);
     }
   };
 

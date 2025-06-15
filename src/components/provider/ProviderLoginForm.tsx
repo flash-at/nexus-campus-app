@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,7 +37,6 @@ export const ProviderLoginForm = () => {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       await signInPartner(values.email, values.password);
-      toast.success("Signed in successfully!");
       navigate("/partner-dashboard");
     } catch (error: any) {
       console.error("Authentication error:", error);
