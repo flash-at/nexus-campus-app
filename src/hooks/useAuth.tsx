@@ -11,6 +11,7 @@ interface AuthContextType {
   supabaseSession: any | null;
   signOut: () => Promise<void>;
   cleanupAndReload: () => void;
+  forceSessionSync: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -19,6 +20,7 @@ const AuthContext = createContext<AuthContextType>({
   supabaseSession: null,
   signOut: async () => {},
   cleanupAndReload: () => {},
+  forceSessionSync: async () => {},
 });
 
 export const useAuth = () => {
@@ -46,6 +48,40 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }, 500);
   };
 
+  const forceSessionSync = async () => {
+    console.log('[Auth] Force session sync triggered');
+    if (user) {
+      try {
+        console.log('[Auth] Getting fresh Firebase ID token for force sync...');
+        const idToken = await getIdToken(user, true);
+        console.log('[Auth] Fresh Firebase ID token obtained:', {
+          tokenLength: idToken?.length,
+          userUid: user.uid,
+          userEmail: user.email
+        });
+        
+        console.log('[Auth] Attempting to sync Supabase session...');
+        const session = await syncSupabaseSession(idToken);
+        console.log('[Auth] Force sync result:', {
+          hasSession: !!session,
+          hasUser: !!session?.user,
+          userId: session?.user?.id,
+          hasAccessToken: !!session?.access_token
+        });
+        
+        setSupabaseSession(session);
+      } catch (error) {
+        console.error('[Auth] Force session sync failed:', error);
+        console.error('[Auth] Error details:', {
+          message: error?.message,
+          stack: error?.stack
+        });
+      }
+    } else {
+      console.log('[Auth] Cannot force sync - no Firebase user available');
+    }
+  };
+
   useEffect(() => {
     console.log('[Auth] Setting up auth state listener...');
     
@@ -55,7 +91,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         hasUser: !!firebaseUser,
         uid: firebaseUser?.uid,
         email: firebaseUser?.email,
-        emailVerified: firebaseUser?.emailVerified
+        emailVerified: firebaseUser?.emailVerified,
+        timestamp: new Date().toISOString()
       });
       
       setUser(firebaseUser);
@@ -64,26 +101,47 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (firebaseUser) {
         try {
           console.log('[Auth] Getting Firebase ID token...');
+          const startTime = Date.now();
           const idToken = await getIdToken(firebaseUser, true);
-          console.log('[Auth] Firebase ID token obtained, length:', idToken?.length);
+          const tokenTime = Date.now() - startTime;
+          console.log('[Auth] Firebase ID token obtained:', {
+            tokenLength: idToken?.length,
+            timeToGet: `${tokenTime}ms`,
+            userUid: firebaseUser.uid,
+            userEmail: firebaseUser.email
+          });
           
-          console.log('[Auth] Syncing Supabase session...');
+          console.log('[Auth] Starting Supabase session sync...');
+          const syncStartTime = Date.now();
           const session = await syncSupabaseSession(idToken);
-          console.log('[Auth] Supabase session sync result:', {
+          const syncTime = Date.now() - syncStartTime;
+          
+          console.log('[Auth] Supabase session sync completed:', {
             hasSession: !!session,
             hasUser: !!session?.user,
             userId: session?.user?.id,
             hasAccessToken: !!session?.access_token,
-            accessTokenLength: session?.access_token?.length
+            accessTokenLength: session?.access_token?.length,
+            syncTime: `${syncTime}ms`,
+            timestamp: new Date().toISOString()
           });
           
-          setSupabaseSession(session);
+          if (session) {
+            console.log('[Auth] Setting Supabase session in state');
+            setSupabaseSession(session);
+          } else {
+            console.error('[Auth] Session sync returned null/undefined');
+            setSupabaseSession(null);
+          }
+          
         } catch (error) {
           console.error('[Auth] Failed to sync Supabase session:', error);
-          console.error('[Auth] Error details:', {
+          console.error('[Auth] Detailed error info:', {
+            name: error?.name,
             message: error?.message,
             stack: error?.stack,
-            cause: error?.cause
+            cause: error?.cause,
+            timestamp: new Date().toISOString()
           });
           setSupabaseSession(null);
         }
@@ -122,12 +180,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   // Log current auth state every time it changes
   useEffect(() => {
-    console.log('[Auth] Current auth state:', {
+    console.log('[Auth] Current auth state updated:', {
       hasUser: !!user,
       userEmail: user?.email,
+      userUid: user?.uid,
       hasSupabaseSession: !!supabaseSession,
       supabaseUserId: supabaseSession?.user?.id,
-      loading
+      supabaseUserEmail: supabaseSession?.user?.email,
+      loading,
+      timestamp: new Date().toISOString()
     });
   }, [user, supabaseSession, loading]);
 
@@ -137,6 +198,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     supabaseSession,
     signOut,
     cleanupAndReload,
+    forceSessionSync,
   };
 
   return (
