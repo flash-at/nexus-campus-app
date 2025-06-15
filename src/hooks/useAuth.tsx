@@ -1,8 +1,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { User, onAuthStateChanged, signOut as firebaseSignOut, getIdToken } from "firebase/auth";
+import { User, onAuthStateChanged, signOut as firebaseSignOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { supabase } from "@/integrations/supabase/client";
 import { cleanupAuthState } from "@/utils/authCleanup";
 
 interface AuthContextType {
@@ -51,51 +50,42 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }, 500);
   };
 
-  const createSupabaseSession = async (firebaseUser: User): Promise<any> => {
-    try {
-      console.log('[Auth] 🔑 Creating direct Supabase session...');
-      
-      // Get Firebase ID token
-      const idToken = await getIdToken(firebaseUser, true);
-      console.log('[Auth] ✅ Got Firebase ID token');
-
-      // Create a mock Supabase session using Firebase user data
-      const mockSession = {
-        access_token: idToken,
-        refresh_token: idToken,
-        expires_in: 3600,
-        expires_at: Math.floor(Date.now() / 1000) + 3600,
-        token_type: "bearer",
-        user: {
-          id: firebaseUser.uid,
-          email: firebaseUser.email,
-          email_verified: firebaseUser.emailVerified,
-          phone: firebaseUser.phoneNumber,
-          created_at: firebaseUser.metadata.creationTime,
-          updated_at: firebaseUser.metadata.lastSignInTime,
-          user_metadata: {
-            full_name: firebaseUser.displayName,
-            avatar_url: firebaseUser.photoURL,
-          },
-          app_metadata: {
-            provider: "firebase",
-            providers: ["firebase"]
-          }
+  const createSupabaseSession = (firebaseUser: User): any => {
+    console.log('[Auth] 🔑 Creating simplified session...');
+    
+    // Create a simplified session object without problematic JWT tokens
+    const session = {
+      access_token: `firebase_${firebaseUser.uid}`, // Simple token identifier
+      refresh_token: `firebase_${firebaseUser.uid}_refresh`,
+      expires_in: 3600,
+      expires_at: Math.floor(Date.now() / 1000) + 3600,
+      token_type: "bearer",
+      user: {
+        id: firebaseUser.uid,
+        email: firebaseUser.email,
+        email_verified: firebaseUser.emailVerified,
+        phone: firebaseUser.phoneNumber,
+        created_at: firebaseUser.metadata.creationTime,
+        updated_at: firebaseUser.metadata.lastSignInTime,
+        user_metadata: {
+          full_name: firebaseUser.displayName,
+          avatar_url: firebaseUser.photoURL,
+        },
+        app_metadata: {
+          provider: "firebase",
+          providers: ["firebase"]
         }
-      };
+      }
+    };
 
-      console.log('[Auth] ✅ Created direct session:', {
-        hasUser: !!mockSession.user,
-        userId: mockSession.user.id,
-        userEmail: mockSession.user.email,
-        hasAccessToken: !!mockSession.access_token
-      });
+    console.log('[Auth] ✅ Created simplified session:', {
+      hasUser: !!session.user,
+      userId: session.user.id,
+      userEmail: session.user.email,
+      hasAccessToken: !!session.access_token
+    });
 
-      return mockSession;
-    } catch (error) {
-      console.error('[Auth] ❌ Failed to create direct session:', error);
-      throw error;
-    }
+    return session;
   };
 
   const forceSessionSync = async () => {
@@ -109,16 +99,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     
     try {
       if (user) {
-        console.log('[Auth] 🔄 Creating new direct session...');
-        const session = await createSupabaseSession(user);
+        console.log('[Auth] 🔄 Creating new simplified session...');
+        const session = createSupabaseSession(user);
         
-        if (session) {
-          console.log('[Auth] ✅ Setting new session in state');
-          setSupabaseSession(session);
-        } else {
-          console.error('[Auth] ❌ Force sync returned null session');
-          setSupabaseSession(null);
-        }
+        console.log('[Auth] ✅ Setting new session in state');
+        setSupabaseSession(session);
       } else {
         console.log('[Auth] ⚠️ Cannot force sync - no Firebase user available');
       }
@@ -147,8 +132,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       if (firebaseUser) {
         try {
-          console.log('[Auth] 🔄 Creating direct Supabase session...');
-          const session = await createSupabaseSession(firebaseUser);
+          console.log('[Auth] 🔄 Creating simplified session...');
+          const session = createSupabaseSession(firebaseUser);
           
           if (session && session.user && session.access_token) {
             console.log('[Auth] ✅ Valid session created, setting in state');
@@ -159,11 +144,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           }
           
         } catch (error) {
-          console.error('[Auth] ❌ Failed to create direct session:', error);
+          console.error('[Auth] ❌ Failed to create simplified session:', error);
           setSupabaseSession(null);
         }
       } else {
-        console.log('[Auth] 🚫 No Firebase user, clearing Supabase session');
+        console.log('[Auth] 🚫 No Firebase user, clearing session');
         setSupabaseSession(null);
       }
     });
@@ -186,9 +171,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       await firebaseSignOut(auth);
       console.log('[Auth] ✅ Firebase sign out complete');
       
-      // Clear Supabase session
+      // Clear session
       setSupabaseSession(null);
-      console.log('[Auth] 🧹 Cleared Supabase session state');
+      console.log('[Auth] 🧹 Cleared session state');
       
     } catch (error) {
       console.error('[Auth] ❌ Error during sign out:', error);

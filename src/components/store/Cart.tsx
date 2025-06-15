@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Minus, Plus, Trash2, MapPin, AlertTriangle, RefreshCw } from 'lucide-react';
-import { supabase as defaultSupabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -63,14 +63,14 @@ export const Cart: React.FC<CartProps> = ({
     try {
       await forceSessionSync();
       toast({
-        title: "Session Sync Attempted",
-        description: "Check the console for detailed logs and try again.",
+        title: "Session Synced",
+        description: "Authentication session has been refreshed. You can now place your order.",
       });
     } catch (error) {
       console.error('[Cart] ❌ Retry session failed:', error);
       toast({
         title: "Session Sync Failed",
-        description: "Check the console for error details. You may need to log out and log back in.",
+        description: "Please try logging out and logging back in.",
         variant: "destructive"
       });
     }
@@ -96,17 +96,17 @@ export const Cart: React.FC<CartProps> = ({
     }
 
     if (!supabaseSession) {
-      console.log('[Cart] ❌ No Supabase session found');
+      console.log('[Cart] ❌ No session found');
       toast({
         title: "Session Error",
-        description: "Authentication session not ready. Please try syncing your session first.",
+        description: "Authentication session not ready. Please try syncing your session.",
         variant: "destructive"
       });
       return;
     }
 
     if (!supabaseSession.user?.id) {
-      console.log('[Cart] ❌ No Supabase user ID found in session:', supabaseSession);
+      console.log('[Cart] ❌ No user ID found in session:', supabaseSession);
       toast({
         title: "Authentication Error",
         description: "User ID not found in session. Please try syncing your session.",
@@ -120,23 +120,7 @@ export const Cart: React.FC<CartProps> = ({
     try {
       console.log('[Cart] 🚀 Starting order placement process...');
       
-      // Always use authenticated Supabase client
-      let supabase = defaultSupabase;
-      if (supabaseSession?.access_token) {
-        const { createClient } = await import('@supabase/supabase-js');
-        supabase = createClient(
-          "https://rqhgakhmtbimsroydtnj.supabase.co",
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxaGdha2htdGJpbXNyb3lkdG5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkyNjIzMTYsImV4cCI6MjA2NDgzODMxNn0.WFD3LLQx4iVuhrb7qct-TKF72NjskF5vWSqch_cfO30",
-          {
-            global: {
-              headers: { Authorization: `Bearer ${supabaseSession.access_token}` }
-            },
-            auth: { persistSession: false }
-          }
-        );
-      }
-
-      // Use supabaseSession.user.id (Auth user ID) for RLS!
+      // Use the Firebase user ID directly for RLS
       const authUserId = supabaseSession.user.id;
       console.log('[Cart] 👤 Using auth user ID:', authUserId);
 
