@@ -201,6 +201,48 @@ export const getUserProfile = async (firebaseUid: string): Promise<UserProfile |
   }
 };
 
+export const getAllUsers = async (): Promise<UserProfile[]> => {
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .select(`
+        id,
+        firebase_uid,
+        full_name,
+        hall_ticket,
+        email,
+        department,
+        academic_year,
+        phone_number,
+        role,
+        email_verified,
+        created_at,
+        updated_at,
+        profile_picture_url,
+        is_active
+      `)
+      .eq('role', 'student')
+      .order('full_name', { ascending: true });
+
+    if (error) {
+      console.error("Error fetching all users:", error);
+      return [];
+    }
+    
+    return (data || []).map(user => ({
+        ...user,
+        academic_info: null,
+        engagement: null,
+        documents: [],
+        preferences: null,
+    })) as UserProfile[];
+
+  } catch (error) {
+    console.error("Error fetching all users:", error);
+    return [];
+  }
+};
+
 export const updateUserProfile = async (
   firebaseUid: string,
   updates: {

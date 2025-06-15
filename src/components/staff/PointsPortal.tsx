@@ -1,7 +1,9 @@
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Coins, QrCode, Fingerprint, History } from "lucide-react";
+import { ManualPointAllocation } from './ManualPointAllocation';
 
 const StaffPointBalance = ({ balance }: { balance: number }) => (
     <Card>
@@ -31,8 +33,11 @@ const ManualEntryTab = () => (
 );
 
 export const PointsPortal = () => {
-    // Hardcoded for now, will be fetched later.
-    const staffPointBalance = 1000;
+    const [staffPointBalance, setStaffPointBalance] = useState(1000);
+
+    const handlePointsAllocated = (points: number) => {
+        setStaffPointBalance(prevBalance => prevBalance - points);
+    };
 
     return (
         <div className="w-full max-w-4xl space-y-6 animate-fade-in p-4 sm:p-0">
@@ -43,7 +48,7 @@ export const PointsPortal = () => {
             
             <StaffPointBalance balance={staffPointBalance} />
 
-            <Tabs defaultValue="qr-scanner" className="w-full">
+            <Tabs defaultValue="manual-entry" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="qr-scanner">
                         <QrCode className="mr-2 h-4 w-4"/>
@@ -68,11 +73,14 @@ export const PointsPortal = () => {
                 <TabsContent value="manual-entry" className="mt-6">
                     <Card>
                          <CardHeader>
-                            <CardTitle>Enter Hall Ticket Number</CardTitle>
-                            <CardDescription>Manually enter student details to award points.</CardDescription>
+                            <CardTitle>Enter Student Details</CardTitle>
+                            <CardDescription>Search for a student to manually award points.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <ManualEntryTab />
+                            <ManualPointAllocation 
+                                staffPointBalance={staffPointBalance} 
+                                onPointsAllocated={handlePointsAllocated} 
+                            />
                         </CardContent>
                     </Card>
                 </TabsContent>
