@@ -3,9 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Clock, User, MapPin, Phone, CheckCircle, XCircle, QrCode } from 'lucide-react';
+import { usePartnerAuth } from '@/hooks/usePartnerAuth';
+import { Clock, User, CheckCircle, XCircle, QrCode, AlertCircle, RefreshCw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Order {
@@ -37,28 +39,36 @@ interface Order {
 export const LiveOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user, partner, loading: authLoading } = usePartnerAuth();
 
   useEffect(() => {
-    fetchOrders();
-    // Set up real-time subscription
-    const subscription = supabase
-      .channel('campus_orders_changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'campus_orders'
-      }, () => {
-        fetchOrders();
-      })
-      .subscribe();
+    console.log('LiveOrders - Auth loading:', authLoading, 'User:', !!user, 'Partner:', !!partner);
+    
+    if (!authLoading) {
+      if (user && partner) {
+        console.log('Partner authenticated, loading orders...');
+        loadOrders();
+        setupRealtimeSubscription();
+      } else {
+        console.log('No partner authenticated');
+        setError('Please log in to view orders.');
+        setLoading(false);
+      }
+    }
+  }, [authLoading, user, partner]);
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
+  const loadOrders = async () => {
+    if (!partner?.id) {
+      console.log('No partner ID available');
+      return;
+    }
 
-  const fetchOrders = async () => {
+    console.log('Fetching orders for partner:', partner.id);
+    setLoading(true);
+    setError(null);
+
     try {
       const { data, error } = await supabase
         .from('campus_orders')
@@ -72,21 +82,44 @@ export const LiveOrders = () => {
             products (name, image_url)
           )
         `)
+        .eq('vendor_id', partner.id)
         .in('status', ['placed', 'accepted', 'ready'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      
+      console.log('Orders fetched:', data?.length || 0);
       setOrders(data || []);
     } catch (error) {
       console.error('Error fetching orders:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load orders",
-        variant: "destructive"
-      });
+      setError('Failed to load orders. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const setupRealtimeSubscription = () => {
+    if (!partner?.id) return;
+
+    console.log('Setting up realtime subscription for partner:', partner.id);
+    
+    const subscription = supabase
+      .channel('partner_orders_changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'campus_orders',
+        filter: `vendor_id=eq.${partner.id}`
+      }, (payload) => {
+        console.log('Realtime order change:', payload);
+        loadOrders();
+      })
+      .subscribe();
+
+    return () => {
+      console.log('Unsubscribing from realtime updates');
+      subscription.unsubscribe();
+    };
   };
 
   const updateOrderStatus = async (orderId: string, status: string) => {
@@ -103,7 +136,7 @@ export const LiveOrders = () => {
         description: `Order ${status} successfully`,
       });
       
-      fetchOrders();
+      await loadOrders();
     } catch (error) {
       console.error('Error updating order:', error);
       toast({
@@ -174,15 +207,45 @@ export const LiveOrders = () => {
     }
   };
 
+  if (authLoading) {
+    return (
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <Card key={i}>
+            <CardContent className="p-6">
+              <Skeleton className="h-4 w-full mb-2" />
+              <Skeleton className="h-3 w-3/4 mb-2" />
+              <Skeleton className="h-3 w-1/2" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive" />
+        <h3 className="text-lg font-semibold mb-2">Something went wrong</h3>
+        <p className="text-muted-foreground mb-4">{error}</p>
+        <Button onClick={loadOrders} variant="outline">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="space-y-4">
         {[...Array(3)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
+          <Card key={i}>
             <CardContent className="p-6">
-              <div className="h-4 bg-muted rounded mb-2"></div>
-              <div className="h-3 bg-muted rounded mb-2"></div>
-              <div className="h-3 bg-muted rounded w-1/2"></div>
+              <Skeleton className="h-4 w-full mb-2" />
+              <Skeleton className="h-3 w-3/4 mb-2" />
+              <Skeleton className="h-3 w-1/2" />
             </CardContent>
           </Card>
         ))}
@@ -222,7 +285,6 @@ export const LiveOrders = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Customer Info */}
               <div className="flex items-center gap-4 p-3 bg-muted rounded-lg">
                 <User className="h-5 w-5 text-muted-foreground" />
                 <div>
@@ -231,7 +293,6 @@ export const LiveOrders = () => {
                 </div>
               </div>
 
-              {/* Order Items */}
               <div className="space-y-2">
                 <h4 className="font-medium">Items:</h4>
                 {order.campus_order_items.map((item, index) => (
@@ -260,7 +321,6 @@ export const LiveOrders = () => {
                 ))}
               </div>
 
-              {/* Special Instructions */}
               {order.notes && (
                 <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <p className="text-sm font-medium text-yellow-800">Special Instructions:</p>
@@ -268,7 +328,6 @@ export const LiveOrders = () => {
                 </div>
               )}
 
-              {/* Time Info */}
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <Clock className="h-4 w-4" />
@@ -281,7 +340,6 @@ export const LiveOrders = () => {
                 )}
               </div>
 
-              {/* Actions */}
               <div className="pt-2 border-t">
                 {getStatusActions(order)}
               </div>

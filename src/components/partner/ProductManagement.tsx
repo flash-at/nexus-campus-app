@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { usePartnerAuth } from '@/hooks/usePartnerAuth';
-import { Plus, Edit, Trash2, Package, DollarSign, AlertCircle, RefreshCw } from 'lucide-react';
+import { Plus, Edit, Trash2, Package, AlertCircle, RefreshCw } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -60,46 +61,33 @@ export const ProductManagement = () => {
   });
 
   useEffect(() => {
+    console.log('Auth loading:', authLoading, 'User:', !!user, 'Partner:', !!partner);
+    
     if (!authLoading) {
-      if (partner) {
-        console.log('Partner found, initializing data for:', partner.id);
-        initializeData();
-      } else if (user && !partner) {
-        console.log('User found but no partner profile');
-        setError('Partner account not found. Please contact support.');
-        setLoading(false);
+      if (user && partner) {
+        console.log('Partner authenticated, loading data...');
+        loadData();
       } else {
-        console.log('No user authenticated');
+        console.log('No partner authenticated');
         setError('Please log in to access product management.');
         setLoading(false);
       }
     }
-  }, [partner, authLoading, user]);
+  }, [authLoading, user, partner]);
 
-  const initializeData = async () => {
-    console.log('Starting data initialization...');
+  const loadData = async () => {
+    console.log('Starting to load data...');
     setLoading(true);
     setError(null);
     
     try {
-      // Fetch both categories and products
-      const [categoriesResult, productsResult] = await Promise.allSettled([
+      await Promise.all([
         fetchCategories(),
         fetchProducts()
       ]);
-
-      if (categoriesResult.status === 'rejected') {
-        console.error('Categories fetch failed:', categoriesResult.reason);
-      }
-      
-      if (productsResult.status === 'rejected') {
-        console.error('Products fetch failed:', productsResult.reason);
-        throw productsResult.reason;
-      }
-
-      console.log('Data initialization completed successfully');
+      console.log('Data loaded successfully');
     } catch (error) {
-      console.error('Error during initialization:', error);
+      console.error('Error loading data:', error);
       setError('Failed to load data. Please try again.');
     } finally {
       setLoading(false);
@@ -119,15 +107,14 @@ export const ProductManagement = () => {
       throw error;
     }
     
-    console.log('Categories fetched successfully:', data?.length || 0, 'categories');
+    console.log('Categories fetched:', data?.length || 0);
     setCategories(data || []);
-    return data;
   };
 
   const fetchProducts = async () => {
-    if (!partner) {
-      console.log('No partner available for product fetch');
-      return [];
+    if (!partner?.id) {
+      console.log('No partner ID available');
+      return;
     }
     
     console.log('Fetching products for partner:', partner.id);
@@ -145,9 +132,8 @@ export const ProductManagement = () => {
       throw error;
     }
     
-    console.log('Products fetched successfully:', data?.length || 0, 'products');
+    console.log('Products fetched:', data?.length || 0);
     setProducts(data || []);
-    return data;
   };
 
   const resetForm = () => {
@@ -169,7 +155,7 @@ export const ProductManagement = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!partner) {
+    if (!partner?.id) {
       toast({
         title: "Error",
         description: "Partner account not found",
@@ -207,12 +193,12 @@ export const ProductManagement = () => {
           .insert(productData);
         
         if (error) throw error;
-        toast({ title: "Product added successfully! It will now appear in the Campus Store." });
+        toast({ title: "Product added successfully!" });
       }
 
       setShowAddDialog(false);
       resetForm();
-      fetchProducts();
+      await fetchProducts();
     } catch (error) {
       console.error('Error saving product:', error);
       toast({
@@ -241,7 +227,7 @@ export const ProductManagement = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this product? It will be removed from the Campus Store.')) return;
+    if (!confirm('Are you sure you want to delete this product?')) return;
 
     try {
       const { error } = await supabase
@@ -251,7 +237,7 @@ export const ProductManagement = () => {
 
       if (error) throw error;
       toast({ title: "Product deleted successfully!" });
-      fetchProducts();
+      await fetchProducts();
     } catch (error) {
       console.error('Error deleting product:', error);
       toast({
@@ -271,19 +257,15 @@ export const ProductManagement = () => {
 
       if (error) throw error;
       toast({
-        title: !currentStatus ? "Product activated" : "Product deactivated",
-        description: !currentStatus 
-          ? "Product is now visible in the Campus Store" 
-          : "Product is now hidden from the Campus Store"
+        title: !currentStatus ? "Product activated" : "Product deactivated"
       });
-      fetchProducts();
+      await fetchProducts();
     } catch (error) {
       console.error('Error updating product status:', error);
     }
   };
 
-  // Show loading skeleton while auth is loading or data is loading
-  if (authLoading || loading) {
+  if (authLoading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -293,7 +275,6 @@ export const ProductManagement = () => {
           </div>
           <Skeleton className="h-10 w-32" />
         </div>
-        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
             <Card key={i}>
@@ -310,14 +291,13 @@ export const ProductManagement = () => {
     );
   }
 
-  // Show error state
   if (error) {
     return (
       <div className="text-center py-12">
         <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive" />
         <h3 className="text-lg font-semibold mb-2">Something went wrong</h3>
         <p className="text-muted-foreground mb-4">{error}</p>
-        <Button onClick={initializeData} variant="outline">
+        <Button onClick={loadData} variant="outline">
           <RefreshCw className="h-4 w-4 mr-2" />
           Try Again
         </Button>
@@ -325,13 +305,38 @@ export const ProductManagement = () => {
     );
   }
 
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i}>
+              <Skeleton className="h-48 w-full rounded-t-lg" />
+              <CardContent className="p-4 space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-3 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Product Management</h2>
-          <p className="text-muted-foreground">Add products that will be visible to students in the Campus Store</p>
+          <p className="text-muted-foreground">Manage your store products</p>
         </div>
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
           <DialogTrigger asChild>
@@ -462,7 +467,7 @@ export const ProductManagement = () => {
                   checked={formData.is_active}
                   onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
                 />
-                <Label htmlFor="is_active">Make product visible in Campus Store</Label>
+                <Label htmlFor="is_active">Active</Label>
               </div>
 
               <div className="flex gap-2 pt-4">
@@ -485,7 +490,6 @@ export const ProductManagement = () => {
         </Dialog>
       </div>
 
-      {/* Products Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {products.map((product) => {
           const discountedPrice = product.price * (1 - product.discount_percentage / 100);
@@ -509,16 +513,16 @@ export const ProductManagement = () => {
                     <Badge className="bg-red-500">{product.discount_percentage}% OFF</Badge>
                   )}
                   <Badge variant={product.is_active ? "default" : "secondary"}>
-                    {product.is_active ? 'Visible' : 'Hidden'}
+                    {product.is_active ? 'Active' : 'Inactive'}
                   </Badge>
                 </div>
               </div>
               <CardContent className="p-4">
-                <h3 className="font-semibold mb-1 line-clamp-1">{product.name}</h3>
+                <h3 className="font-semibold mb-1">{product.name}</h3>
                 <p className="text-sm text-muted-foreground mb-2">
                   {product.store_categories?.name}
                 </p>
-                <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                <p className="text-sm text-muted-foreground mb-2">
                   {product.description}
                 </p>
                 <div className="flex items-center justify-between mb-2">
@@ -570,7 +574,7 @@ export const ProductManagement = () => {
         <div className="text-center py-12">
           <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
           <h3 className="text-lg font-semibold mb-2">No Products Yet</h3>
-          <p className="text-muted-foreground mb-4">Start by adding your first product to the Campus Store</p>
+          <p className="text-muted-foreground mb-4">Start by adding your first product</p>
           <Button onClick={() => setShowAddDialog(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Add Your First Product
