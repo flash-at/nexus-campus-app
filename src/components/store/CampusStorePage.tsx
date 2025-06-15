@@ -30,7 +30,7 @@ interface Product {
   available_until: string;
   vendor_id: string;
   category_id: string;
-  vendors: {
+  vendors?: {
     business_name: string;
     status: string;
   };
@@ -100,18 +100,17 @@ export const CampusStorePage = () => {
     try {
       console.log('Fetching products for campus store...');
       
-      // Fetch products with vendor information, filtering for approved vendors only
+      // First try to get all active products with vendor info
       let query = supabase
         .from('products')
         .select(`
           *,
-          vendors!inner (
+          vendors (
             business_name,
             status
           )
         `)
         .eq('is_active', true)
-        .eq('vendors.status', 'approved')
         .order('created_at', { ascending: false });
 
       // Apply filters only if they exist
@@ -130,13 +129,28 @@ export const CampusStorePage = () => {
         throw error;
       }
       
-      console.log('Products fetched from approved vendors:', data);
-      setProducts(data || []);
+      console.log('Raw products data:', data);
       
-      if (!data || data.length === 0) {
-        if (!selectedCategory && !searchQuery) {
+      // Filter to only show products from approved vendors
+      const approvedProducts = data?.filter(product => 
+        product.vendors && product.vendors.status === 'approved'
+      ) || [];
+      
+      console.log('Products from approved vendors:', approvedProducts);
+      setProducts(approvedProducts);
+      
+      // Set appropriate message based on results
+      if (approvedProducts.length === 0) {
+        if (data && data.length > 0) {
+          // There are products but no approved vendors
+          console.log('No approved vendors found');
+          setError('No products are currently available from approved vendors.');
+        } else if (!selectedCategory && !searchQuery) {
+          // No products at all
+          console.log('No products found in database');
           setError('No products are currently available in the store.');
         }
+        // If we have filters applied and no results, don't set error - just show empty state
       } else {
         setError(null);
       }
@@ -153,8 +167,7 @@ export const CampusStorePage = () => {
 
   useEffect(() => {
     if (user) {
-      setLoading(true);
-      fetchProducts().finally(() => setLoading(false));
+      fetchProducts();
     }
   }, [selectedCategory, searchQuery, user]);
 
@@ -355,7 +368,7 @@ export const CampusStorePage = () => {
         )}
 
         {/* Products Grid */}
-        {!loading && !error && (
+        {!loading && !error && products.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {products.map((product) => {
               const discountedPrice = product.price * (1 - product.discount_percentage / 100);
@@ -426,9 +439,17 @@ export const CampusStorePage = () => {
           </div>
         )}
 
-        {products.length === 0 && !loading && !error && (
+        {/* Empty State - only show when no error and no loading */}
+        {!loading && !error && products.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">No products found</p>
+            <div className="text-6xl mb-4">🛍️</div>
+            <h3 className="text-lg font-semibold mb-2">No Products Found</h3>
+            <p className="text-muted-foreground">
+              {selectedCategory || searchQuery 
+                ? "Try adjusting your search or category filter"
+                : "Check back later for new products"
+              }
+            </p>
           </div>
         )}
       </div>
