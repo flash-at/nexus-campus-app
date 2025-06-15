@@ -85,12 +85,22 @@ export const Cart: React.FC<CartProps> = ({
             auth: { persistSession: false }
           }
         );
-      } 
+      }
+
+      // Debug session contents carefully
+      console.log('[Cart] supabaseSession:', supabaseSession);
+      console.log('[Cart] supabaseSession.user:', supabaseSession?.user);
 
       // Use supabaseSession.user.id (Auth user ID) for RLS!
       const authUserId = supabaseSession?.user?.id;
       if (!authUserId) {
-        throw new Error("Could not determine authenticated user ID from session");
+        // Log entire session for error investigation
+        console.error('[Cart] Could not determine authenticated user ID. Full supabaseSession:', supabaseSession);
+        throw new Error(
+          "Could not determine authenticated user ID from session. " +
+          "Please ensure your authentication is set up correctly and try logging in again. " +
+          "Session object: " + JSON.stringify(supabaseSession)
+        );
       }
 
       for (const [vendorId, group] of Object.entries(groupedItems)) {
@@ -150,7 +160,6 @@ export const Cart: React.FC<CartProps> = ({
       onBack();
 
     } catch (error: any) {
-      // Show error message if possible
       const errorDesc =
         (error?.message || error?.description || "") +
         (error?.details ? ` (${error.details})` : "");
