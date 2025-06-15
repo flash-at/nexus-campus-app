@@ -251,12 +251,23 @@ const Register = () => {
     } catch (error: any) {
       console.error("Registration error at step:", error);
 
+      // Inspect any error from Supabase deeper
       let errorMessage = "Registration failed. Please try again.";
 
-      // Add more debugging:
-      if (typeof error === "string") {
+      // If error is from Supabase, extract the error object
+      if (error && error.code && error.message) {
+        errorMessage = `Supabase error: ${error.message}`;
+        if (error.details) errorMessage += ` (${error.details})`;
+      } else if (error && error.error) {
+        // Some APIs return { error: ... }
+        errorMessage = error.error;
+      } else if (typeof error === "string") {
         errorMessage = error;
+      } else if (error.message) {
+        errorMessage = error.message;
       }
+
+      // Additional Firebase error parsing unchanged
       if (error.code) {
         switch (error.code) {
           case 'auth/email-already-in-use':
@@ -275,14 +286,13 @@ const Register = () => {
             errorMessage = "Network error. Please check your connection and try again.";
             break;
           default:
-            errorMessage = `Registration failed: ${error.message}`;
+            // Supabase codes are usually different, so prefer message
+            break;
         }
-      } else if (error.message) {
-        errorMessage = error.message;
       }
 
       toast.error(errorMessage, {
-        duration: 5000,
+        duration: 6000,
       });
     } finally {
       setIsLoading(false);
