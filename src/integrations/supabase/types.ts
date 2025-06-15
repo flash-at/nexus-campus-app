@@ -1121,6 +1121,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_email_exists: {
+        Args: { p_email: string }
+        Returns: boolean
+      }
+      check_hall_ticket_exists: {
+        Args: { p_hall_ticket: string }
+        Returns: boolean
+      }
       get_current_user_id: {
         Args: Record<PropertyKey, never>
         Returns: string

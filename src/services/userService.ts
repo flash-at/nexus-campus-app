@@ -65,42 +65,36 @@ export interface UserProfile {
 
 export const checkHallTicketExists = async (hallTicket: string): Promise<boolean> => {
   try {
-    console.log("Checking hall ticket:", hallTicket);
-    const { data, error } = await supabase
-      .from("users")
-      .select("hall_ticket")
-      .eq("hall_ticket", hallTicket)
-      .maybeSingle();
+    console.log("Checking hall ticket via RPC:", hallTicket);
+    const { data, error } = await supabase.rpc('check_hall_ticket_exists', { p_hall_ticket: hallTicket });
 
     if (error) {
-      console.error("Error checking hall ticket:", error);
+      console.error("Error checking hall ticket via RPC:", error);
+      // Default to false to allow registration attempt, the backend will have the final say.
       return false;
     }
-
-    return data !== null;
+    
+    return data;
   } catch (error) {
-    console.error("Error checking hall ticket:", error);
+    console.error("Exception checking hall ticket:", error);
     return false;
   }
 };
 
 export const checkEmailExists = async (email: string): Promise<boolean> => {
   try {
-    console.log("Checking email:", email);
-    const { data, error } = await supabase
-      .from("users")
-      .select("email")
-      .eq("email", email)
-      .maybeSingle();
+    console.log("Checking email via RPC:", email);
+    const { data, error } = await supabase.rpc('check_email_exists', { p_email: email });
 
     if (error) {
-      console.error("Error checking email:", error);
+      console.error("Error checking email via RPC:", error);
+      // Default to false to allow registration attempt, the backend will have the final say.
       return false;
     }
-
-    return data !== null;
+    
+    return data;
   } catch (error) {
-    console.error("Error checking email:", error);
+    console.error("Exception checking email:", error);
     return false;
   }
 };
