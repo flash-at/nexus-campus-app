@@ -1,11 +1,10 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { User, Mail, Phone, BookOpen, Award } from "lucide-react";
-import { useProfile } from "@/hooks/useProfile";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { EditProfileForm } from "./EditProfileForm";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -53,7 +52,7 @@ const ProfilePageSkeleton = () => (
 );
 
 export const ProfilePage = () => {
-  const { profile, loading, refetch } = useProfile();
+  const { profile, loading, refetch, error } = useUserProfile();
   const { user } = useAuth();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCreatingProfile, setIsCreatingProfile] = useState(false);
@@ -80,6 +79,23 @@ export const ProfilePage = () => {
 
   if (loading) {
     return <ProfilePageSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <Card className="soft-shadow animate-fade-in max-w-2xl mx-auto mt-8">
+        <CardHeader>
+          <CardTitle className="text-red-500">Error</CardTitle>
+          <CardDescription>
+            There was an error loading your profile.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="text-center">
+          <p className="mb-4">{error}</p>
+          <Button onClick={() => refetch()}>Try Again</Button>
+        </CardContent>
+      </Card>
+    );
   }
 
   const handleCreateProfile = async (e: React.FormEvent) => {
