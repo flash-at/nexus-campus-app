@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { 
   User, ShoppingBag, Calendar, CreditCard, FileText, Store, MessageSquare, Users,
   TrendingUp, BookOpen, Target, Newspaper, MessageCircle, Bot, Briefcase, Shield,
-  Settings, LogOut, Bell, Clock, Zap, Menu, X, Package, Trophy, UserCog, IdCard
+  Settings, LogOut, Bell, Clock, Zap, Menu, X, Package, Trophy, UserCog, IdCard, RotateCcw
 } from "lucide-react";
 import { SidebarNav } from "@/components/dashboard/SidebarNav";
 import { NewProfilePage } from "@/components/profile/NewProfilePage";
@@ -24,7 +24,7 @@ const Dashboard = () => {
   const [activeSection, setActiveSection] = useState("overview");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { profile } = useUserProfile();
-  const { user, signOut } = useAuth();
+  const { user, signOut, cleanupAndReload } = useAuth();
   const navigate = useNavigate();
   const { currentUserRank, currentUserData } = useLeaderboard();
 
@@ -155,6 +155,10 @@ const Dashboard = () => {
                   <User className="mr-2 h-4 w-4" />
                   <span>My Profile</span>
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={cleanupAndReload}>
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  <span>Fix Auth Issues</span>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
@@ -226,7 +230,6 @@ const Dashboard = () => {
                 </Button>
               </div>
 
-              {/* Empty State for Orders */}
               <div className="text-center py-12 sm:py-20">
                 <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">
                   <Package className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
@@ -466,7 +469,6 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* Other sections */}
           {activeSection !== "overview" && activeSection !== "profile" && activeSection !== "orders" && activeSection !== "leaderboard" && activeSection !== "events" && activeSection !== "id-card" && activeSection !== "store" && (
             <div className="text-center py-12 sm:py-20 animate-fade-in">
               <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 sm:mb-6 rounded-xl sm:rounded-2xl bg-primary/20 flex items-center justify-center">

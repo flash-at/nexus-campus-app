@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,13 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, Eye, EyeOff, Mail, Lock, Shield, Users, Zap } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Mail, Lock, Shield, Users, Zap, RotateCcw } from "lucide-react";
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendEmailVerification } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { getUserProfile, createUserProfile } from "@/services/userService";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
+import { cleanupAuthState } from "@/utils/authCleanup";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -31,6 +31,12 @@ const Login = () => {
     return null;
   }
 
+  const handleCleanupAuth = () => {
+    console.log('[Login] Manual auth cleanup triggered');
+    const removedCount = cleanupAuthState();
+    toast.success(`Cleared ${removedCount} auth storage keys. Try logging in again.`);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -42,6 +48,9 @@ const Login = () => {
     setIsLoading(true);
     
     try {
+      // Clean up any existing auth state before login
+      cleanupAuthState();
+      
       const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
       
       if (!userCredential.user.emailVerified) {
@@ -80,6 +89,9 @@ const Login = () => {
 
   const handleGoogleSignIn = async () => {
     try {
+      // Clean up any existing auth state before Google login
+      cleanupAuthState();
+      
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       
@@ -281,6 +293,15 @@ const Login = () => {
                           />
                         </svg>
                         Continue with Google
+                      </Button>
+                      
+                      <Button 
+                        variant="outline" 
+                        className="w-full h-12 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300 font-medium"
+                        onClick={handleCleanupAuth}
+                      >
+                        <RotateCcw className="mr-3 h-5 w-5" />
+                        Clear Auth Storage & Retry
                       </Button>
                     </div>
                   </div>
