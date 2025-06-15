@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,6 +8,7 @@ import { Plus, Trash2, Package } from 'lucide-react';
 import { usePartnerAuth } from '@/hooks/usePartnerAuth';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 
 interface Product {
   id: string;
@@ -73,15 +75,21 @@ export const ProductManagement = () => {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!partner?.id) return alert("Not authorized");
-    if (!form.name || !form.price || !form.category_id) return alert("Name, price, and category required");
+    if (!partner?.id) {
+      toast.error("Not authorized. Please log in again.");
+      return;
+    }
+    if (!form.name || !form.price || !form.category_id) {
+      toast.error("Product name, price, and category are required.");
+      return;
+    }
 
     const { error } = await supabase.from('products').insert([{
       name: form.name,
       description: form.description,
       price: Number(form.price),
       discount_percentage: Number(form.discount || 0),
-      quantity: Number(form.quantity || 1),
+      quantity: Number(form.quantity || 0),
       vendor_id: partner.id,
       category_id: form.category_id,
       is_active: true,
@@ -89,10 +97,14 @@ export const ProductManagement = () => {
       available_from: form.available_from || null,
       available_until: form.available_until || null,
     }]);
+
     if (error) {
       console.error('Failed to add product:', error);
-      return alert('Failed to add product');
+      toast.error(`Failed to add product: ${error.message}`);
+      return;
     }
+    
+    toast.success("Product added successfully!");
     setAddMode(false);
     setForm({ name: '', description: '', price: '', discount: '', quantity: '', category_id: '', image_url: '', available_from: '09:00', available_until: '18:00' });
     fetchProducts();
@@ -100,7 +112,15 @@ export const ProductManagement = () => {
 
   const removeProduct = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
-    await supabase.from('products').update({ is_active: false }).eq('id', id);
+    const { error } = await supabase.from('products').update({ is_active: false }).eq('id', id);
+
+    if (error) {
+      toast.error(`Failed to delete product: ${error.message}`);
+      console.error('Failed to remove product:', error);
+      return;
+    }
+
+    toast.success("Product removed successfully.");
     fetchProducts();
   };
 
