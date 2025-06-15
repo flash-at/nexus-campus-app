@@ -12,9 +12,12 @@ import { auth } from "@/lib/firebase";
 import { createUserProfile, checkHallTicketExists } from "@/services/userService";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
+import { Turnstile } from "@marsidev/react-turnstile";
+import { useTheme } from "next-themes";
 
 const Register = () => {
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -29,6 +32,7 @@ const Register = () => {
     password: "",
     confirmPassword: ""
   });
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   // NEW: Allow non-edu sign up toggle
   const [allowNonEdu, setAllowNonEdu] = useState(false);
@@ -201,6 +205,11 @@ const checkFirebaseUidExists = async (firebaseUid: string): Promise<boolean> => 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!turnstileToken) {
+      toast.error("Please complete the security check.");
+      return;
+    }
 
     console.log("Starting registration process...");
 
@@ -669,10 +678,21 @@ const checkFirebaseUidExists = async (firebaseUid: string): Promise<boolean> => 
                       )}
                     </div>
 
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Security Check</Label>
+                      <Turnstile
+                        siteKey="1x00000000000000000000AA" // This is a test key. Get yours from Cloudflare.
+                        onSuccess={setTurnstileToken}
+                        options={{
+                          theme: theme === 'dark' ? 'dark' : 'light',
+                        }}
+                      />
+                    </div>
+
                     <Button 
                       type="submit" 
                       className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-                      disabled={isLoading}
+                      disabled={isLoading || !turnstileToken}
                     >
                       {isLoading ? (
                         <div className="flex items-center gap-3">
