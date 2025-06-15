@@ -81,7 +81,7 @@ export const Cart: React.FC<CartProps> = ({
     console.log('[Cart] 📊 Auth state check:', {
       hasUser: !!user,
       hasSupabaseSession: !!supabaseSession,
-      supabaseUserId: supabaseSession?.user?.id,
+      firebaseUID: user?.uid,
       timestamp: new Date().toISOString()
     });
 
@@ -105,24 +105,32 @@ export const Cart: React.FC<CartProps> = ({
       return;
     }
 
-    if (!supabaseSession.user?.id) {
-      console.log('[Cart] ❌ No user ID found in session:', supabaseSession);
-      toast({
-        title: "Authentication Error",
-        description: "User ID not found in session. Please try syncing your session.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     setIsPlacingOrder(true);
 
     try {
       console.log('[Cart] 🚀 Starting order placement process...');
       
-      // Use the Firebase user ID directly for RLS
-      const authUserId = supabaseSession.user.id;
-      console.log('[Cart] 👤 Using auth user ID:', authUserId);
+      // First, get the user's UUID from the users table using their Firebase UID
+      console.log('[Cart] 🔍 Looking up user UUID for Firebase UID:', user.uid);
+      
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('firebase_uid', user.uid)
+        .single();
+
+      if (userError || !userData) {
+        console.error('[Cart] ❌ Error finding user:', userError);
+        toast({
+          title: "User Error",
+          description: "Could not find your user profile. Please try logging out and back in.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const userUuid = userData.id;
+      console.log('[Cart] ✅ Found user UUID:', userUuid);
 
       for (const [vendorId, group] of Object.entries(groupedItems)) {
         console.log('[Cart] 🏪 Processing vendor:', vendorId);
@@ -136,7 +144,7 @@ export const Cart: React.FC<CartProps> = ({
         const qrCode = `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
         console.log('[Cart] 📝 Creating order:', {
-          student_id: authUserId,
+          student_id: userUuid,
           vendor_id: vendorId,
           total_price: vendorSubtotal + vendorServiceFee,
           service_fee: vendorServiceFee,
@@ -147,7 +155,7 @@ export const Cart: React.FC<CartProps> = ({
         const { data: orderData, error: orderError } = await supabase
           .from('campus_orders')
           .insert({
-            student_id: authUserId,
+            student_id: userUuid,
             vendor_id: vendorId,
             total_price: vendorSubtotal + vendorServiceFee,
             service_fee: vendorServiceFee,
