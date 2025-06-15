@@ -52,208 +52,116 @@ export const CampusStorePage = () => {
   const { toast } = useToast();
   const { user } = useAuth();
 
+  // REMOVE THE addSampleDataIfNeeded function – this is not needed in production
+  // useEffect(() => {
+  //   initializeData();
+  // }, []);
+
   useEffect(() => {
+    // On mount, fetch all
     initializeData();
   }, []);
 
+  // Remove custom sample seed logic, just load everything from DB
   const initializeData = async () => {
     setLoading(true);
     setError(null);
-    
     try {
-      console.log('Initializing Campus Store data...');
-      
-      // Add sample data if needed
-      await addSampleDataIfNeeded();
-      
-      // Fetch categories and products
       await Promise.all([fetchCategories(), fetchProducts()]);
     } catch (error) {
-      console.error('Error initializing data:', error);
       setError('Failed to load store data. Please try again.');
+      console.error('[CampusStorePage] initializeData error:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const addSampleDataIfNeeded = async () => {
-    try {
-      // Check if categories exist
-      const { data: existingCategories } = await supabase
-        .from('store_categories')
-        .select('*')
-        .limit(1);
-
-      if (!existingCategories || existingCategories.length === 0) {
-        console.log('Adding sample categories...');
-        
-        // Insert categories
-        const { error: categoriesError } = await supabase
-          .from('store_categories')
-          .insert([
-            { name: 'Food & Beverages', description: 'Meals, snacks, and drinks', icon: '🍔', display_order: 1, active: true },
-            { name: 'Xerox & Printing', description: 'Document services', icon: '🖨️', display_order: 2, active: true },
-            { name: 'Stationery', description: 'Academic supplies', icon: '📝', display_order: 3, active: true },
-            { name: 'Electronics', description: 'Tech supplies', icon: '💻', display_order: 4, active: true }
-          ]);
-
-        if (categoriesError) {
-          console.error('Categories insert error:', categoriesError);
-        }
-
-        // Insert sample vendor
-        const { error: vendorError } = await supabase
-          .from('vendors')
-          .insert({
-            id: '550e8400-e29b-41d4-a716-446655440001',
-            firebase_uid: 'sample_vendor_uid',
-            business_name: 'Campus Cafe',
-            category: 'Food & Beverages',
-            description: 'Fresh food and beverages for students',
-            status: 'approved'
-          });
-
-        if (vendorError && !vendorError.message.includes('duplicate key')) {
-          console.error('Vendor insert error:', vendorError);
-        }
-
-        // Get the food category ID for products
-        const { data: foodCategory } = await supabase
-          .from('store_categories')
-          .select('id')
-          .eq('name', 'Food & Beverages')
-          .single();
-
-        if (foodCategory) {
-          // Insert sample products
-          const { error: productsError } = await supabase
-            .from('products')
-            .insert([
-              {
-                name: 'Chicken Sandwich',
-                description: 'Fresh grilled chicken sandwich with vegetables',
-                price: 120.00,
-                discount_percentage: 10,
-                quantity: 25,
-                vendor_id: '550e8400-e29b-41d4-a716-446655440001',
-                category_id: foodCategory.id,
-                is_active: true,
-                available_from: '08:00:00',
-                available_until: '20:00:00'
-              },
-              {
-                name: 'Coffee',
-                description: 'Hot freshly brewed coffee',
-                price: 40.00,
-                discount_percentage: 0,
-                quantity: 50,
-                vendor_id: '550e8400-e29b-41d4-a716-446655440001',
-                category_id: foodCategory.id,
-                is_active: true,
-                available_from: '07:00:00',
-                available_until: '22:00:00'
-              }
-            ]);
-
-          if (productsError) {
-            console.error('Products insert error:', productsError);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error adding sample data:', error);
-    }
-  };
-
+  // Clean fetchCategories
   const fetchCategories = async () => {
     try {
-      console.log('Fetching categories...');
       const { data, error } = await supabase
         .from('store_categories')
         .select('*')
         .eq('active', true)
         .order('display_order');
-
-      if (error) {
-        console.error('Categories error:', error);
-        throw error;
+      if (error) throw error;
+      setCategories(data ?? []);
+      if (!data || data.length === 0) {
+        setError('No categories found.');
       }
-      
-      console.log('[CampusStorePage] Categories fetched:', data?.length || 0, data);
-      setCategories(data || []);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      setError('Failed to load categories.');
+      setCategories([]);
+      console.error('[CampusStorePage] Error fetching categories:', error);
     }
   };
 
+  // Clean fetchProducts and clarify vendor mapping logic
   const fetchProducts = async () => {
     try {
-      console.log('Fetching products...');
-      
+      // 1. Fetch all products
       const { data: allProducts, error: productsError } = await supabase
         .from('products')
         .select('*')
         .eq('is_active', true);
 
-      if (productsError) {
-        console.error('Products error:', productsError);
-        throw productsError;
-      }
-
-      console.log('[CampusStorePage] Products fetched:', allProducts?.length || 0, allProducts);
-
+      if (productsError) throw productsError;
       if (!allProducts || allProducts.length === 0) {
         setProducts([]);
         setError('No products are currently available.');
         return;
       }
 
-      // Fetch vendors
-      const { data: vendors } = await supabase
+      // 2. Fetch vendors
+      const { data: vendors, error: vendorsError } = await supabase
         .from('vendors')
         .select('*')
         .eq('status', 'approved');
+      if (vendorsError) throw vendorsError;
 
-      console.log('[CampusStorePage] Vendors fetched:', vendors?.length || 0, vendors);
-
+      // 3. Map vendorId => vendor
       const vendorMap: Record<string, Vendor> = {};
-      if (vendors) {
-        vendors.forEach(vendor => {
-          vendorMap[vendor.id] = vendor;
-        });
-      }
+      (vendors ?? []).forEach((vendor) => {
+        vendorMap[vendor.id] = vendor;
+      });
 
-      let filteredProducts = allProducts;
-      
+      // 4. Apply category and search filters (robust)
+      let filteredProducts = [...allProducts];
       if (selectedCategory) {
-        filteredProducts = filteredProducts.filter(product => product.category_id === selectedCategory);
+        filteredProducts = filteredProducts.filter(p => p.category_id === selectedCategory);
       }
-
-      if (searchQuery && searchQuery.trim() !== '') {
+      if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
-        filteredProducts = filteredProducts.filter(product => 
-          product.name.toLowerCase().includes(query) || 
-          (product.description && product.description.toLowerCase().includes(query))
+        filteredProducts = filteredProducts.filter(product =>
+          product.name?.toLowerCase().includes(query) ||
+          (product.description?.toLowerCase().includes(query))
         );
       }
 
+      // 5. Map vendor objects for display, fallback to "Campus Store"
       const productsWithVendors = filteredProducts.map(product => ({
         ...product,
-        vendor: product.vendor_id ? vendorMap[product.vendor_id] : undefined
+        vendor: vendorMap[product.vendor_id] ?? { business_name: "Campus Store", status: "approved", id: "" }
       }));
 
-      console.log('[CampusStorePage] Final products after filtering:', productsWithVendors.length, productsWithVendors);
-
       setProducts(productsWithVendors);
-      setError(null);
+
+      if (filteredProducts.length === 0) {
+        setError('No products found matching your search or filters.');
+      } else {
+        setError(null);
+      }
     } catch (error) {
-      console.error('Error fetching products:', error);
       setError('Failed to load products. Please try again.');
+      setProducts([]);
+      console.error('[CampusStorePage] Error fetching products:', error);
     }
   };
 
   useEffect(() => {
     fetchProducts();
+    // fetchCategories(); // Optionally, reload categories if filters depend
+    // Only re-fetch products when filter/search changes
   }, [selectedCategory, searchQuery]);
 
   const addToCart = (product: Product, quantity: number = 1) => {
