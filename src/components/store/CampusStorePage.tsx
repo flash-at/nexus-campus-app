@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -80,6 +79,10 @@ export const CampusStorePage = () => {
         .gt('quantity', 0);
       if (prodErr) throw prodErr;
       setProducts(prods || []);
+      // CONSOLE LOG ALL RAW QUERIED DATA
+      console.log("Fetched categories (Store):", cats);
+      console.log("Fetched vendors (Store):", vends);
+      console.log("Fetched products (Store):", prods);
     } catch (e: any) {
       setError(e.message || 'Could not load store data.');
     }

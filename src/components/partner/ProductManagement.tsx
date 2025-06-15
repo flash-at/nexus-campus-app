@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -43,18 +42,20 @@ export const ProductManagement = () => {
       .eq('active', true)
       .order('display_order');
     if (!error && data) setCategories(data);
+    console.log("Fetched categories (Partner):", data, error);
   };
 
   const fetchProducts = async () => {
     setLoading(true);
     if (partner?.id) {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('products')
         .select('*')
         .eq('vendor_id', partner.id)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
       setProducts(data || []);
+      console.log("Fetched products (Partner):", data, error, "PartnerId:", partner.id);
     }
     setLoading(false);
   };
