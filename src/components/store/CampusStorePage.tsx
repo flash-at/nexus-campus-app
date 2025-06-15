@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -99,12 +100,19 @@ export const CampusStorePage = () => {
     try {
       console.log('Fetching products for campus store...');
       
-      // Simple query without complex joins first
       const { data: productsData, error: productsError } = await supabase
         .from('products')
-        .select('*')
+        .select(`
+          *,
+          vendors!inner (
+            id,
+            business_name,
+            status
+          )
+        `)
         .eq('is_active', true)
         .gt('quantity', 0)
+        .eq('vendors.status', 'approved')
         .order('created_at', { ascending: false });
 
       if (productsError) {
@@ -120,41 +128,8 @@ export const CampusStorePage = () => {
         return;
       }
 
-      // Now get vendor information for each product
-      const productIds = productsData.map(p => p.vendor_id).filter(Boolean);
-      
-      if (productIds.length === 0) {
-        setProducts([]);
-        setError('No products with valid vendors found.');
-        return;
-      }
-
-      const { data: vendorsData, error: vendorsError } = await supabase
-        .from('vendors')
-        .select('id, business_name')
-        .in('id', productIds)
-        .eq('status', 'approved');
-
-      if (vendorsError) {
-        console.error('Error fetching vendors:', vendorsError);
-        // Continue without vendor data rather than failing completely
-      }
-
-      console.log('Vendors fetched:', vendorsData);
-
-      // Combine products with vendor data
-      const productsWithVendors = productsData.map(product => {
-        const vendor = vendorsData?.find(v => v.id === product.vendor_id);
-        return {
-          ...product,
-          vendors: vendor ? { business_name: vendor.business_name } : null
-        };
-      }).filter(product => product.vendors); // Only include products with valid vendors
-
-      console.log('Products with vendors:', productsWithVendors);
-
       // Apply filters
-      let filteredProducts = productsWithVendors;
+      let filteredProducts = productsData;
 
       if (selectedCategory) {
         filteredProducts = filteredProducts.filter(p => p.category_id === selectedCategory);
