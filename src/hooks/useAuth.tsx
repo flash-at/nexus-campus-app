@@ -4,6 +4,7 @@ import { auth } from "@/lib/firebase";
 import { cleanupAuthState } from "@/utils/authCleanup";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
+import { syncSupabaseSession } from "@/utils/syncSupabaseSession";
 
 interface AuthContextType {
   user: User | null;
@@ -56,20 +57,34 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUser(firebaseUser);
 
       if (firebaseUser) {
-        console.log('[Auth] 🔄 Syncing Firebase session to Supabase...');
-        const token = await firebaseUser.getIdToken();
-        const { error } = await supabase.auth.setSession({
-          access_token: token,
-        });
+        console.log('[Auth] 🔄 Syncing Firebase session to Supabase via Edge Function...');
+        try {
+          const token = await firebaseUser.getIdToken();
+          const newSupabaseSession = await syncSupabaseSession(token);
 
-        if (error) {
-          console.error('[Auth] ❌ Error setting Supabase session:', error);
+          if (newSupabaseSession && newSupabaseSession.access_token && newSupabaseSession.refresh_token) {
+            const { error } = await supabase.auth.setSession({
+              access_token: newSupabaseSession.access_token,
+              refresh_token: newSupabaseSession.refresh_token,
+            });
+
+            if (error) {
+              console.error('[Auth] ❌ Error setting Supabase session from synced data:', error);
+              setSupabaseSession(null);
+            } else {
+              // After setting session, we can get it to update our state.
+              const { data: { session } } = await supabase.auth.getSession();
+              setSupabaseSession(session);
+              console.log('[Auth] ✅ Supabase session synced via Edge Function.');
+            }
+          } else {
+            console.error('[Auth] ❌ Sync function did not return a valid session.');
+            setSupabaseSession(null);
+          }
+        } catch (error) {
+          console.error('[Auth] ❌ Error syncing with Supabase Edge Function:', error);
+          await supabase.auth.signOut();
           setSupabaseSession(null);
-        } else {
-            // After setting session, we can get it to update our state.
-            const { data: { session } } = await supabase.auth.getSession();
-            setSupabaseSession(session);
-            console.log('[Auth] ✅ Supabase session synced.');
         }
       } else {
         console.log('[Auth] 🚫 No Firebase user. Signing out of Supabase.');
