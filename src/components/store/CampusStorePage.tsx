@@ -75,7 +75,6 @@ export const CampusStorePage = () => {
 
   const fetchCategories = async () => {
     try {
-      console.log('Fetching categories...');
       const { data, error } = await supabase
         .from('store_categories')
         .select('*')
@@ -87,16 +86,7 @@ export const CampusStorePage = () => {
         throw error;
       }
       
-      console.log('Categories fetched:', data);
       setCategories(data || []);
-      
-      // Debug: Let's also check if we have any categories at all
-      const { data: allCategories, error: allCatError } = await supabase
-        .from('store_categories')
-        .select('*');
-      
-      console.log('All categories (including inactive):', allCategories);
-      
     } catch (error) {
       console.error('Error fetching categories:', error);
       toast({
@@ -111,33 +101,18 @@ export const CampusStorePage = () => {
     if (!user) return;
     
     try {
-      console.log('Fetching products for campus store...');
-      
-      // Debug: First check if we have any vendors
-      const { data: allVendors, error: vendorError } = await supabase
-        .from('vendors')
-        .select('*');
-      
-      console.log('All vendors:', allVendors);
-      
-      // Debug: Check if we have any products at all
-      const { data: allProducts, error: allProdError } = await supabase
-        .from('products')
-        .select('*');
-      
-      console.log('All products:', allProducts);
-      
-      // Now try to get products with vendor info
+      // Build query with proper vendor filtering at SQL level
       let query = supabase
         .from('products')
         .select(`
           *,
-          vendors (
+          vendors!inner (
             business_name,
             status
           )
         `)
         .eq('is_active', true)
+        .eq('vendors.status', 'approved')
         .order('created_at', { ascending: false });
 
       // Apply filters only if they exist
@@ -156,30 +131,15 @@ export const CampusStorePage = () => {
         throw error;
       }
       
-      console.log('Raw products data with vendors:', data);
+      console.log('Products fetched:', data);
+      setProducts(data || []);
       
-      // Filter to only show products from approved vendors
-      const approvedProducts = data?.filter(product => 
-        product.vendors && product.vendors.status === 'approved'
-      ) || [];
-      
-      console.log('Products from approved vendors:', approvedProducts);
-      setProducts(approvedProducts);
-      
-      // Set appropriate message based on results
-      if (approvedProducts.length === 0) {
-        if (data && data.length > 0) {
-          // There are products but no approved vendors
-          console.log('No approved vendors found');
-          setError('No products are currently available from approved vendors.');
-        } else if (!selectedCategory && !searchQuery) {
-          // No products at all
-          console.log('No products found in database');
-          setError('No products are currently available in the store.');
-        }
-        // If we have filters applied and no results, don't set error - just show empty state
-      } else {
+      // Clear error if we successfully got data
+      if (data && data.length > 0) {
         setError(null);
+      } else if (!selectedCategory && !searchQuery) {
+        // Only show error if no filters are applied
+        setError('No products are currently available in the store.');
       }
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -202,8 +162,6 @@ export const CampusStorePage = () => {
   useEffect(() => {
     if (!user) return;
 
-    console.log('Setting up real-time subscription for products...');
-    
     const channel = supabase
       .channel('products-changes')
       .on(
@@ -221,7 +179,6 @@ export const CampusStorePage = () => {
       .subscribe();
 
     return () => {
-      console.log('Cleaning up real-time subscription...');
       supabase.removeChannel(channel);
     };
   }, [user]);
