@@ -276,9 +276,18 @@ export const Cart: React.FC<CartProps> = ({
 
                 <div className="space-y-3">
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Payment Method</label>
-                    <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                      <SelectTrigger>
+                    <label
+                      className="text-sm font-medium mb-2 block"
+                      htmlFor="payment-method"
+                    >
+                      Payment Method
+                    </label>
+                    <Select
+                      value={paymentMethod}
+                      onValueChange={setPaymentMethod}
+                      name="payment_method"
+                    >
+                      <SelectTrigger id="payment-method" name="payment_method">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -291,8 +300,15 @@ export const Cart: React.FC<CartProps> = ({
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Special Instructions (Optional)</label>
+                    <label
+                      className="text-sm font-medium mb-2 block"
+                      htmlFor="special-instructions"
+                    >
+                      Special Instructions (Optional)
+                    </label>
                     <Textarea
+                      id="special-instructions"
+                      name="special_instructions"
                       placeholder="Any special requests or instructions..."
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
