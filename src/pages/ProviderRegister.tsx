@@ -1,4 +1,3 @@
-
 import React, { useState, Fragment } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -13,7 +12,6 @@ import { ArrowLeft, ArrowRight, User, Building, Shield, CheckCircle } from "luci
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 import { signUpPartner, getPartnerAuthErrorMessage } from "@/utils/partnerSupabaseAuth";
-import { Turnstile } from '@marsidev/react-turnstile';
 import { useTheme } from 'next-themes';
 
 const ProviderRegister = () => {
@@ -37,7 +35,6 @@ const ProviderRegister = () => {
     // Step 3 - Verification
     adminCode: ""
   });
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   const serviceCategories = [
     "Food & Beverages",
@@ -103,10 +100,6 @@ const ProviderRegister = () => {
   };
 
   const handleSubmit = async () => {
-    if (!turnstileToken) {
-      toast.error("Please complete the security check.");
-      return;
-    }
     if (!validateStep(3)) return;
 
     setIsLoading(true);
@@ -371,17 +364,6 @@ const ProviderRegister = () => {
                         </p>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label>Security Check</Label>
-                        <Turnstile
-                            siteKey="1x00000000000000000000AA"
-                            onSuccess={setTurnstileToken}
-                            options={{
-                                theme: theme === 'dark' ? 'dark' : 'light',
-                            }}
-                        />
-                      </div>
-
                       <div className="flex space-x-4">
                         <Button variant="outline" onClick={handleBack} className="flex-1 h-12">
                           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -390,7 +372,7 @@ const ProviderRegister = () => {
                         <Button 
                           onClick={handleSubmit} 
                           className="flex-1 h-12 bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-                          disabled={isLoading || !turnstileToken}
+                          disabled={isLoading}
                         >
                           {isLoading ? "Submitting..." : (
                             <>
