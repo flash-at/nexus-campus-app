@@ -110,6 +110,20 @@ export const Cart: React.FC<CartProps> = ({
     try {
       console.log('[Cart] 🚀 Starting order placement process...');
       
+      // Set the auth token for this session to work with RLS
+      console.log('[Cart] 🔑 Setting Supabase auth session...');
+      const { error: authError } = await supabase.auth.setSession(supabaseSession);
+      
+      if (authError) {
+        console.error('[Cart] ❌ Auth session error:', authError);
+        toast({
+          title: "Authentication Error",
+          description: "Failed to authenticate with database. Please try syncing your session.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       // First, get the user's UUID from the users table using their Firebase UID
       console.log('[Cart] 🔍 Looking up user UUID for Firebase UID:', user.uid);
       
