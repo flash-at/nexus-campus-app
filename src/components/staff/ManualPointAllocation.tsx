@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
-import { Loader2, UserCheck, UserPlus, Award } from 'lucide-react';
+import { Loader2, UserPlus, Award, ArrowLeft } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -124,7 +124,10 @@ export const ManualPointAllocation = ({ staffPointBalance, onPointsAllocated }: 
                             />
                         </div>
                         <div className="flex justify-end space-x-2 pt-2">
-                             <Button variant="outline" type="button" onClick={handleClearSelection}>Cancel</Button>
+                             <Button variant="outline" type="button" onClick={handleClearSelection}>
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Back
+                             </Button>
                              <Button type="submit" disabled={isSubmitting}>
                                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Award className="mr-2 h-4 w-4" />}
                                 Award Points
