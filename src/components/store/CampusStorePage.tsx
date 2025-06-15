@@ -51,16 +51,30 @@ export const CampusStorePage = () => {
 
   useEffect(() => {
     if (user) {
-      fetchCategories();
-      fetchProducts();
+      initializeData();
     } else {
       setError('Please log in to access the Campus Store');
       setLoading(false);
     }
   }, [user]);
 
+  const initializeData = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      await Promise.all([fetchCategories(), fetchProducts()]);
+    } catch (error) {
+      console.error('Error initializing data:', error);
+      setError('Failed to load store data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchCategories = async () => {
     try {
+      console.log('Fetching categories...');
       const { data, error } = await supabase
         .from('store_categories')
         .select('*')
@@ -68,6 +82,7 @@ export const CampusStorePage = () => {
         .order('display_order');
 
       if (error) throw error;
+      console.log('Categories fetched:', data);
       setCategories(data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -81,9 +96,6 @@ export const CampusStorePage = () => {
 
   const fetchProducts = async () => {
     if (!user) return;
-    
-    setLoading(true);
-    setError(null);
     
     try {
       console.log('Fetching products for campus store...');
@@ -117,6 +129,8 @@ export const CampusStorePage = () => {
       
       if (data?.length === 0 && !selectedCategory && !searchQuery) {
         setError('No products available at the moment. Please check back later.');
+      } else {
+        setError(null);
       }
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -126,14 +140,13 @@ export const CampusStorePage = () => {
         description: "Failed to load products",
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
     if (user) {
-      fetchProducts();
+      setLoading(true);
+      fetchProducts().finally(() => setLoading(false));
     }
   }, [selectedCategory, searchQuery, user]);
 
@@ -308,17 +321,17 @@ export const CampusStorePage = () => {
         </div>
 
         {/* Error State */}
-        {error && (
+        {error && !loading && (
           <div className="text-center py-12">
             <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <h3 className="text-lg font-semibold mb-2">Something went wrong</h3>
             <p className="text-muted-foreground mb-4">{error}</p>
-            <Button onClick={fetchProducts}>Try Again</Button>
+            <Button onClick={initializeData}>Try Again</Button>
           </div>
         )}
 
-        {/* Products Grid */}
-        {loading ? (
+        {/* Loading State */}
+        {loading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => (
               <Card key={i} className="animate-pulse">
@@ -331,7 +344,10 @@ export const CampusStorePage = () => {
               </Card>
             ))}
           </div>
-        ) : !error && (
+        )}
+
+        {/* Products Grid */}
+        {!loading && !error && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {products.map((product) => {
               const discountedPrice = product.price * (1 - product.discount_percentage / 100);
