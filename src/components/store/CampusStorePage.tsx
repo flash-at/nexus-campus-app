@@ -179,7 +179,7 @@ export const CampusStorePage = () => {
         throw error;
       }
       
-      console.log('Categories fetched:', data?.length || 0);
+      console.log('[CampusStorePage] Categories fetched:', data?.length || 0, data);
       setCategories(data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -200,7 +200,7 @@ export const CampusStorePage = () => {
         throw productsError;
       }
 
-      console.log('Products fetched:', allProducts?.length || 0);
+      console.log('[CampusStorePage] Products fetched:', allProducts?.length || 0, allProducts);
 
       if (!allProducts || allProducts.length === 0) {
         setProducts([]);
@@ -214,9 +214,8 @@ export const CampusStorePage = () => {
         .select('*')
         .eq('status', 'approved');
 
-      console.log('Vendors fetched:', vendors?.length || 0);
+      console.log('[CampusStorePage] Vendors fetched:', vendors?.length || 0, vendors);
 
-      // Create vendor map
       const vendorMap: Record<string, Vendor> = {};
       if (vendors) {
         vendors.forEach(vendor => {
@@ -224,7 +223,6 @@ export const CampusStorePage = () => {
         });
       }
 
-      // Filter products by category and search
       let filteredProducts = allProducts;
       
       if (selectedCategory) {
@@ -239,16 +237,15 @@ export const CampusStorePage = () => {
         );
       }
 
-      // Add vendor information
       const productsWithVendors = filteredProducts.map(product => ({
         ...product,
         vendor: product.vendor_id ? vendorMap[product.vendor_id] : undefined
       }));
 
-      console.log('Final products:', productsWithVendors.length);
+      console.log('[CampusStorePage] Final products after filtering:', productsWithVendors.length, productsWithVendors);
+
       setProducts(productsWithVendors);
       setError(null);
-      
     } catch (error) {
       console.error('Error fetching products:', error);
       setError('Failed to load products. Please try again.');
