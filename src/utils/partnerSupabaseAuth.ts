@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -14,6 +15,41 @@ export interface PartnerProfile {
   rejected_at: string | null;
   rejection_reason: string | null;
 }
+
+export const signInPartner = async (email: string, password: string) => {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) throw error;
+
+    // Check if user has vendor record
+    if (data.user) {
+      const { data: vendor, error: vendorError } = await supabase
+        .from('vendors')
+        .select('*')
+        .eq('firebase_uid', data.user.id)
+        .single();
+
+      if (vendorError || !vendor) {
+        throw new Error("No partner account found");
+      }
+
+      if (vendor.status !== 'approved') {
+        throw new Error("Partner account pending approval");
+      }
+
+      return { user: data.user, vendor };
+    }
+
+    throw new Error("Authentication failed");
+  } catch (error: any) {
+    console.error("Partner sign in error:", error);
+    throw error;
+  }
+};
 
 export const signUpPartner = async (email: string, password: string, partnerData: {
   businessName: string;
@@ -74,12 +110,10 @@ export const getPartnerAuthErrorMessage = (error: any) => {
       return "Incorrect email or password";
     case 'Email not confirmed':
       return "Please verify your email address";
-    case 'No partner account found with this email.':
-      return "No partner account found with this email.";
-    case 'Your partner account is pending approval.':
-      return "Your partner account is pending approval.";
-    case 'Error fetching your partner profile.':
-       return "There was a problem verifying your partner account.";
+    case 'No partner account found':
+      return "No partner account found with this email";
+    case 'Partner account pending approval':
+      return "Your partner account is pending approval";
     default:
       return error.message || "Sign in failed. Please try again.";
   }
