@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -100,35 +99,42 @@ export const CampusStorePage = () => {
     try {
       console.log('Fetching products for campus store...');
       
+      // First, let's try a simpler query to see if we can get products at all
       let query = supabase
         .from('products')
         .select(`
           *,
-          vendors!inner (business_name)
+          vendors (business_name)
         `)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
+      // Apply filters only if they exist
       if (selectedCategory) {
         query = query.eq('category_id', selectedCategory);
       }
 
-      if (searchQuery) {
+      if (searchQuery && searchQuery.trim() !== '') {
         query = query.or(`name.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
       }
 
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching products:', error);
+        console.error('Supabase error fetching products:', error);
         throw error;
       }
       
-      console.log('Fetched products:', data);
-      setProducts(data || []);
+      console.log('Raw products data from Supabase:', data);
       
-      if (data?.length === 0 && !selectedCategory && !searchQuery) {
-        setError('No products available at the moment. Please check back later.');
+      // Filter products that have vendors (approved vendors should have business_name)
+      const validProducts = data?.filter(product => product.vendors?.business_name) || [];
+      
+      console.log('Valid products with vendors:', validProducts);
+      setProducts(validProducts);
+      
+      if (validProducts.length === 0 && !selectedCategory && !searchQuery) {
+        setError('No products are currently available in the store.');
       } else {
         setError(null);
       }
