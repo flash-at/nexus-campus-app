@@ -190,25 +190,6 @@ export const getUserProfile = async (firebaseUid: string): Promise<UserProfile |
       return null;
     }
 
-    // The database trigger should handle creating related data.
-    // As a fallback, create an engagement record if it's missing.
-    if (data && !data.engagement) {
-        console.log(`No engagement record found for user ${data.id}. Creating one.`);
-        const { data: newEngagement, error: engagementError } = await supabase
-            .from('engagement')
-            .insert({ user_id: data.id, last_login: new Date().toISOString() })
-            .select()
-            .single();
-
-        if (engagementError) {
-            console.error('Error creating engagement record:', engagementError);
-        } else {
-            console.log('Engagement record created:', newEngagement);
-            data.engagement = newEngagement;
-        }
-    }
-
-
     console.log("User profile fetched successfully:", data);
     return data as UserProfile;
   } catch (error) {
