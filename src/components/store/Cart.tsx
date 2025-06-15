@@ -87,16 +87,10 @@ export const Cart: React.FC<CartProps> = ({
         );
       } 
 
-      // Fetch current user ID using authenticated client
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('firebase_uid', user.uid)
-        .single();
-
-      if (userError || !userData) {
-        console.error('[Cart] User fetch error:', userError, userData);
-        throw new Error('User not found: ' + (userError?.message || 'No userData'));
+      // Use supabaseSession.user.id (Auth user ID) for RLS!
+      const authUserId = supabaseSession?.user?.id;
+      if (!authUserId) {
+        throw new Error("Could not determine authenticated user ID from session");
       }
 
       for (const [vendorId, group] of Object.entries(groupedItems)) {
@@ -108,10 +102,11 @@ export const Cart: React.FC<CartProps> = ({
         const vendorServiceFee = serviceFee / Object.keys(groupedItems).length;
         const qrCode = `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+        // Use authUserId as student_id
         const { data: orderData, error: orderError } = await supabase
           .from('campus_orders')
           .insert({
-            student_id: userData.id,
+            student_id: authUserId,
             vendor_id: vendorId,
             total_price: vendorSubtotal + vendorServiceFee,
             service_fee: vendorServiceFee,
