@@ -61,14 +61,14 @@ export const ProductManagement = () => {
   });
 
   useEffect(() => {
-    console.log('Auth loading:', authLoading, 'User:', !!user, 'Partner:', !!partner);
+    console.log('ProductManagement - Auth state:', { authLoading, user: !!user, partner: !!partner, partnerId: partner?.id });
     
     if (!authLoading) {
       if (user && partner) {
-        console.log('Partner authenticated, loading data...');
+        console.log('Loading product management data...');
         loadData();
       } else {
-        console.log('No partner authenticated');
+        console.log('No authenticated partner found');
         setError('Please log in to access product management.');
         setLoading(false);
       }
@@ -76,19 +76,54 @@ export const ProductManagement = () => {
   }, [authLoading, user, partner]);
 
   const loadData = async () => {
-    console.log('Starting to load data...');
+    if (!partner?.id) {
+      console.error('Partner ID not available');
+      setError('Partner information not available');
+      setLoading(false);
+      return;
+    }
+
+    console.log('Starting data load for partner:', partner.id);
     setLoading(true);
     setError(null);
     
     try {
-      await Promise.all([
-        fetchCategories(),
-        fetchProducts()
-      ]);
-      console.log('Data loaded successfully');
-    } catch (error) {
-      console.error('Error loading data:', error);
-      setError('Failed to load data. Please try again.');
+      console.log('Fetching categories...');
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('store_categories')
+        .select('id, name')
+        .eq('active', true)
+        .order('display_order');
+
+      if (categoriesError) {
+        console.error('Categories fetch error:', categoriesError);
+        throw categoriesError;
+      }
+      
+      console.log('Categories loaded:', categoriesData?.length || 0);
+      setCategories(categoriesData || []);
+
+      console.log('Fetching products for partner:', partner.id);
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select(`
+          *,
+          store_categories (name)
+        `)
+        .eq('vendor_id', partner.id)
+        .order('created_at', { ascending: false });
+
+      if (productsError) {
+        console.error('Products fetch error:', productsError);
+        throw productsError;
+      }
+      
+      console.log('Products loaded:', productsData?.length || 0);
+      setProducts(productsData || []);
+      
+    } catch (error: any) {
+      console.error('Data load error:', error);
+      setError(error.message || 'Failed to load data');
     } finally {
       setLoading(false);
     }
@@ -198,12 +233,12 @@ export const ProductManagement = () => {
 
       setShowAddDialog(false);
       resetForm();
-      await fetchProducts();
-    } catch (error) {
+      await loadData();
+    } catch (error: any) {
       console.error('Error saving product:', error);
       toast({
         title: "Error",
-        description: "Failed to save product",
+        description: error.message || "Failed to save product",
         variant: "destructive"
       });
     }
@@ -237,12 +272,12 @@ export const ProductManagement = () => {
 
       if (error) throw error;
       toast({ title: "Product deleted successfully!" });
-      await fetchProducts();
-    } catch (error) {
+      await loadData();
+    } catch (error: any) {
       console.error('Error deleting product:', error);
       toast({
         title: "Error",
-        description: "Failed to delete product",
+        description: error.message || "Failed to delete product",
         variant: "destructive"
       });
     }
@@ -259,9 +294,14 @@ export const ProductManagement = () => {
       toast({
         title: !currentStatus ? "Product activated" : "Product deactivated"
       });
-      await fetchProducts();
-    } catch (error) {
+      await loadData();
+    } catch (error: any) {
       console.error('Error updating product status:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update product status",
+        variant: "destructive"
+      });
     }
   };
 
