@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -58,34 +59,40 @@ export const CampusStorePage = () => {
     setError(null);
 
     try {
+      // --- LOAD ALL ROWS, NO FILTERING ---
       const { data: cats, error: catErr } = await supabase
         .from('store_categories')
-        .select('id,name,icon')
-        .eq('active', true)
-        .order('display_order');
+        .select('id,name,icon');
       setCategories(cats || []);
-      if (catErr) throw catErr;
+      console.log("Fetched categories (Store):", cats);
+      if (catErr) {
+        console.error("Category fetch error:", catErr);
+        setError(catErr.message);
+      }
 
       const { data: vends, error: vendErr } = await supabase
         .from('vendors')
         .select('id,business_name');
       setVendors(vends || []);
-      if (vendErr) throw vendErr;
+      console.log("Fetched vendors (Store):", vends);
+      if (vendErr) {
+        console.error("Vendor fetch error:", vendErr);
+        setError(vendErr.message);
+      }
 
       const { data: prods, error: prodErr } = await supabase
         .from('products')
-        .select('*')
-        .eq('is_active', true)
-        .gt('quantity', 0);
+        .select('*');
       setProducts(prods || []);
-      if (prodErr) throw prodErr;
-
-      console.log("Fetched categories (Store):", cats);
-      console.log("Fetched vendors (Store):", vends);
       console.log("Fetched products (Store):", prods);
+      if (prodErr) {
+        console.error("Product fetch error:", prodErr);
+        setError(prodErr.message);
+      }
 
     } catch (e: any) {
       setError(e.message || 'Could not load store data.');
+      console.error("CampusStorePage general fetch error:", e);
     }
     setLoading(false);
   };
@@ -177,6 +184,7 @@ export const CampusStorePage = () => {
             {displayProducts.length === 0 ? (
               <div className="py-12 text-center text-muted-foreground">
                 <h3>No products available.</h3>
+                <p>Try removing filters or check console for debugging info above.</p>
               </div>
             ) : (
               <ProductGrid products={displayProducts} onAddToCart={addToCart} />
