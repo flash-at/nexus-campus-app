@@ -15,6 +15,8 @@ interface Product {
   discount_percentage: number;
   quantity: number;
   image_url?: string;
+  vendor_id: string;
+  category_id?: string;
 }
 
 export const ProductManagement = () => {
@@ -23,12 +25,25 @@ export const ProductManagement = () => {
   const [loading, setLoading] = useState(true);
   const [addMode, setAddMode] = useState(false);
   const [form, setForm] = useState({
-    name: '', description: '', price: '', discount: '', quantity: ''
+    name: '', description: '', price: '', discount: '', quantity: '', category_id: ''
   });
 
+  // Fetch all categories for selecting when adding product
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+
   useEffect(() => {
-    fetchProducts();
+    if (partner?.id) fetchProducts();
+    fetchCategories();
   }, [partner?.id]);
+
+  const fetchCategories = async () => {
+    const { data, error } = await supabase
+      .from('store_categories')
+      .select('id,name')
+      .eq('active', true)
+      .order('display_order');
+    if (!error && data) setCategories(data);
+  };
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -47,7 +62,7 @@ export const ProductManagement = () => {
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!partner?.id) return alert("Not authorized");
-    if (!form.name || !form.price) return alert("Name and price required");
+    if (!form.name || !form.price || !form.category_id) return alert("Name, price, and category required");
 
     const { error } = await supabase.from('products').insert([{
       name: form.name,
@@ -56,11 +71,12 @@ export const ProductManagement = () => {
       discount_percentage: Number(form.discount || 0),
       quantity: Number(form.quantity || 1),
       vendor_id: partner.id,
+      category_id: form.category_id,
       is_active: true
     }]);
     if (error) return alert('Failed to add product');
     setAddMode(false);
-    setForm({ name: '', description: '', price: '', discount: '', quantity: '' });
+    setForm({ name: '', description: '', price: '', discount: '', quantity: '', category_id: '' });
     fetchProducts();
   };
 
@@ -110,6 +126,17 @@ export const ProductManagement = () => {
             value={form.quantity}
             onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))}
           />
+          <select
+            className="w-full p-2 rounded border"
+            required
+            value={form.category_id}
+            onChange={e => setForm(f => ({ ...f, category_id: e.target.value }))}
+          >
+            <option value="">Select Category</option>
+            {categories.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
           <div className="flex gap-2">
             <Button type="submit">Submit</Button>
             <Button type="button" variant="ghost" onClick={() => setAddMode(false)}>Cancel</Button>

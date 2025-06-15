@@ -30,7 +30,7 @@ interface Product {
   quantity: number;
   image_url?: string;
   vendor_id: string;
-  category_id: string;
+  category_id?: string;
 }
 
 export const CampusStorePage = () => {
@@ -50,41 +50,43 @@ export const CampusStorePage = () => {
     loadData();
   }, []);
 
+  // Load categories, vendors, and products robustly.
   const loadData = async () => {
     setLoading(true);
     setError(null);
+
     try {
-      // fetch categories
+      // Categories
       const { data: cats, error: catErr } = await supabase
         .from('store_categories')
         .select('id,name,icon')
         .eq('active', true)
         .order('display_order');
-      if (catErr) throw catErr;
       setCategories(cats || []);
+      if (catErr) throw catErr;
 
-      // fetch vendors
+      // Vendors
       const { data: vends, error: vendErr } = await supabase
         .from('vendors')
-        .select('id,business_name')
-        .eq('status', 'approved');
-      if (vendErr) throw vendErr;
+        .select('id,business_name');
       setVendors(vends || []);
+      if (vendErr) throw vendErr;
 
-      // fetch products
+      // Products (active & in stock)
       const { data: prods, error: prodErr } = await supabase
         .from('products')
         .select('*')
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .gt('quantity', 0);
       if (prodErr) throw prodErr;
       setProducts(prods || []);
     } catch (e: any) {
-      setError(e.message ?? 'Could not load store data.');
+      setError(e.message || 'Could not load store data.');
     }
     setLoading(false);
   };
 
-  // Filtered products
+  // Products to display, with robust mapping.
   const displayProducts = products
     .filter(p => !selectedCategory || p.category_id === selectedCategory)
     .filter(p =>
