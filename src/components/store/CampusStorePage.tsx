@@ -101,18 +101,17 @@ export const CampusStorePage = () => {
     if (!user) return;
     
     try {
-      // Build query with proper vendor filtering at SQL level
+      // First, let's try a simpler query to see if we have any products at all
       let query = supabase
         .from('products')
         .select(`
           *,
-          vendors!inner (
+          vendors (
             business_name,
             status
           )
         `)
         .eq('is_active', true)
-        .eq('vendors.status', 'approved')
         .order('created_at', { ascending: false });
 
       // Apply filters only if they exist
@@ -131,15 +130,29 @@ export const CampusStorePage = () => {
         throw error;
       }
       
-      console.log('Products fetched:', data);
-      setProducts(data || []);
+      console.log('Raw products data:', data);
+      
+      // Filter products to only show those with approved vendors or no vendor info available
+      const filteredProducts = data?.filter(product => {
+        // If there's no vendor info, include the product
+        if (!product.vendors) return true;
+        // If there is vendor info, only include if status is approved
+        return product.vendors.status === 'approved';
+      }) || [];
+      
+      console.log('Filtered products:', filteredProducts);
+      setProducts(filteredProducts);
       
       // Clear error if we successfully got data
-      if (data && data.length > 0) {
+      if (filteredProducts.length > 0) {
         setError(null);
-      } else if (!selectedCategory && !searchQuery) {
-        // Only show error if no filters are applied
-        setError('No products are currently available in the store.');
+      } else {
+        // Check if we have any products at all (for debugging)
+        if (data && data.length > 0) {
+          setError('No products are available from approved vendors at the moment.');
+        } else if (!selectedCategory && !searchQuery) {
+          setError('No products are currently available in the store.');
+        }
       }
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -394,7 +407,7 @@ export const CampusStorePage = () => {
                     </p>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                       <MapPin className="h-3 w-3" />
-                      <span>{product.vendors?.business_name}</span>
+                      <span>{product.vendors?.business_name || 'Campus Store'}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
