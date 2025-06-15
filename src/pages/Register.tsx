@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +30,9 @@ const Register = () => {
     confirmPassword: ""
   });
 
+  // NEW: Allow non-edu sign up toggle
+  const [allowNonEdu, setAllowNonEdu] = useState(false);
+
   const departments = [
     "Computer Science & Engineering",
     "Electronics & Communication Engineering", 
@@ -44,6 +46,7 @@ const Register = () => {
 
   const academicYears = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
 
+  // Modified validateField for email check
   const validateField = (field: string, value: string) => {
     const newErrors = { ...errors };
     
@@ -64,10 +67,20 @@ const Register = () => {
         }
         break;
       case 'email':
-        if (!value.endsWith('.edu.in')) {
-          newErrors.email = "Email must end with .edu.in";
+        if (!allowNonEdu) {
+          if (!value.endsWith('.edu.in')) {
+            newErrors.email = "Email must end with .edu.in (tap below if you want to use a personal Gmail)";
+          } else {
+            delete newErrors.email;
+          }
         } else {
-          delete newErrors.email;
+          // Relaxed: Accept any email, just require basic email format
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(value)) {
+            newErrors.email = "Please enter a valid email address";
+          } else {
+            delete newErrors.email;
+          }
         }
         break;
       case 'phone':
@@ -98,6 +111,7 @@ const Register = () => {
     setErrors(newErrors);
   };
 
+  // Adjusted validateForm to support allowNonEdu
   const validateForm = async () => {
     const newErrors: Record<string, string> = {};
 
@@ -110,8 +124,16 @@ const Register = () => {
       newErrors.hallTicket = "Hall ticket must be exactly 10 characters (numbers and uppercase letters only)";
     }
 
-    if (!formData.email.endsWith('.edu.in')) {
-      newErrors.email = "Email must end with .edu.in";
+    // Changed email check for personal emails
+    if (!allowNonEdu) {
+      if (!formData.email.endsWith('.edu.in')) {
+        newErrors.email = "Email must end with .edu.in";
+      }
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        newErrors.email = "Please enter a valid email address";
+      }
     }
 
     const phoneRegex = /^[0-9]{10}$/;
@@ -138,17 +160,20 @@ const Register = () => {
       return false;
     }
 
-    try {
-      const hallTicketExists = await checkHallTicketExists(formData.hallTicket);
-      if (hallTicketExists) {
-        newErrors.hallTicket = "This hall ticket number is already registered";
-        setErrors(newErrors);
+    // Only check hall-ticket collision if NOT a personal account
+    if (!allowNonEdu) {
+      try {
+        const hallTicketExists = await checkHallTicketExists(formData.hallTicket);
+        if (hallTicketExists) {
+          newErrors.hallTicket = "This hall ticket number is already registered";
+          setErrors(newErrors);
+          return false;
+        }
+      } catch (error) {
+        console.error("Error checking hall ticket:", error);
+        toast.error("Unable to verify hall ticket. Please try again.");
         return false;
       }
-    } catch (error) {
-      console.error("Error checking hall ticket:", error);
-      toast.error("Unable to verify hall ticket. Please try again.");
-      return false;
     }
 
     return true;
@@ -414,7 +439,7 @@ const Register = () => {
                       )}
                     </div>
 
-                    {/* Email */}
+                    {/* Email (modified) */}
                     <div className="space-y-2">
                       <Label htmlFor="email" className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
                         <Mail className="h-4 w-4" />
@@ -423,18 +448,46 @@ const Register = () => {
                       <Input
                         id="email"
                         type="email"
-                        placeholder="your.name@college.edu.in"
+                        placeholder={
+                          !allowNonEdu
+                            ? "your.name@college.edu.in"
+                            : "your.email@gmail.com"
+                        }
                         value={formData.email}
                         onChange={(e) => handleInputChange("email", e.target.value)}
                         onBlur={(e) => handleBlur("email", e.target.value)}
                         className={`h-12 ${errors.email ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'} bg-gray-50 dark:bg-gray-700`}
                         required
                       />
+                      <div className="flex items-center gap-2">
+                        {!allowNonEdu ? (
+                          <button
+                            type="button"
+                            className="text-xs text-blue-600 hover:underline px-0 py-1 bg-transparent border-0 focus:outline-none"
+                            onClick={() => setAllowNonEdu(true)}
+                          >
+                            Don't have a college email? <span className="underline">Register with Gmail &rarr;</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="text-xs text-gray-500 hover:underline px-0 py-1 bg-transparent border-0 focus:outline-none"
+                            onClick={() => setAllowNonEdu(false)}
+                          >
+                            Use college email instead
+                          </button>
+                        )}
+                      </div>
                       {errors.email && (
                         <p className="flex items-center gap-1 text-sm text-red-500">
                           <AlertCircle className="h-3 w-3" />
                           {errors.email}
                         </p>
+                      )}
+                      {!allowNonEdu ? (
+                        <p className="text-xs text-gray-500 mt-0.5">Use your institutional .edu.in email to unlock all features and faster verification. <br />Don't have one? <span className="text-blue-600 underline cursor-pointer" onClick={() => setAllowNonEdu(true)}>Register with your Gmail</span>.</p>
+                      ) : (
+                        <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-0.5">Personal email sign-up may have limited access to some features.</p>
                       )}
                     </div>
 
