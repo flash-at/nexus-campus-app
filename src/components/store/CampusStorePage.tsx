@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -85,11 +86,13 @@ export const CampusStorePage = () => {
     setError(null);
     
     try {
+      console.log('Fetching products for campus store...');
+      
       let query = supabase
         .from('products')
         .select(`
           *,
-          vendors (business_name)
+          vendors!inner (business_name)
         `)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
@@ -104,7 +107,12 @@ export const CampusStorePage = () => {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching products:', error);
+        throw error;
+      }
+      
+      console.log('Fetched products:', data);
       setProducts(data || []);
       
       if (data?.length === 0 && !selectedCategory && !searchQuery) {
@@ -133,6 +141,8 @@ export const CampusStorePage = () => {
   useEffect(() => {
     if (!user) return;
 
+    console.log('Setting up real-time subscription for products...');
+    
     const channel = supabase
       .channel('products-changes')
       .on(
@@ -150,6 +160,7 @@ export const CampusStorePage = () => {
       .subscribe();
 
     return () => {
+      console.log('Cleaning up real-time subscription...');
       supabase.removeChannel(channel);
     };
   }, [user]);

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
+import { usePartnerAuth } from '@/hooks/usePartnerAuth';
 import { Plus, Edit, Trash2, Package, DollarSign, AlertCircle, RefreshCw } from 'lucide-react';
 
 interface Product {
@@ -41,11 +42,8 @@ export const ProductManagement = () => {
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [currentVendor, setCurrentVendor] = useState<any>(null);
-  const [vendorError, setVendorError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, partner, loading: authLoading } = usePartnerAuth();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -60,151 +58,12 @@ export const ProductManagement = () => {
     is_active: true
   });
 
-  // Helper: Try to sync Supabase session with Firebase current user if missing
-  const ensureSupabaseSession = async (): Promise<boolean> => {
-    const sessionResult = await supabase.auth.getSession();
-    if (!sessionResult?.data?.session || !sessionResult.data.session.user) {
-      if (user) {
-        console.log("[VendorDebug] Missing Supabase session, attempting to restore using Firebase ID token...");
-        const idToken = await user.getIdToken();
-        const { error: supaAuthError } = await supabase.auth.signInWithIdToken({
-          provider: 'firebase',
-          token: idToken,
-        });
-        if (supaAuthError) {
-          console.error("[VendorDebug] Failed to re-auth Supabase:", supaAuthError);
-          setVendorError("Authentication session error. Please ensure Firebase is a configured OIDC provider in your Supabase project's Auth settings.");
-          return false;
-        } else {
-          console.log("[VendorDebug] Supabase session restored successfully!");
-          return true;
-        }
-      } else {
-        console.warn("[VendorDebug] No Firebase user available for re-authentication.");
-        setVendorError("Cannot verify session: No active user found.");
-        return false;
-      }
-    }
-    return true; // Session was already valid
-  };
-
   useEffect(() => {
-    if (user) {
-      fetchCurrentVendor();
+    if (!authLoading && partner) {
       fetchCategories();
-    }
-  }, [user, retryCount]);
-
-  useEffect(() => {
-    if (currentVendor) {
       fetchProducts();
     }
-  }, [currentVendor]);
-
-  const fetchCurrentVendor = async () => {
-    if (!user) return;
-    
-    try {
-      setVendorError(null);
-      setLoading(true);
-
-      console.log("[VendorDebug] Starting vendor sync for Firebase UID:", user.uid);
-
-      // CRITICAL: Ensure we have a valid Supabase session before proceeding
-      const isSessionValid = await ensureSupabaseSession();
-      if (!isSessionValid) {
-        // ensureSupabaseSession has already set the specific error message
-        setLoading(false);
-        return;
-      }
-      
-      // Now that session is confirmed, try to fetch the vendor
-      const { data, error } = await supabase
-        .from('vendors')
-        .select('*')
-        .eq('firebase_uid', user.uid)
-        .maybeSingle();
-      console.log("[VendorDebug] Vendor fetch result:", { data, error });
-
-      if (error) {
-        console.error('[VendorDebug] Error fetching vendor:', error);
-        setVendorError('Unable to load vendor account. Please try refreshing the page.');
-        return;
-      }
-      
-      if (data) {
-        // Vendor exists
-        if (data.status !== 'approved') {
-          setVendorError('Your vendor account is pending approval.');
-        } else {
-          setCurrentVendor(data);
-        }
-        return;
-      }
-
-      // Vendor does not exist, so let's create it.
-      // We already know the session is valid from the check above.
-      console.log("[VendorDebug] No vendor found, attempting to insert record with firebase_uid:", user.uid);
-
-      const { data: newVendor, error: createError } = await supabase
-        .from('vendors')
-        .insert({
-          firebase_uid: user.uid,
-          business_name: 'Partner Business',
-          category: 'Food & Beverages',
-          description: 'Campus service provider',
-          status: 'approved'
-        })
-        .select()
-        .single();
-
-      console.log("[VendorDebug] Vendor insert result:", { newVendor, createError });
-
-      if (createError) {
-        console.error('[VendorDebug] Error creating vendor:', createError);
-        setVendorError(`Failed to create vendor account: ${createError.message}`);
-        return;
-      }
-      
-      setCurrentVendor(newVendor);
-      toast({ title: "Vendor account created successfully!" });
-
-    } catch (error) {
-      console.error('[VendorDebug] Exception in fetchCurrentVendor:', error);
-      setVendorError('An unexpected error occurred while setting up your vendor account.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRetry = () => {
-    setRetryCount(prev => prev + 1);
-  };
-
-  const fetchProducts = async () => {
-    if (!currentVendor) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          *,
-          store_categories (name)
-        `)
-        .eq('vendor_id', currentVendor.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setProducts(data || []);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load products",
-        variant: "destructive"
-      });
-    }
-  };
+  }, [partner, authLoading]);
 
   const fetchCategories = async () => {
     try {
@@ -218,6 +77,34 @@ export const ProductManagement = () => {
       setCategories(data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
+    }
+  };
+
+  const fetchProducts = async () => {
+    if (!partner) return;
+    
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          store_categories (name)
+        `)
+        .eq('vendor_id', partner.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load products",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -240,10 +127,10 @@ export const ProductManagement = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!currentVendor) {
+    if (!partner) {
       toast({
         title: "Error",
-        description: "Vendor account not found",
+        description: "Partner account not found",
         variant: "destructive"
       });
       return;
@@ -261,7 +148,7 @@ export const ProductManagement = () => {
         available_until: formData.available_until,
         category_id: formData.category_id,
         is_active: formData.is_active,
-        vendor_id: currentVendor.id
+        vendor_id: partner.id
       };
 
       if (editingProduct) {
@@ -353,34 +240,25 @@ export const ProductManagement = () => {
     }
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <Package className="h-8 w-8 mx-auto mb-2 animate-spin text-muted-foreground" />
-          <p className="text-muted-foreground">Loading vendor account...</p>
+          <p className="text-muted-foreground">Loading products...</p>
         </div>
       </div>
     );
   }
 
-  if (vendorError || !currentVendor) {
+  if (!user || !partner) {
     return (
       <div className="text-center py-12">
         <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive" />
-        <h3 className="text-lg font-semibold mb-2">Vendor Account Issue</h3>
+        <h3 className="text-lg font-semibold mb-2">Authentication Required</h3>
         <p className="text-muted-foreground mb-4">
-          {vendorError || 'Unable to access vendor account'}
+          Please log in to access product management
         </p>
-        {vendorError?.includes("Firebase") && (
-           <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
-            To fix this, go to your Supabase project's Authentication settings, add a new OIDC Provider, and configure it with your Firebase project details.
-          </p>
-        )}
-        <Button onClick={handleRetry} className="flex items-center gap-2">
-          <RefreshCw className="h-4 w-4" />
-          Try Again
-        </Button>
       </div>
     );
   }
