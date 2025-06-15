@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart } from "lucide-react";
@@ -9,7 +8,7 @@ interface StoreHeaderProps {
 }
 
 export const StoreHeader: React.FC<StoreHeaderProps> = ({ cartCount, onCartClick }) => (
-  <div className="sticky top-0 z-[60] bg-gray-900/95 backdrop-blur-md border-b border-gray-800">
+  <div className="sticky top-0 z-[70] bg-gray-900/95 backdrop-blur-md border-b border-gray-800">
     <div className="container mx-auto px-4 py-4 flex items-center justify-between max-w-7xl">
       <div>
         <h1 className="text-2xl font-bold text-white sm:text-3xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
