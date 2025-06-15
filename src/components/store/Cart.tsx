@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Minus, Plus, Trash2, MapPin } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase as defaultSupabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -41,7 +40,7 @@ export const Cart: React.FC<CartProps> = ({
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [notes, setNotes] = useState('');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const { user } = useAuth();
+  const { user, supabaseSession } = useAuth();
   const { toast } = useToast();
 
   const total = subtotal + serviceFee;
@@ -72,7 +71,25 @@ export const Cart: React.FC<CartProps> = ({
     setIsPlacingOrder(true);
 
     try {
-      // Get current user ID from the users table
+      // Use authenticated Supabase client if possible
+      let supabase = defaultSupabase;
+      if (supabaseSession?.access_token) {
+        const { createClient } = await import('@supabase/supabase-js');
+        supabase = createClient(
+          "https://rqhgakhmtbimsroydtnj.supabase.co",
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxaGdha2htdGJpbXNyb3lkdG5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkyNjIzMTYsImV4cCI6MjA2NDgzODMxNn0.WFD3LLQx4iVuhrb7qct-TKF72NjskF5vWSqch_cfO30",
+          {
+            global: {
+              headers: { Authorization: `Bearer ${supabaseSession.access_token}` }
+            },
+            auth: {
+              persistSession: false
+            }
+          }
+        );
+      } 
+
+      // Get current user ID from the users table using this supabase client
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('id')
@@ -83,7 +100,6 @@ export const Cart: React.FC<CartProps> = ({
         throw new Error('User not found');
       }
 
-      // Create orders for each vendor
       for (const [vendorId, group] of Object.entries(groupedItems)) {
         const vendorSubtotal = group.items.reduce((sum, item) => {
           const discountedPrice = item.price * (1 - item.discount_percentage / 100);
@@ -91,11 +107,9 @@ export const Cart: React.FC<CartProps> = ({
         }, 0);
 
         const vendorServiceFee = serviceFee / Object.keys(groupedItems).length; // Split service fee
-
-        // Generate QR code for the order
         const qrCode = `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-        // Create the order
+        // Use supabase client with session auth
         const { data: orderData, error: orderError } = await supabase
           .from('campus_orders')
           .insert({
@@ -113,7 +127,6 @@ export const Cart: React.FC<CartProps> = ({
 
         if (orderError) throw orderError;
 
-        // Create order items
         const orderItems = group.items.map(item => ({
           order_id: orderData.id,
           product_id: item.id,
@@ -134,7 +147,6 @@ export const Cart: React.FC<CartProps> = ({
         description: `Your order${Object.keys(groupedItems).length > 1 ? 's' : ''} ${Object.keys(groupedItems).length > 1 ? 'have' : 'has'} been placed. You'll receive updates as vendors accept your order.`,
       });
 
-      // Clear cart and go back
       items.forEach(item => onUpdateQuantity(item.id, 0));
       onBack();
 
