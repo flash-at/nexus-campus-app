@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -81,9 +82,21 @@ export const CampusStorePage = () => {
         .eq('active', true)
         .order('display_order');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching categories:', error);
+        throw error;
+      }
+      
       console.log('Categories fetched:', data);
       setCategories(data || []);
+      
+      // Debug: Let's also check if we have any categories at all
+      const { data: allCategories, error: allCatError } = await supabase
+        .from('store_categories')
+        .select('*');
+      
+      console.log('All categories (including inactive):', allCategories);
+      
     } catch (error) {
       console.error('Error fetching categories:', error);
       toast({
@@ -100,7 +113,21 @@ export const CampusStorePage = () => {
     try {
       console.log('Fetching products for campus store...');
       
-      // First try to get all active products with vendor info
+      // Debug: First check if we have any vendors
+      const { data: allVendors, error: vendorError } = await supabase
+        .from('vendors')
+        .select('*');
+      
+      console.log('All vendors:', allVendors);
+      
+      // Debug: Check if we have any products at all
+      const { data: allProducts, error: allProdError } = await supabase
+        .from('products')
+        .select('*');
+      
+      console.log('All products:', allProducts);
+      
+      // Now try to get products with vendor info
       let query = supabase
         .from('products')
         .select(`
@@ -129,7 +156,7 @@ export const CampusStorePage = () => {
         throw error;
       }
       
-      console.log('Raw products data:', data);
+      console.log('Raw products data with vendors:', data);
       
       // Filter to only show products from approved vendors
       const approvedProducts = data?.filter(product => 
