@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, ShoppingCart, Star, Clock, MapPin, AlertCircle } from 'lucide-react';
+import { Search, ShoppingCart, Star, Clock, MapPin, AlertCircle, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { Cart } from './Cart';
@@ -50,6 +50,7 @@ export const CampusStorePage = () => {
   const { user } = useAuth();
 
   useEffect(() => {
+    console.log('CampusStorePage - User state:', !!user);
     if (user) {
       initializeData();
     } else {
@@ -59,13 +60,15 @@ export const CampusStorePage = () => {
   }, [user]);
 
   const initializeData = async () => {
+    console.log('Initializing Campus Store data...');
     setLoading(true);
     setError(null);
     
     try {
       await Promise.all([fetchCategories(), fetchProducts()]);
+      console.log('Campus Store data initialized successfully');
     } catch (error) {
-      console.error('Error initializing data:', error);
+      console.error('Error initializing Campus Store data:', error);
       setError('Failed to load store data. Please try again.');
     } finally {
       setLoading(false);
@@ -74,48 +77,54 @@ export const CampusStorePage = () => {
 
   const fetchCategories = async () => {
     try {
-      console.log('Fetching categories...');
+      console.log('Fetching store categories...');
       const { data, error } = await supabase
         .from('store_categories')
         .select('*')
         .eq('active', true)
         .order('display_order');
 
-      if (error) throw error;
-      console.log('Categories fetched:', data);
+      if (error) {
+        console.error('Error fetching categories:', error);
+        throw error;
+      }
+      
+      console.log('Categories fetched successfully:', data?.length || 0);
       setCategories(data || []);
     } catch (error) {
-      console.error('Error fetching categories:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load categories",
-        variant: "destructive"
-      });
+      console.error('Failed to fetch categories:', error);
+      throw error;
     }
   };
 
   const fetchProducts = async () => {
-    if (!user) return;
-    
     try {
-      console.log('Fetching products for campus store...');
+      console.log('Fetching products from campus store...');
       
       let query = supabase
         .from('products')
         .select(`
           *,
-          vendors!inner (business_name)
+          vendors!inner (
+            business_name,
+            status
+          )
         `)
         .eq('is_active', true)
-        .order('created_at', { ascending: false });
+        .eq('vendors.status', 'approved')
+        .gt('quantity', 0);
 
       if (selectedCategory) {
+        console.log('Filtering by category:', selectedCategory);
         query = query.eq('category_id', selectedCategory);
       }
 
       if (searchQuery) {
+        console.log('Filtering by search query:', searchQuery);
         query = query.or(`name.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
       }
+
+      query = query.order('created_at', { ascending: false });
 
       const { data, error } = await query;
 
@@ -124,27 +133,25 @@ export const CampusStorePage = () => {
         throw error;
       }
       
-      console.log('Fetched products:', data);
+      console.log('Products fetched successfully:', data?.length || 0);
       setProducts(data || []);
       
-      if (data?.length === 0 && !selectedCategory && !searchQuery) {
-        setError('No products available at the moment. Please check back later.');
+      if (!data || data.length === 0) {
+        if (!selectedCategory && !searchQuery) {
+          setError('No products are currently available. Please check back later or contact support.');
+        }
       } else {
         setError(null);
       }
     } catch (error) {
-      console.error('Error fetching products:', error);
-      setError('Failed to load products. Please try again.');
-      toast({
-        title: "Error",
-        description: "Failed to load products",
-        variant: "destructive"
-      });
+      console.error('Failed to fetch products:', error);
+      throw error;
     }
   };
 
   useEffect(() => {
     if (user) {
+      console.log('Refetching products due to filter change...');
       setLoading(true);
       fetchProducts().finally(() => setLoading(false));
     }
@@ -157,7 +164,7 @@ export const CampusStorePage = () => {
     console.log('Setting up real-time subscription for products...');
     
     const channel = supabase
-      .channel('products-changes')
+      .channel('campus-store-products')
       .on(
         'postgres_changes',
         {
@@ -176,7 +183,7 @@ export const CampusStorePage = () => {
       console.log('Cleaning up real-time subscription...');
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, selectedCategory, searchQuery]);
 
   const addToCart = (product: Product, quantity: number = 1) => {
     const existingItem = cartItems.find(item => item.id === product.id);
@@ -323,10 +330,13 @@ export const CampusStorePage = () => {
         {/* Error State */}
         {error && !loading && (
           <div className="text-center py-12">
-            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive" />
             <h3 className="text-lg font-semibold mb-2">Something went wrong</h3>
             <p className="text-muted-foreground mb-4">{error}</p>
-            <Button onClick={initializeData}>Try Again</Button>
+            <Button onClick={initializeData} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
           </div>
         )}
 
@@ -420,7 +430,19 @@ export const CampusStorePage = () => {
 
         {products.length === 0 && !loading && !error && (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">No products found</p>
+            <p className="text-muted-foreground">No products found matching your criteria</p>
+            {(selectedCategory || searchQuery) && (
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={() => {
+                  setSelectedCategory('');
+                  setSearchQuery('');
+                }}
+              >
+                Clear Filters
+              </Button>
+            )}
           </div>
         )}
       </div>
