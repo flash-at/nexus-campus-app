@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,7 +46,6 @@ export const Cart: React.FC<CartProps> = ({
   const { user, forceSessionSync, isSessionSyncing } = useAuth();
   const { toast } = useToast();
   
-  // Add password verification with new dynamic password support
   const {
     isVerified,
     showPasswordDialog,
@@ -120,32 +120,10 @@ export const Cart: React.FC<CartProps> = ({
     try {
       console.log('[Cart] 🚀 Starting order placement process...');
       
-      // Get Firebase ID token for authentication
-      console.log('[Cart] 🔑 Getting Firebase ID token...');
-      const idToken = await user.getIdToken();
-      console.log('[Cart] ✅ Got Firebase ID token');
-
-      // Create a temporary session with the Firebase token
-      console.log('[Cart] 🔐 Setting up authentication with Firebase token...');
-      
-      // Create a temporary Supabase client with the Firebase JWT token
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabaseWithAuth = createClient(
-        'https://rqhgakhmtbimsroydtnj.supabase.co',
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxaGdha2htdGJpbXNyb3lkdG5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkyNjIzMTYsImV4cCI6MjA2NDgzODMxNn0.WFD3LLQx4iVuhrb7qct-TKF72NjskF5vWSqch_cfO30',
-        {
-          global: {
-            headers: {
-              Authorization: `Bearer ${idToken}`,
-            },
-          },
-        }
-      );
-      
       // First, get the user's UUID from the users table using their Firebase UID
       console.log('[Cart] 🔍 Looking up user UUID for Firebase UID:', user.uid);
       
-      const { data: userData, error: userError } = await supabaseWithAuth
+      const { data: userData, error: userError } = await supabase
         .from('users')
         .select('id')
         .eq('firebase_uid', user.uid)
@@ -184,7 +162,7 @@ export const Cart: React.FC<CartProps> = ({
           qr_code: qrCode
         });
 
-        const { data: orderData, error: orderError } = await supabaseWithAuth
+        const { data: orderData, error: orderError } = await supabase
           .from('campus_orders')
           .insert({
             student_id: userUuid,
@@ -216,7 +194,7 @@ export const Cart: React.FC<CartProps> = ({
 
         console.log('[Cart] 📦 Adding order items:', orderItems);
 
-        const { error: itemsError } = await supabaseWithAuth
+        const { error: itemsError } = await supabase
           .from('campus_order_items')
           .insert(orderItems);
 
