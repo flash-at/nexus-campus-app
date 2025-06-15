@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,15 +12,9 @@ import { auth } from "@/lib/firebase";
 import { createUserProfile, checkHallTicketExists } from "@/services/userService";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
-import { useAuth } from "@/hooks/useAuth";
-import { Turnstile } from "@marsidev/react-turnstile";
-import { useTheme } from "next-themes";
 
 const Register = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
-  const { theme } = useTheme();
-
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,24 +29,9 @@ const Register = () => {
     password: "",
     confirmPassword: ""
   });
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   // NEW: Allow non-edu sign up toggle
   const [allowNonEdu, setAllowNonEdu] = useState(false);
-
-  useEffect(() => {
-    if (user) {
-      navigate("/dashboard");
-    }
-  }, [user, navigate]);
-
-  if (authLoading || user) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-950 dark:via-blue-950 dark:to-purple-950">
-        <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
 
   const departments = [
     "Computer Science & Engineering",
@@ -223,11 +201,6 @@ const checkFirebaseUidExists = async (firebaseUid: string): Promise<boolean> => 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!turnstileToken) {
-      toast.error("Please complete the security check before submitting.");
-      return;
-    }
 
     console.log("Starting registration process...");
 
@@ -694,17 +667,6 @@ const checkFirebaseUidExists = async (firebaseUid: string): Promise<boolean> => 
                           {errors.confirmPassword}
                         </p>
                       )}
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Security Check</Label>
-                      <Turnstile
-                        siteKey="1x00000000000000000000AA" // This is a test key. Get yours from Cloudflare.
-                        onSuccess={setTurnstileToken}
-                        options={{
-                          theme: theme === 'dark' ? 'dark' : 'light',
-                        }}
-                      />
                     </div>
 
                     <Button 
