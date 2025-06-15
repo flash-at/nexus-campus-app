@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/sonner';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface PasswordPromptProps {
     onSuccess: () => void;
@@ -16,6 +17,7 @@ export const PasswordPrompt = ({ onSuccess }: PasswordPromptProps) => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const navigate = useNavigate();
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -30,7 +32,16 @@ export const PasswordPrompt = ({ onSuccess }: PasswordPromptProps) => {
 
     return (
         <Card className="w-full max-w-sm animate-fade-in">
-            <CardHeader className="text-center">
+            <CardHeader className="text-center relative">
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="absolute left-2 top-1/2 -translate-y-1/2"
+                    onClick={() => navigate('/')}
+                >
+                    <ArrowLeft className="h-5 w-5" />
+                    <span className="sr-only">Back to home</span>
+                </Button>
                 <CardTitle className="text-2xl">CC-Points Portal</CardTitle>
                 <CardDescription>Enter the password to access the Staff Portal.</CardDescription>
             </CardHeader>
