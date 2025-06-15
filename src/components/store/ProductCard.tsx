@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -71,7 +70,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }
             className={`rounded-full px-4 py-2 font-medium transition-all duration-200 ${
               isOutOfStock 
                 ? "bg-muted text-muted-foreground cursor-not-allowed" 
-                : "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:scale-105"
+                : "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:scale-105 active:scale-95 active:brightness-90"
             }`}
           >
             {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
