@@ -181,8 +181,9 @@ const Register = () => {
 
 const checkFirebaseUidExists = async (firebaseUid: string): Promise<boolean> => {
   try {
-    // Check if user with this Firebase UID exists in Supabase
-    const { data, error } = await import("@/integrations/supabase/client").then(m => m.supabase)
+    // Properly await the import and get the supabase client first
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { data, error } = await supabase
       .from("users")
       .select("id")
       .eq("firebase_uid", firebaseUid)
