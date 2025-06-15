@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -43,7 +42,7 @@ interface Product {
 export const CampusStorePage = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -54,26 +53,115 @@ export const CampusStorePage = () => {
   const { user } = useAuth();
 
   useEffect(() => {
-    if (user) {
-      initializeData();
-    } else {
-      setError('Please log in to access the Campus Store');
-      setLoading(false);
-    }
-  }, [user]);
+    initializeData();
+  }, []);
 
   const initializeData = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      console.log('Starting data initialization...');
+      console.log('Initializing Campus Store data...');
+      
+      // Add sample data if needed
+      await addSampleDataIfNeeded();
+      
+      // Fetch categories and products
       await Promise.all([fetchCategories(), fetchProducts()]);
     } catch (error) {
       console.error('Error initializing data:', error);
       setError('Failed to load store data. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const addSampleDataIfNeeded = async () => {
+    try {
+      // Check if categories exist
+      const { data: existingCategories } = await supabase
+        .from('store_categories')
+        .select('*')
+        .limit(1);
+
+      if (!existingCategories || existingCategories.length === 0) {
+        console.log('Adding sample categories...');
+        
+        // Insert categories
+        const { error: categoriesError } = await supabase
+          .from('store_categories')
+          .insert([
+            { name: 'Food & Beverages', description: 'Meals, snacks, and drinks', icon: '🍔', display_order: 1, active: true },
+            { name: 'Xerox & Printing', description: 'Document services', icon: '🖨️', display_order: 2, active: true },
+            { name: 'Stationery', description: 'Academic supplies', icon: '📝', display_order: 3, active: true },
+            { name: 'Electronics', description: 'Tech supplies', icon: '💻', display_order: 4, active: true }
+          ]);
+
+        if (categoriesError) {
+          console.error('Categories insert error:', categoriesError);
+        }
+
+        // Insert sample vendor
+        const { error: vendorError } = await supabase
+          .from('vendors')
+          .insert({
+            id: '550e8400-e29b-41d4-a716-446655440001',
+            firebase_uid: 'sample_vendor_uid',
+            business_name: 'Campus Cafe',
+            category: 'Food & Beverages',
+            description: 'Fresh food and beverages for students',
+            status: 'approved'
+          });
+
+        if (vendorError && !vendorError.message.includes('duplicate key')) {
+          console.error('Vendor insert error:', vendorError);
+        }
+
+        // Get the food category ID for products
+        const { data: foodCategory } = await supabase
+          .from('store_categories')
+          .select('id')
+          .eq('name', 'Food & Beverages')
+          .single();
+
+        if (foodCategory) {
+          // Insert sample products
+          const { error: productsError } = await supabase
+            .from('products')
+            .insert([
+              {
+                name: 'Chicken Sandwich',
+                description: 'Fresh grilled chicken sandwich with vegetables',
+                price: 120.00,
+                discount_percentage: 10,
+                quantity: 25,
+                vendor_id: '550e8400-e29b-41d4-a716-446655440001',
+                category_id: foodCategory.id,
+                is_active: true,
+                available_from: '08:00:00',
+                available_until: '20:00:00'
+              },
+              {
+                name: 'Coffee',
+                description: 'Hot freshly brewed coffee',
+                price: 40.00,
+                discount_percentage: 0,
+                quantity: 50,
+                vendor_id: '550e8400-e29b-41d4-a716-446655440001',
+                category_id: foodCategory.id,
+                is_active: true,
+                available_from: '07:00:00',
+                available_until: '22:00:00'
+              }
+            ]);
+
+          if (productsError) {
+            console.error('Products insert error:', productsError);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error adding sample data:', error);
     }
   };
 
@@ -91,7 +179,7 @@ export const CampusStorePage = () => {
         throw error;
       }
       
-      console.log('Categories fetched:', data);
+      console.log('Categories fetched:', data?.length || 0);
       setCategories(data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -102,53 +190,45 @@ export const CampusStorePage = () => {
     try {
       console.log('Fetching products...');
       
-      // First, let's try to fetch products without any filters to see what we get
       const { data: allProducts, error: productsError } = await supabase
         .from('products')
-        .select('*');
-
-      console.log('All products query result:', { allProducts, productsError });
+        .select('*')
+        .eq('is_active', true);
 
       if (productsError) {
         console.error('Products error:', productsError);
         throw productsError;
       }
 
+      console.log('Products fetched:', allProducts?.length || 0);
+
       if (!allProducts || allProducts.length === 0) {
-        console.log('No products found in database');
         setProducts([]);
-        setError('No products found in the database.');
+        setError('No products are currently available.');
         return;
       }
 
-      // Now let's fetch vendors
-      const { data: allVendors, error: vendorsError } = await supabase
+      // Fetch vendors
+      const { data: vendors } = await supabase
         .from('vendors')
-        .select('*');
+        .select('*')
+        .eq('status', 'approved');
 
-      console.log('All vendors query result:', { allVendors, vendorsError });
-
-      if (vendorsError) {
-        console.error('Vendors error:', vendorsError);
-        // Don't throw here, vendors might not be required
-      }
+      console.log('Vendors fetched:', vendors?.length || 0);
 
       // Create vendor map
       const vendorMap: Record<string, Vendor> = {};
-      if (allVendors) {
-        allVendors.forEach(vendor => {
+      if (vendors) {
+        vendors.forEach(vendor => {
           vendorMap[vendor.id] = vendor;
         });
       }
 
-      // Filter active products and apply search/category filters
-      let filteredProducts = allProducts.filter(product => product.is_active === true);
+      // Filter products by category and search
+      let filteredProducts = allProducts;
       
-      console.log('Active products:', filteredProducts.length);
-
       if (selectedCategory) {
         filteredProducts = filteredProducts.filter(product => product.category_id === selectedCategory);
-        console.log('After category filter:', filteredProducts.length);
       }
 
       if (searchQuery && searchQuery.trim() !== '') {
@@ -157,69 +237,27 @@ export const CampusStorePage = () => {
           product.name.toLowerCase().includes(query) || 
           (product.description && product.description.toLowerCase().includes(query))
         );
-        console.log('After search filter:', filteredProducts.length);
       }
 
-      // Add vendor information and filter by vendor status
+      // Add vendor information
       const productsWithVendors = filteredProducts.map(product => ({
         ...product,
         vendor: product.vendor_id ? vendorMap[product.vendor_id] : undefined
-      })).filter(product => {
-        // Include products without vendors OR products with approved vendors
-        return !product.vendor || product.vendor.status === 'approved';
-      });
+      }));
 
-      console.log('Final filtered products:', productsWithVendors.length);
-      console.log('Sample product:', productsWithVendors[0]);
-      
+      console.log('Final products:', productsWithVendors.length);
       setProducts(productsWithVendors);
+      setError(null);
       
-      if (productsWithVendors.length === 0) {
-        setError('No products are available at the moment.');
-      } else {
-        setError(null);
-      }
     } catch (error) {
       console.error('Error fetching products:', error);
       setError('Failed to load products. Please try again.');
-      toast({
-        title: "Error",
-        description: "Failed to load products",
-        variant: "destructive"
-      });
     }
   };
 
   useEffect(() => {
-    if (user) {
-      fetchProducts();
-    }
-  }, [selectedCategory, searchQuery, user]);
-
-  // Set up real-time subscription for new products
-  useEffect(() => {
-    if (!user) return;
-
-    const channel = supabase
-      .channel('products-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'products'
-        },
-        (payload) => {
-          console.log('Product change detected:', payload);
-          fetchProducts();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user]);
+    fetchProducts();
+  }, [selectedCategory, searchQuery]);
 
   const addToCart = (product: Product, quantity: number = 1) => {
     const existingItem = cartItems.find(item => item.id === product.id);
@@ -363,7 +401,7 @@ export const CampusStorePage = () => {
           </div>
         </div>
 
-        {/* Debug Information */}
+        {/* Loading State */}
         {loading && (
           <div className="text-center py-4">
             <p className="text-muted-foreground">Loading products...</p>
@@ -377,22 +415,6 @@ export const CampusStorePage = () => {
             <h3 className="text-lg font-semibold mb-2">Something went wrong</h3>
             <p className="text-muted-foreground mb-4">{error}</p>
             <Button onClick={initializeData}>Try Again</Button>
-          </div>
-        )}
-
-        {/* Loading State */}
-        {loading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...Array(6)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <div className="h-48 bg-muted rounded-t-lg"></div>
-                <CardContent className="p-4">
-                  <div className="h-4 bg-muted rounded mb-2"></div>
-                  <div className="h-3 bg-muted rounded mb-2"></div>
-                  <div className="h-4 bg-muted rounded w-1/2"></div>
-                </CardContent>
-              </Card>
-            ))}
           </div>
         )}
 
@@ -468,7 +490,7 @@ export const CampusStorePage = () => {
           </div>
         )}
 
-        {/* Empty State - only show when no error and no loading */}
+        {/* Empty State */}
         {!loading && !error && products.length === 0 && (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🛍️</div>
