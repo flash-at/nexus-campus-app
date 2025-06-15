@@ -922,6 +922,38 @@ export type Database = {
           },
         ]
       }
+      staff_wallets: {
+        Row: {
+          created_at: string
+          id: string
+          points_balance: number
+          staff_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          points_balance?: number
+          staff_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          points_balance?: number
+          staff_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_wallets_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_categories: {
         Row: {
           active: boolean | null
@@ -1098,6 +1130,10 @@ export type Database = {
         Returns: {
           rank: number
         }[]
+      }
+      get_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
     }
     Enums: {
