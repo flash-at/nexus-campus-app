@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
@@ -28,8 +29,8 @@ const Login = () => {
   const [isForgotPassOpen, setIsForgotPassOpen] = useState(false);
 
   useEffect(() => {
-    // Redirect if already logged in and auth state is no longer loading.
-    if (!loading && user) {
+    // Redirect if already logged in, verified, and auth state is no longer loading.
+    if (!loading && user && user.emailVerified) {
       navigate("/dashboard");
     }
   }, [user, loading, navigate]);
