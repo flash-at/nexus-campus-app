@@ -13,7 +13,6 @@ export const useUserProfile = () => {
     if (!user) {
       setProfile(null);
       setLoading(false);
-      setError(null);
       return;
     }
 
@@ -23,15 +22,7 @@ export const useUserProfile = () => {
       console.log("Fetching profile for user:", user.uid);
       
       const userProfile = await getUserProfile(user.uid);
-      if (userProfile) {
-        console.log("Profile fetched successfully:", userProfile);
-        setProfile(userProfile);
-        setError(null);
-      } else {
-        console.log("No profile found for user");
-        setProfile(null);
-        setError("Profile not found. Please create your profile.");
-      }
+      setProfile(userProfile);
     } catch (err) {
       console.error("Failed to fetch profile:", err);
       setError("Failed to load profile");
@@ -47,14 +38,10 @@ export const useUserProfile = () => {
     }
   }, [user, authLoading, fetchProfile]);
 
-  const refetch = useCallback(() => {
-    return fetchProfile();
-  }, [fetchProfile]);
-
   return { 
     profile, 
     loading: loading || authLoading, 
     error,
-    refetch 
+    refetch: fetchProfile 
   };
 };

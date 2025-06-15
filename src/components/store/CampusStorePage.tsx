@@ -32,7 +32,7 @@ interface Product {
   category_id: string;
   vendors: {
     business_name: string;
-  } | null;
+  };
 }
 
 export const CampusStorePage = () => {
@@ -99,83 +99,42 @@ export const CampusStorePage = () => {
     try {
       console.log('Fetching products for campus store...');
       
-      // Simple query without complex joins first
-      const { data: productsData, error: productsError } = await supabase
+      // First, let's try a simpler query to see if we can get products at all
+      let query = supabase
         .from('products')
-        .select('*')
+        .select(`
+          *,
+          vendors (business_name)
+        `)
         .eq('is_active', true)
-        .gt('quantity', 0)
         .order('created_at', { ascending: false });
 
-      if (productsError) {
-        console.error('Error fetching products:', productsError);
-        throw productsError;
-      }
-
-      console.log('Products fetched:', productsData);
-
-      if (!productsData || productsData.length === 0) {
-        setProducts([]);
-        setError('No products are currently available in the store.');
-        return;
-      }
-
-      // Now get vendor information for each product
-      const productIds = productsData.map(p => p.vendor_id).filter(Boolean);
-      
-      if (productIds.length === 0) {
-        setProducts([]);
-        setError('No products with valid vendors found.');
-        return;
-      }
-
-      const { data: vendorsData, error: vendorsError } = await supabase
-        .from('vendors')
-        .select('id, business_name')
-        .in('id', productIds)
-        .eq('status', 'approved');
-
-      if (vendorsError) {
-        console.error('Error fetching vendors:', vendorsError);
-        // Continue without vendor data rather than failing completely
-      }
-
-      console.log('Vendors fetched:', vendorsData);
-
-      // Combine products with vendor data
-      const productsWithVendors = productsData.map(product => {
-        const vendor = vendorsData?.find(v => v.id === product.vendor_id);
-        return {
-          ...product,
-          vendors: vendor ? { business_name: vendor.business_name } : null
-        };
-      }).filter(product => product.vendors); // Only include products with valid vendors
-
-      console.log('Products with vendors:', productsWithVendors);
-
-      // Apply filters
-      let filteredProducts = productsWithVendors;
-
+      // Apply filters only if they exist
       if (selectedCategory) {
-        filteredProducts = filteredProducts.filter(p => p.category_id === selectedCategory);
+        query = query.eq('category_id', selectedCategory);
       }
 
       if (searchQuery && searchQuery.trim() !== '') {
-        const query = searchQuery.toLowerCase();
-        filteredProducts = filteredProducts.filter(p => 
-          p.name.toLowerCase().includes(query) || 
-          p.description?.toLowerCase().includes(query)
-        );
+        query = query.or(`name.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
       }
 
-      setProducts(filteredProducts);
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Supabase error fetching products:', error);
+        throw error;
+      }
       
-      if (filteredProducts.length === 0) {
-        if (selectedCategory || searchQuery) {
-          setError('No products found matching your criteria.');
-        } else {
-          setError('No products are currently available in the store.');
-        }
+      console.log('Raw products data from Supabase:', data);
+      
+      // Filter products that have vendors (approved vendors should have business_name)
+      const validProducts = data?.filter(product => product.vendors?.business_name) || [];
+      
+      console.log('Valid products with vendors:', validProducts);
+      setProducts(validProducts);
+      
+      if (validProducts.length === 0 && !selectedCategory && !searchQuery) {
+        setError('No products are currently available in the store.');
       } else {
         setError(null);
       }
@@ -436,7 +395,7 @@ export const CampusStorePage = () => {
                     </p>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                       <MapPin className="h-3 w-3" />
-                      <span>{product.vendors?.business_name || 'Unknown Vendor'}</span>
+                      <span>{product.vendors?.business_name}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
