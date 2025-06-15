@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +9,8 @@ import { ArrowLeft, Minus, Plus, Trash2, MapPin, AlertTriangle, RefreshCw } from
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { usePasswordVerification } from '@/hooks/usePasswordVerification';
+import { PasswordVerificationDialog } from '@/components/PasswordVerificationDialog';
 
 interface CartItem {
   id: string;
@@ -43,6 +44,15 @@ export const Cart: React.FC<CartProps> = ({
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const { user, forceSessionSync, isSessionSyncing } = useAuth();
   const { toast } = useToast();
+  
+  // Add password verification
+  const {
+    isVerified,
+    showPasswordDialog,
+    setShowPasswordDialog,
+    verifyPassword,
+    requestVerification
+  } = usePasswordVerification();
 
   const total = subtotal + serviceFee;
 
@@ -79,6 +89,14 @@ export const Cart: React.FC<CartProps> = ({
 
   const handlePlaceOrder = async () => {
     console.log('[Cart] 🛒 Place order triggered');
+    
+    // Check if user is verified first
+    if (!isVerified) {
+      console.log('[Cart] 🔒 User not verified, requesting password verification');
+      requestVerification();
+      return;
+    }
+
     console.log('[Cart] 📊 Auth state check:', {
       hasUser: !!user,
       firebaseUID: user?.uid,
@@ -441,6 +459,13 @@ export const Cart: React.FC<CartProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Password Verification Dialog */}
+      <PasswordVerificationDialog
+        isOpen={showPasswordDialog}
+        onClose={() => setShowPasswordDialog(false)}
+        onVerify={verifyPassword}
+      />
     </div>
   );
 };
