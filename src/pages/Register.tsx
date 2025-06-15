@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -367,7 +368,7 @@ const checkFirebaseUidExists = async (firebaseUid: string): Promise<boolean> => 
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-950 dark:via-blue-950 dark:to-purple-950">
-      <div className="container mx-auto px-6 py-8">
+      <div className="container mx-auto px-4 sm:px-6 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <Button variant="ghost" size="sm" asChild className="group">
@@ -391,10 +392,10 @@ const checkFirebaseUidExists = async (firebaseUid: string): Promise<boolean> => 
                   CampusConnect
                 </h1>
               </div>
-              <h2 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+              <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
                 Join the Future of Campus Life
               </h2>
-              <p className="text-xl text-gray-600 dark:text-gray-400 leading-relaxed">
+              <p className="text-lg lg:text-xl text-gray-600 dark:text-gray-400 leading-relaxed">
                 Connect with thousands of students, access campus services instantly, 
                 and make your college experience unforgettable.
               </p>
@@ -444,8 +445,8 @@ const checkFirebaseUidExists = async (firebaseUid: string): Promise<boolean> => 
                   </CardDescription>
                 </CardHeader>
 
-                <CardContent className="p-8">
-                  <form onSubmit={handleSubmit} className="space-y-6">
+                <CardContent className="p-6 md:p-8">
+                  <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                     {/* Full Name */}
                     <div className="space-y-2">
                       <Label htmlFor="fullName" className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -541,7 +542,7 @@ const checkFirebaseUidExists = async (firebaseUid: string): Promise<boolean> => 
                         </p>
                       )}
                       {!allowNonEdu ? (
-                        <p className="text-xs text-gray-500 mt-0.5">Use your institutional .edu.in email to unlock all features and faster verification. <br />Don't have one? <span className="text-blue-600 underline cursor-pointer" onClick={() => setAllowNonEdu(true)}>Register with your Gmail</span>.</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Use your institutional .edu.in email for full access. Don't have one? <span className="text-blue-600 underline cursor-pointer" onClick={() => setAllowNonEdu(true)}>Register with Gmail</span>.</p>
                       ) : (
                         <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-0.5">Personal email sign-up may have limited access to some features.</p>
                       )}
