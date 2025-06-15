@@ -1,4 +1,3 @@
-
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { CreateProfileForm } from "./CreateProfileForm";
 import { ProfileHeader } from "./ProfileHeader";
@@ -11,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useState } from "react";
+import { QrCodeDisplay } from "./QrCodeDisplay";
 
 const ProfileSkeleton = () => (
   <div className="space-y-4 sm:space-y-6 lg:space-y-8 p-4 sm:p-6">
@@ -59,10 +59,11 @@ export const NewProfilePage = () => {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="points">Points History</TabsTrigger>
+          <TabsTrigger value="id">Digital ID</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -78,6 +79,10 @@ export const NewProfilePage = () => {
             transactions={pointsHistory} 
             loading={pointsLoading}
           />
+        </TabsContent>
+
+        <TabsContent value="id" className="space-y-6">
+          <QrCodeDisplay value={profile.id} studentName={profile.full_name} />
         </TabsContent>
       </Tabs>
 
