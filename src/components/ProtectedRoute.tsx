@@ -2,6 +2,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import { ReactNode } from "react";
+import { toast } from "sonner";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -23,13 +24,10 @@ const ProtectedRoute = ({ children, requireEmailVerified = true }: ProtectedRout
     return <Navigate to="/login" replace />;
   }
 
-  // Temporarily bypassing email verification to ease testing.
-  // Re-enable for production.
-  /*
   if (requireEmailVerified && !user.emailVerified) {
+    toast.error("Please verify your email to access this page.");
     return <Navigate to="/login" replace />;
   }
-  */
 
   return <>{children}</>;
 };
