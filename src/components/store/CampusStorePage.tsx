@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -45,11 +46,12 @@ export const CampusStorePage = () => {
   const { toast } = useToast();
   const { user } = useAuth();
 
+  // fetch everything on mount
   useEffect(() => {
     loadData();
   }, []);
 
-  // Load categories, vendors, and products robustly.
+  // Load everything and log for debug
   const loadData = async () => {
     setLoading(true);
     setError(null);
@@ -71,25 +73,27 @@ export const CampusStorePage = () => {
       setVendors(vends || []);
       if (vendErr) throw vendErr;
 
-      // Products (active & in stock)
+      // Products
       const { data: prods, error: prodErr } = await supabase
         .from('products')
         .select('*')
         .eq('is_active', true)
         .gt('quantity', 0);
-      if (prodErr) throw prodErr;
       setProducts(prods || []);
-      // CONSOLE LOG ALL RAW QUERIED DATA
+      if (prodErr) throw prodErr;
+
+      // Log all for troubleshooting
       console.log("Fetched categories (Store):", cats);
       console.log("Fetched vendors (Store):", vends);
       console.log("Fetched products (Store):", prods);
+
     } catch (e: any) {
       setError(e.message || 'Could not load store data.');
     }
     setLoading(false);
   };
 
-  // Products to display, with robust mapping.
+  // Filter and present product list
   const displayProducts = products
     .filter(p => !selectedCategory || p.category_id === selectedCategory)
     .filter(p =>
@@ -120,6 +124,7 @@ export const CampusStorePage = () => {
     toast({ title: 'Added to Cart', description: `${product.name} added to cart.` });
   };
 
+  // UI - login check
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">

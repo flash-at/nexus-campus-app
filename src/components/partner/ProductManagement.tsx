@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -26,8 +27,6 @@ export const ProductManagement = () => {
   const [form, setForm] = useState({
     name: '', description: '', price: '', discount: '', quantity: '', category_id: ''
   });
-
-  // Fetch all categories for selecting when adding product
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
@@ -52,7 +51,6 @@ export const ProductManagement = () => {
         .from('products')
         .select('*')
         .eq('vendor_id', partner.id)
-        .eq('is_active', true)
         .order('created_at', { ascending: false });
       setProducts(data || []);
       console.log("Fetched products (Partner):", data, error, "PartnerId:", partner.id);
