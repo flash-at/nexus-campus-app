@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +10,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Eye, EyeOff, Mail, User, Phone, GraduationCap, Sparkles, Shield, Users, BookOpen, AlertCircle, CheckCircle } from "lucide-react";
 import { createUserWithEmailAndPassword, sendEmailVerification, deleteUser } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { supabase } from "@/integrations/supabase/client";
 import { createUserProfile, checkHallTicketExists, checkEmailExists } from "@/services/userService";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -221,6 +223,21 @@ const checkFirebaseUidExists = async (firebaseUid: string): Promise<boolean> => 
       );
       const firebaseUser = userCredential.user;
       console.log("Firebase user created successfully:", firebaseUser.uid);
+
+      // New Step: Sync Firebase session with Supabase client to allow profile creation
+      console.log("Syncing auth session with database...");
+      const idToken = await firebaseUser.getIdToken();
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: idToken,
+        refresh_token: firebaseUser.refreshToken,
+      });
+
+      if (sessionError) {
+        console.error("Error setting Supabase session:", sessionError);
+        throw new Error("Failed to create a secure session. Please try again.");
+      }
+      console.log("Auth session synced successfully.");
+
 
       // Step 3: Send Verification Email (continue on failure)
       try {
