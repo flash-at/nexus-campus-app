@@ -9,7 +9,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
-import { signInPartner, getPartnerAuthErrorMessage } from "@/utils/partnerSupabaseAuth";
+import { getPartnerAuthErrorMessage } from "@/utils/partnerSupabaseAuth";
+import { usePartnerAuth } from "@/hooks/usePartnerAuth";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -23,6 +24,7 @@ const formSchema = z.object({
 export const ProviderLoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const { signIn, loading } = usePartnerAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -32,11 +34,9 @@ export const ProviderLoginForm = () => {
     },
   });
 
-  const { isSubmitting } = form.formState;
-
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await signInPartner(values.email, values.password);
+      await signIn(values.email, values.password);
       navigate("/partner-dashboard");
     } catch (error: any) {
       console.error("Authentication error:", error);
@@ -113,9 +113,9 @@ export const ProviderLoginForm = () => {
               <Button
                 type="submit"
                 className="w-full h-12 bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-                disabled={isSubmitting}
+                disabled={loading}
               >
-                {isSubmitting ? "Signing In..." : "Sign In"}
+                {loading ? "Signing In..." : "Sign In"}
               </Button>
             </form>
           </Form>

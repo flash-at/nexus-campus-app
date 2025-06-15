@@ -15,22 +15,6 @@ export interface PartnerProfile {
   rejection_reason: string | null;
 }
 
-export const signInPartner = async (email: string, password: string) => {
-  try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) throw error;
-    
-    return data;
-  } catch (error: any) {
-    console.error("Partner sign in error:", error);
-    throw error;
-  }
-};
-
 export const signUpPartner = async (email: string, password: string, partnerData: {
   businessName: string;
   category: string;
@@ -90,6 +74,12 @@ export const getPartnerAuthErrorMessage = (error: any) => {
       return "Incorrect email or password";
     case 'Email not confirmed':
       return "Please verify your email address";
+    case 'No partner account found with this email.':
+      return "No partner account found with this email.";
+    case 'Your partner account is pending approval.':
+      return "Your partner account is pending approval.";
+    case 'Error fetching your partner profile.':
+       return "There was a problem verifying your partner account.";
     default:
       return error.message || "Sign in failed. Please try again.";
   }
