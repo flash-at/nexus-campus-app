@@ -21,6 +21,7 @@ import CreateClub from "./pages/CreateClub";
 import ClubAdmin from "./pages/ClubAdmin";
 import NotFound from "./pages/NotFound";
 import { CampusStorePage } from "./components/store/CampusStorePage";
+import StaffPointsPortal from "./pages/StaffPointsPortal";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ function App() {
                   <Route path="/create-club" element={<CreateClub />} />
                   <Route path="/club-admin" element={<ClubAdmin />} />
                   <Route path="/partner-dashboard" element={<PartnerDashboard />} />
+                  <Route path="/staff-portal" element={<StaffPointsPortal />} />
                   <Route
                     path="/campus-store"
                     element={

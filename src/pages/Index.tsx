@@ -274,6 +274,9 @@ const Index = () => {
           <div className="flex items-center gap-4">
             <Link to="#" className="text-sm text-muted-foreground hover:text-foreground">Privacy Policy</Link>
             <Link to="#" className="text-sm text-muted-foreground hover:text-foreground">Terms of Service</Link>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/staff-portal">🌟 Staff Access</Link>
+            </Button>
           </div>
         </div>
       </footer>
