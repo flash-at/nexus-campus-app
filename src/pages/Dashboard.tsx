@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -106,6 +107,9 @@ const Dashboard = () => {
     setActiveSection("leaderboard");
     setIsSidebarOpen(false);
   };
+
+  // Get current date and format it as "Month DD, YYYY"
+  const todayStr = format(new Date(), "MMMM d, yyyy");
 
   return (
     <div className="min-h-screen bg-background">
@@ -276,7 +280,7 @@ const Dashboard = () => {
                   </div>
                   <div className="text-left sm:text-right">
                     <p className="text-white/80 text-sm">Today's Date</p>
-                    <p className="text-lg sm:text-xl font-semibold">June 14, 2025</p>
+                    <p className="text-lg sm:text-xl font-semibold">{todayStr}</p>
                   </div>
                 </div>
               </div>
