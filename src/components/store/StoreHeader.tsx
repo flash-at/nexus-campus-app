@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Badge } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 
 interface StoreHeaderProps {
   cartCount: number;
@@ -9,19 +9,22 @@ interface StoreHeaderProps {
 }
 
 export const StoreHeader: React.FC<StoreHeaderProps> = ({ cartCount, onCartClick }) => (
-  <div className="sticky top-0 z-40 bg-background/95 border-b">
-    <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-      <h1 className="text-2xl font-bold">Campus Store</h1>
+  <div className="sticky top-0 z-50 bg-white shadow-sm border-b">
+    <div className="container mx-auto px-4 py-4 flex items-center justify-between max-w-7xl">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-800 sm:text-3xl">Campus Store</h1>
+        <p className="text-sm text-gray-600 hidden sm:block">Fresh food & essentials delivered</p>
+      </div>
       <Button
-        variant="outline"
         onClick={onCartClick}
-        className="relative"
+        className="relative bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full shadow-lg transition-all duration-200 transform hover:scale-105"
+        size="sm"
       >
-        <ShoppingCart className="h-4 w-4 mr-2" />
-        Cart
+        <ShoppingCart className="h-5 w-5 mr-2" />
+        <span className="hidden sm:inline">Cart</span>
         {cartCount > 0 && (
-          <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 text-xs bg-primary text-white flex items-center justify-center">
-            {cartCount}
+          <span className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center text-xs font-bold shadow-lg animate-pulse">
+            {cartCount > 99 ? '99+' : cartCount}
           </span>
         )}
       </Button>

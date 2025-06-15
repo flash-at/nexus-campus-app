@@ -59,7 +59,6 @@ export const CampusStorePage = () => {
     setError(null);
 
     try {
-      // --- LOAD ALL ROWS, NO FILTERING ---
       const { data: cats, error: catErr } = await supabase
         .from('store_categories')
         .select('id,name,icon');
@@ -129,11 +128,15 @@ export const CampusStorePage = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="max-w-sm">
-          <CardContent className="p-6 text-center">
-            <AlertCircle className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
-            <h3 className="text-lg font-bold mb-2">Please log in to view the Campus Store</h3>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <Card className="w-full max-w-sm">
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+            <h3 className="text-xl font-bold mb-3 text-gray-800">Welcome to Campus Store</h3>
+            <p className="text-gray-600 mb-4">Please log in to start shopping</p>
+            <Button className="w-full" onClick={() => window.location.href = '/login'}>
+              Log In
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -156,12 +159,12 @@ export const CampusStorePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50">
       <StoreHeader
         cartCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)}
         onCartClick={() => setShowCart(true)}
       />
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-3 py-4 max-w-7xl">
         <SearchBar value={search} onChange={setSearch} />
         <CategoryFilterBar
           categories={categories}
@@ -169,22 +172,30 @@ export const CampusStorePage = () => {
           onSelect={setSelectedCategory}
         />
         {loading && (
-          <div className="text-center py-8 text-muted-foreground">Loading products...</div>
+          <div className="flex justify-center items-center py-16">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3"></div>
+              <p className="text-gray-600">Loading products...</p>
+            </div>
+          </div>
         )}
         {error && !loading && (
-          <div className="text-center py-12">
-            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">Something went wrong</h3>
-            <p className="mb-4">{error}</p>
-            <Button onClick={loadData}>Try Again</Button>
+          <div className="text-center py-16 px-4">
+            <AlertCircle className="h-16 w-16 mx-auto mb-4 text-red-400" />
+            <h3 className="text-xl font-semibold mb-3 text-gray-800">Oops! Something went wrong</h3>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <Button onClick={loadData} className="bg-blue-600 hover:bg-blue-700">
+              Try Again
+            </Button>
           </div>
         )}
         {!loading && !error && (
           <>
             {displayProducts.length === 0 ? (
-              <div className="py-12 text-center text-muted-foreground">
-                <h3>No products available.</h3>
-                <p>Try removing filters or check console for debugging info above.</p>
+              <div className="py-16 text-center px-4">
+                <div className="text-6xl mb-4">🛍️</div>
+                <h3 className="text-xl font-semibold mb-2 text-gray-800">No products found</h3>
+                <p className="text-gray-600">Try adjusting your search or category filter</p>
               </div>
             ) : (
               <ProductGrid products={displayProducts} onAddToCart={addToCart} />

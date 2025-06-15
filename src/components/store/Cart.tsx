@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Minus, Plus, Trash2, MapPin, AlertTriangle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Minus, Plus, Trash2, MapPin, AlertTriangle, RefreshCw, ShoppingBag, CreditCard } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -92,7 +92,6 @@ export const Cart: React.FC<CartProps> = ({
   const handlePlaceOrder = async () => {
     console.log('[Cart] 🛒 Place order triggered');
     
-    // Check if user is verified first
     if (!isVerified) {
       console.log('[Cart] 🔒 User not verified, requesting password verification');
       requestVerification();
@@ -119,9 +118,6 @@ export const Cart: React.FC<CartProps> = ({
 
     try {
       console.log('[Cart] 🚀 Starting order placement process...');
-      
-      // First, get the user's UUID from the users table using their Firebase UID
-      console.log('[Cart] 🔍 Looking up user UUID for Firebase UID:', user.uid);
       
       const { data: userData, error: userError } = await supabase
         .from('users')
@@ -153,15 +149,6 @@ export const Cart: React.FC<CartProps> = ({
         const vendorServiceFee = serviceFee / Object.keys(groupedItems).length;
         const qrCode = `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-        console.log('[Cart] 📝 Creating order:', {
-          student_id: userUuid,
-          vendor_id: vendorId,
-          total_price: vendorSubtotal + vendorServiceFee,
-          service_fee: vendorServiceFee,
-          payment_method: paymentMethod,
-          qr_code: qrCode
-        });
-
         const { data: orderData, error: orderError } = await supabase
           .from('campus_orders')
           .insert({
@@ -192,8 +179,6 @@ export const Cart: React.FC<CartProps> = ({
           subtotal: (item.price * (1 - item.discount_percentage / 100)) * item.quantity
         }));
 
-        console.log('[Cart] 📦 Adding order items:', orderItems);
-
         const { error: itemsError } = await supabase
           .from('campus_order_items')
           .insert(orderItems);
@@ -209,7 +194,7 @@ export const Cart: React.FC<CartProps> = ({
       console.log('[Cart] 🎉 All orders placed successfully');
 
       toast({
-        title: "Order Placed Successfully!",
+        title: "🎉 Order Placed Successfully!",
         description: `Your order${Object.keys(groupedItems).length > 1 ? 's' : ''} ${Object.keys(groupedItems).length > 1 ? 'have' : 'has'} been placed. You'll receive updates as vendors accept your order.`,
       });
 
@@ -233,38 +218,46 @@ export const Cart: React.FC<CartProps> = ({
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-background p-4">
-        <Button variant="ghost" onClick={onBack} className="mb-4">
-          <ArrowLeft className="h-4 w-4 mr-2" />
+      <div className="min-h-screen bg-gray-50 p-4">
+        <Button variant="ghost" onClick={onBack} className="mb-6 text-gray-600 hover:text-gray-800">
+          <ArrowLeft className="h-5 w-5 mr-2" />
           Back to Store
         </Button>
-        <div className="text-center py-12">
-          <h2 className="text-2xl font-bold mb-4">Your Cart is Empty</h2>
-          <p className="text-muted-foreground mb-6">Add some items to get started</p>
-          <Button onClick={onBack}>Continue Shopping</Button>
+        <div className="text-center py-16">
+          <div className="text-8xl mb-6">🛒</div>
+          <h2 className="text-3xl font-bold mb-4 text-gray-800">Your Cart is Empty</h2>
+          <p className="text-gray-600 mb-8 text-lg">Add some delicious items to get started</p>
+          <Button onClick={onBack} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full text-lg">
+            Continue Shopping
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-6">
-        <Button variant="ghost" onClick={onBack} className="mb-4">
-          <ArrowLeft className="h-4 w-4 mr-2" />
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-6 max-w-6xl">
+        <Button variant="ghost" onClick={onBack} className="mb-6 text-gray-600 hover:text-gray-800">
+          <ArrowLeft className="h-5 w-5 mr-2" />
           Back to Store
         </Button>
 
-        <h1 className="text-2xl font-bold mb-6">Your Cart</h1>
+        <div className="flex items-center gap-3 mb-8">
+          <ShoppingBag className="h-8 w-8 text-blue-600" />
+          <h1 className="text-3xl font-bold text-gray-800">Your Cart</h1>
+          <Badge className="bg-blue-100 text-blue-800 px-3 py-1 text-sm">
+            {items.reduce((sum, item) => sum + item.quantity, 0)} items
+          </Badge>
+        </div>
 
-        {/* Session Status Warning */}
         {!user && (
           <Card className="mb-6 border-orange-200 bg-orange-50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <AlertTriangle className="h-5 w-5 text-orange-600" />
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <AlertTriangle className="h-6 w-6 text-orange-600 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="font-medium text-orange-800">Authentication Required</p>
+                  <p className="font-semibold text-orange-800 mb-1">Authentication Required</p>
                   <p className="text-sm text-orange-700">Please log in to place an order.</p>
                 </div>
                 <Button 
@@ -272,6 +265,7 @@ export const Cart: React.FC<CartProps> = ({
                   size="sm" 
                   onClick={handleRetrySession}
                   disabled={isSessionSyncing}
+                  className="border-orange-300 text-orange-700 hover:bg-orange-100"
                 >
                   <RefreshCw className={`h-4 w-4 mr-2 ${isSessionSyncing ? 'animate-spin' : ''}`} />
                   {isSessionSyncing ? 'Syncing...' : 'Sync Session'}
@@ -281,70 +275,70 @@ export const Cart: React.FC<CartProps> = ({
           </Card>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-2 space-y-6">
             {Object.entries(groupedItems).map(([vendorId, group]) => (
-              <Card key={vendorId}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    <CardTitle className="text-lg">{group.vendor}</CardTitle>
+              <Card key={vendorId} className="shadow-lg border-0">
+                <CardHeader className="pb-4 bg-gradient-to-r from-blue-50 to-indigo-50">
+                  <div className="flex items-center gap-3">
+                    <MapPin className="h-5 w-5 text-blue-600" />
+                    <CardTitle className="text-xl text-gray-800">{group.vendor}</CardTitle>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="p-6 space-y-4">
                   {group.items.map((item) => {
                     const discountedPrice = item.price * (1 - item.discount_percentage / 100);
                     const itemTotal = discountedPrice * item.quantity;
 
                     return (
-                      <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div key={item.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-xl bg-white hover:shadow-md transition-shadow">
                         <div className="flex-1">
-                          <h4 className="font-medium">{item.name}</h4>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="font-bold">₹{discountedPrice.toFixed(2)}</span>
+                          <h4 className="font-semibold text-lg text-gray-800">{item.name}</h4>
+                          <div className="flex items-center gap-3 mt-2">
+                            <span className="font-bold text-green-600 text-lg">₹{discountedPrice.toFixed(2)}</span>
                             {item.discount_percentage > 0 && (
                               <>
-                                <span className="text-sm text-muted-foreground line-through">
+                                <span className="text-sm text-gray-500 line-through">
                                   ₹{item.price.toFixed(2)}
                                 </span>
-                                <Badge variant="secondary" className="text-xs">
+                                <Badge variant="secondary" className="bg-red-100 text-red-700 text-xs">
                                   {item.discount_percentage}% OFF
                                 </Badge>
                               </>
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2 bg-gray-100 rounded-full p-1">
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="icon"
-                              className="h-8 w-8"
+                              className="h-8 w-8 rounded-full hover:bg-gray-200"
                               onClick={() => onUpdateQuantity(item.id, Math.max(0, item.quantity - 1))}
                             >
-                              <Minus className="h-3 w-3" />
+                              <Minus className="h-4 w-4" />
                             </Button>
-                            <span className="w-8 text-center">{item.quantity}</span>
+                            <span className="w-8 text-center font-semibold">{item.quantity}</span>
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="icon"
-                              className="h-8 w-8"
+                              className="h-8 w-8 rounded-full hover:bg-gray-200"
                               onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
                             >
-                              <Plus className="h-3 w-3" />
+                              <Plus className="h-4 w-4" />
                             </Button>
                           </div>
                           <div className="text-right min-w-[80px]">
-                            <p className="font-bold">₹{itemTotal.toFixed(2)}</p>
+                            <p className="font-bold text-lg text-gray-800">₹{itemTotal.toFixed(2)}</p>
                           </div>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-red-500 hover:text-red-700"
+                            className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
                             onClick={() => onUpdateQuantity(item.id, 0)}
                           >
-                            <Trash2 className="h-3 w-3" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
@@ -356,83 +350,82 @@ export const Cart: React.FC<CartProps> = ({
           </div>
 
           {/* Order Summary */}
-          <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Order Summary</CardTitle>
+          <div className="space-y-6">
+            <Card className="shadow-lg border-0 sticky top-4">
+              <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-green-600" />
+                  <CardTitle className="text-xl text-gray-800">Order Summary</CardTitle>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>Subtotal</span>
-                    <span>₹{subtotal.toFixed(2)}</span>
+              <CardContent className="p-6 space-y-6">
+                <div className="space-y-3">
+                  <div className="flex justify-between text-lg">
+                    <span className="text-gray-600">Subtotal</span>
+                    <span className="font-semibold">₹{subtotal.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Service Fee</span>
-                    <span>₹{serviceFee.toFixed(2)}</span>
+                  <div className="flex justify-between text-lg">
+                    <span className="text-gray-600">Service Fee</span>
+                    <span className="font-semibold">₹{serviceFee.toFixed(2)}</span>
                   </div>
-                  <div className="border-t pt-2">
-                    <div className="flex justify-between font-bold text-lg">
-                      <span>Total</span>
-                      <span>₹{total.toFixed(2)}</span>
+                  <div className="border-t pt-3">
+                    <div className="flex justify-between font-bold text-2xl">
+                      <span className="text-gray-800">Total</span>
+                      <span className="text-green-600">₹{total.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div>
-                    <label
-                      className="text-sm font-medium mb-2 block"
-                      htmlFor="payment-method"
-                    >
+                    <label className="text-sm font-semibold mb-3 block text-gray-700">
                       Payment Method
                     </label>
-                    <Select
-                      value={paymentMethod}
-                      onValueChange={setPaymentMethod}
-                      name="payment_method"
-                    >
-                      <SelectTrigger id="payment-method" name="payment_method">
+                    <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                      <SelectTrigger className="w-full border-2 border-gray-200 rounded-xl p-3">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="cod">Cash on Delivery</SelectItem>
-                        <SelectItem value="wallet">Campus Wallet</SelectItem>
-                        <SelectItem value="upi">UPI</SelectItem>
-                        <SelectItem value="card">Card</SelectItem>
+                        <SelectItem value="cod">💵 Cash on Delivery</SelectItem>
+                        <SelectItem value="wallet">💳 Campus Wallet</SelectItem>
+                        <SelectItem value="upi">📱 UPI</SelectItem>
+                        <SelectItem value="card">💳 Card</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div>
-                    <label
-                      className="text-sm font-medium mb-2 block"
-                      htmlFor="special-instructions"
-                    >
+                    <label className="text-sm font-semibold mb-3 block text-gray-700">
                       Special Instructions (Optional)
                     </label>
                     <Textarea
-                      id="special-instructions"
-                      name="special_instructions"
                       placeholder="Any special requests or instructions..."
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       rows={3}
+                      className="border-2 border-gray-200 rounded-xl resize-none"
                     />
                   </div>
                 </div>
 
                 <Button
-                  className="w-full"
-                  size="lg"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl text-lg font-semibold shadow-lg transition-all duration-200 transform hover:scale-105"
                   onClick={handlePlaceOrder}
                   disabled={isPlacingOrder || !user}
                 >
-                  {isPlacingOrder ? 'Placing Order...' : 'Place Order'}
+                  {isPlacingOrder ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      Placing Order...
+                    </>
+                  ) : (
+                    `🛍️ Place Order • ₹${total.toFixed(2)}`
+                  )}
                 </Button>
 
-                <p className="text-xs text-muted-foreground text-center">
-                  Orders will be split by vendor. You'll receive separate QR codes for each vendor.
+                <p className="text-xs text-gray-500 text-center leading-relaxed">
+                  Orders will be split by vendor. You'll receive separate QR codes for each vendor. 
+                  Estimated pickup time: 15-30 minutes.
                 </p>
               </CardContent>
             </Card>
@@ -440,7 +433,6 @@ export const Cart: React.FC<CartProps> = ({
         </div>
       </div>
 
-      {/* Password Verification Dialog */}
       <PasswordVerificationDialog
         isOpen={showPasswordDialog}
         onClose={() => setShowPasswordDialog(false)}
