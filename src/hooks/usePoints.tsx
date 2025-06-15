@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -15,7 +15,7 @@ export const usePoints = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchPoints = useCallback(async () => {
+  const fetchPoints = async () => {
     if (!user) {
       setCurrentPoints(0);
       setPointsHistory([]);
@@ -48,13 +48,11 @@ export const usePoints = () => {
     } finally {
       setLoading(false);
     }
-  }, [user?.uid]);
+  };
 
   useEffect(() => {
-    if (user) {
-      fetchPoints();
-    }
-  }, [user, fetchPoints]);
+    fetchPoints();
+  }, [user]);
 
   return {
     currentPoints,
