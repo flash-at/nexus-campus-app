@@ -16,8 +16,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }
   const isOutOfStock = product.quantity <= 0;
   
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-105 bg-white border-0 shadow-md">
-      <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center overflow-hidden">
+    <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:scale-105 bg-card/50 backdrop-blur-sm border-border/50 shadow-lg">
+      <div className="relative h-48 bg-gradient-to-br from-muted/50 to-muted flex items-center justify-center overflow-hidden">
         {product.image_url ? (
           <img 
             src={product.image_url} 
@@ -28,13 +28,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }
           <div className="text-6xl">📦</div>
         )}
         {product.discount_percentage > 0 && (
-          <Badge className="absolute top-3 right-3 bg-red-500 text-white px-2 py-1 text-xs font-bold">
+          <Badge className="absolute top-3 right-3 bg-destructive text-destructive-foreground px-2 py-1 text-xs font-bold shadow-lg">
             {product.discount_percentage}% OFF
           </Badge>
         )}
         {isOutOfStock && (
-          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <Badge variant="secondary" className="bg-gray-800 text-white px-3 py-1">
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+            <Badge variant="secondary" className="bg-muted text-muted-foreground px-3 py-1">
               Out of Stock
             </Badge>
           </div>
@@ -42,9 +42,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }
       </div>
       <CardContent className="p-4">
         <div className="mb-2">
-          <h4 className="font-bold text-lg mb-1 text-gray-800 leading-tight">{product.name}</h4>
-          <p className="text-sm text-gray-600 line-clamp-2 mb-2">{product.description}</p>
-          <div className="flex items-center gap-1 text-xs text-gray-500 mb-3">
+          <h4 className="font-bold text-lg mb-1 text-foreground leading-tight">{product.name}</h4>
+          <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{product.description}</p>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
             <MapPin className="h-3 w-3" />
             <span>{product.vendor.business_name}</span>
           </div>
@@ -52,14 +52,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-xl text-green-600">₹{discounted.toFixed(2)}</span>
+              <span className="font-bold text-xl text-green-600 dark:text-green-400">₹{discounted.toFixed(2)}</span>
               {product.discount_percentage > 0 && (
-                <span className="text-sm text-gray-500 line-through">
+                <span className="text-sm text-muted-foreground line-through">
                   ₹{product.price.toFixed(2)}
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-1 text-xs text-gray-500">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
               <span>4.5 (120)</span>
             </div>
@@ -70,8 +70,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }
             disabled={isOutOfStock}
             className={`rounded-full px-4 py-2 font-medium transition-all duration-200 ${
               isOutOfStock 
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed" 
-                : "bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:scale-105"
+                ? "bg-muted text-muted-foreground cursor-not-allowed" 
+                : "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:scale-105"
             }`}
           >
             {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}

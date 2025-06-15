@@ -218,16 +218,16 @@ export const Cart: React.FC<CartProps> = ({
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4">
-        <Button variant="ghost" onClick={onBack} className="mb-6 text-gray-600 hover:text-gray-800">
+      <div className="min-h-screen bg-background p-4">
+        <Button variant="ghost" onClick={onBack} className="mb-6 text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-5 w-5 mr-2" />
           Back to Store
         </Button>
         <div className="text-center py-16">
           <div className="text-8xl mb-6">🛒</div>
-          <h2 className="text-3xl font-bold mb-4 text-gray-800">Your Cart is Empty</h2>
-          <p className="text-gray-600 mb-8 text-lg">Add some delicious items to get started</p>
-          <Button onClick={onBack} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full text-lg">
+          <h2 className="text-3xl font-bold mb-4 text-foreground">Your Cart is Empty</h2>
+          <p className="text-muted-foreground mb-8 text-lg">Add some delicious items to get started</p>
+          <Button onClick={onBack} className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-full text-lg">
             Continue Shopping
           </Button>
         </div>
@@ -236,36 +236,36 @@ export const Cart: React.FC<CartProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 max-w-6xl">
-        <Button variant="ghost" onClick={onBack} className="mb-6 text-gray-600 hover:text-gray-800">
+        <Button variant="ghost" onClick={onBack} className="mb-6 text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-5 w-5 mr-2" />
           Back to Store
         </Button>
 
         <div className="flex items-center gap-3 mb-8">
-          <ShoppingBag className="h-8 w-8 text-blue-600" />
-          <h1 className="text-3xl font-bold text-gray-800">Your Cart</h1>
-          <Badge className="bg-blue-100 text-blue-800 px-3 py-1 text-sm">
+          <ShoppingBag className="h-8 w-8 text-primary" />
+          <h1 className="text-3xl font-bold text-foreground">Your Cart</h1>
+          <Badge className="bg-primary/10 text-primary px-3 py-1 text-sm">
             {items.reduce((sum, item) => sum + item.quantity, 0)} items
           </Badge>
         </div>
 
         {!user && (
-          <Card className="mb-6 border-orange-200 bg-orange-50">
+          <Card className="mb-6 border-amber-200 bg-amber-50/10 backdrop-blur-sm">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <AlertTriangle className="h-6 w-6 text-orange-600 flex-shrink-0" />
+                <AlertTriangle className="h-6 w-6 text-amber-600 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="font-semibold text-orange-800 mb-1">Authentication Required</p>
-                  <p className="text-sm text-orange-700">Please log in to place an order.</p>
+                  <p className="font-semibold text-amber-800 dark:text-amber-200 mb-1">Authentication Required</p>
+                  <p className="text-sm text-amber-700 dark:text-amber-300">Please log in to place an order.</p>
                 </div>
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={handleRetrySession}
                   disabled={isSessionSyncing}
-                  className="border-orange-300 text-orange-700 hover:bg-orange-100"
+                  className="border-amber-300 text-amber-700 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-900"
                 >
                   <RefreshCw className={`h-4 w-4 mr-2 ${isSessionSyncing ? 'animate-spin' : ''}`} />
                   {isSessionSyncing ? 'Syncing...' : 'Sync Session'}
@@ -279,11 +279,11 @@ export const Cart: React.FC<CartProps> = ({
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-6">
             {Object.entries(groupedItems).map(([vendorId, group]) => (
-              <Card key={vendorId} className="shadow-lg border-0">
-                <CardHeader className="pb-4 bg-gradient-to-r from-blue-50 to-indigo-50">
+              <Card key={vendorId} className="shadow-xl border-border/50 bg-card/50 backdrop-blur-sm">
+                <CardHeader className="pb-4 bg-gradient-to-r from-primary/10 to-purple-600/10">
                   <div className="flex items-center gap-3">
-                    <MapPin className="h-5 w-5 text-blue-600" />
-                    <CardTitle className="text-xl text-gray-800">{group.vendor}</CardTitle>
+                    <MapPin className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-xl text-foreground">{group.vendor}</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent className="p-6 space-y-4">
@@ -292,17 +292,17 @@ export const Cart: React.FC<CartProps> = ({
                     const itemTotal = discountedPrice * item.quantity;
 
                     return (
-                      <div key={item.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-xl bg-white hover:shadow-md transition-shadow">
+                      <div key={item.id} className="flex items-center justify-between p-4 border border-border/50 rounded-xl bg-card/30 backdrop-blur-sm hover:shadow-md transition-shadow">
                         <div className="flex-1">
-                          <h4 className="font-semibold text-lg text-gray-800">{item.name}</h4>
+                          <h4 className="font-semibold text-lg text-foreground">{item.name}</h4>
                           <div className="flex items-center gap-3 mt-2">
-                            <span className="font-bold text-green-600 text-lg">₹{discountedPrice.toFixed(2)}</span>
+                            <span className="font-bold text-green-600 dark:text-green-400 text-lg">₹{discountedPrice.toFixed(2)}</span>
                             {item.discount_percentage > 0 && (
                               <>
-                                <span className="text-sm text-gray-500 line-through">
+                                <span className="text-sm text-muted-foreground line-through">
                                   ₹{item.price.toFixed(2)}
                                 </span>
-                                <Badge variant="secondary" className="bg-red-100 text-red-700 text-xs">
+                                <Badge variant="secondary" className="bg-destructive/10 text-destructive text-xs">
                                   {item.discount_percentage}% OFF
                                 </Badge>
                               </>
@@ -310,11 +310,11 @@ export const Cart: React.FC<CartProps> = ({
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-2 bg-gray-100 rounded-full p-1">
+                          <div className="flex items-center gap-2 bg-muted/50 rounded-full p-1">
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 rounded-full hover:bg-gray-200"
+                              className="h-8 w-8 rounded-full hover:bg-muted"
                               onClick={() => onUpdateQuantity(item.id, Math.max(0, item.quantity - 1))}
                             >
                               <Minus className="h-4 w-4" />
@@ -323,19 +323,19 @@ export const Cart: React.FC<CartProps> = ({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 rounded-full hover:bg-gray-200"
+                              className="h-8 w-8 rounded-full hover:bg-muted"
                               onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
                             >
                               <Plus className="h-4 w-4" />
                             </Button>
                           </div>
                           <div className="text-right min-w-[80px]">
-                            <p className="font-bold text-lg text-gray-800">₹{itemTotal.toFixed(2)}</p>
+                            <p className="font-bold text-lg text-foreground">₹{itemTotal.toFixed(2)}</p>
                           </div>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                             onClick={() => onUpdateQuantity(item.id, 0)}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -351,41 +351,41 @@ export const Cart: React.FC<CartProps> = ({
 
           {/* Order Summary */}
           <div className="space-y-6">
-            <Card className="shadow-lg border-0 sticky top-4">
-              <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50">
+            <Card className="shadow-xl border-border/50 bg-card/50 backdrop-blur-sm sticky top-4">
+              <CardHeader className="bg-gradient-to-r from-green-500/10 to-emerald-500/10">
                 <div className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-green-600" />
-                  <CardTitle className="text-xl text-gray-800">Order Summary</CardTitle>
+                  <CreditCard className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  <CardTitle className="text-xl text-foreground">Order Summary</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="p-6 space-y-6">
                 <div className="space-y-3">
                   <div className="flex justify-between text-lg">
-                    <span className="text-gray-600">Subtotal</span>
+                    <span className="text-muted-foreground">Subtotal</span>
                     <span className="font-semibold">₹{subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-lg">
-                    <span className="text-gray-600">Service Fee</span>
+                    <span className="text-muted-foreground">Service Fee</span>
                     <span className="font-semibold">₹{serviceFee.toFixed(2)}</span>
                   </div>
                   <div className="border-t pt-3">
                     <div className="flex justify-between font-bold text-2xl">
-                      <span className="text-gray-800">Total</span>
-                      <span className="text-green-600">₹{total.toFixed(2)}</span>
+                      <span className="text-foreground">Total</span>
+                      <span className="text-green-600 dark:text-green-400">₹{total.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-semibold mb-3 block text-gray-700">
+                    <label className="text-sm font-semibold mb-3 block text-foreground">
                       Payment Method
                     </label>
                     <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                      <SelectTrigger className="w-full border-2 border-gray-200 rounded-xl p-3">
+                      <SelectTrigger className="w-full border-2 border-border bg-card/50 backdrop-blur-sm rounded-xl p-3">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-card border-border">
                         <SelectItem value="cod">💵 Cash on Delivery</SelectItem>
                         <SelectItem value="wallet">💳 Campus Wallet</SelectItem>
                         <SelectItem value="upi">📱 UPI</SelectItem>
@@ -395,7 +395,7 @@ export const Cart: React.FC<CartProps> = ({
                   </div>
 
                   <div>
-                    <label className="text-sm font-semibold mb-3 block text-gray-700">
+                    <label className="text-sm font-semibold mb-3 block text-foreground">
                       Special Instructions (Optional)
                     </label>
                     <Textarea
@@ -403,13 +403,13 @@ export const Cart: React.FC<CartProps> = ({
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       rows={3}
-                      className="border-2 border-gray-200 rounded-xl resize-none"
+                      className="border-2 border-border bg-card/50 backdrop-blur-sm rounded-xl resize-none placeholder:text-muted-foreground"
                     />
                   </div>
                 </div>
 
                 <Button
-                  className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl text-lg font-semibold shadow-lg transition-all duration-200 transform hover:scale-105"
+                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-4 rounded-xl text-lg font-semibold shadow-lg transition-all duration-200 transform hover:scale-105"
                   onClick={handlePlaceOrder}
                   disabled={isPlacingOrder || !user}
                 >
@@ -423,7 +423,7 @@ export const Cart: React.FC<CartProps> = ({
                   )}
                 </Button>
 
-                <p className="text-xs text-gray-500 text-center leading-relaxed">
+                <p className="text-xs text-muted-foreground text-center leading-relaxed">
                   Orders will be split by vendor. You'll receive separate QR codes for each vendor. 
                   Estimated pickup time: 15-30 minutes.
                 </p>
