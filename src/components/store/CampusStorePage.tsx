@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, AlertCircle, MapPin, Search } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { Cart } from './Cart';
@@ -18,12 +16,10 @@ interface Category {
   name: string;
   icon: string;
 }
-
 interface Vendor {
   id: string;
   business_name: string;
 }
-
 interface Product {
   id: string;
   name: string;
@@ -34,6 +30,10 @@ interface Product {
   image_url?: string;
   vendor_id: string;
   category_id?: string;
+}
+
+export interface DisplayProduct extends Product {
+  vendor: Vendor;
 }
 
 export const CampusStorePage = () => {
@@ -49,18 +49,15 @@ export const CampusStorePage = () => {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // fetch everything on mount
   useEffect(() => {
     loadData();
   }, []);
 
-  // Load everything and log for debug
   const loadData = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      // Categories
       const { data: cats, error: catErr } = await supabase
         .from('store_categories')
         .select('id,name,icon')
@@ -69,14 +66,12 @@ export const CampusStorePage = () => {
       setCategories(cats || []);
       if (catErr) throw catErr;
 
-      // Vendors
       const { data: vends, error: vendErr } = await supabase
         .from('vendors')
         .select('id,business_name');
       setVendors(vends || []);
       if (vendErr) throw vendErr;
 
-      // Products
       const { data: prods, error: prodErr } = await supabase
         .from('products')
         .select('*')
@@ -85,7 +80,6 @@ export const CampusStorePage = () => {
       setProducts(prods || []);
       if (prodErr) throw prodErr;
 
-      // Log all for troubleshooting
       console.log("Fetched categories (Store):", cats);
       console.log("Fetched vendors (Store):", vends);
       console.log("Fetched products (Store):", prods);
@@ -96,8 +90,7 @@ export const CampusStorePage = () => {
     setLoading(false);
   };
 
-  // Filter and present product list
-  const displayProducts = products
+  const displayProducts: DisplayProduct[] = products
     .filter(p => !selectedCategory || p.category_id === selectedCategory)
     .filter(p =>
       !search ||
@@ -106,22 +99,22 @@ export const CampusStorePage = () => {
     )
     .map(p => ({
       ...p,
-      vendor: vendors.find(v => v.id === p.vendor_id) || { business_name: 'Campus Store' }
+      vendor: vendors.find(v => v.id === p.vendor_id) || { id: '', business_name: 'Campus Store' }
     }));
 
-  const addToCart = (product: Product, qty: number = 1) => {
+  const addToCart = (product: DisplayProduct) => {
     if (cartItems.some(item => item.id === product.id)) {
       setCartItems(items =>
         items.map(item =>
           item.id === product.id
-            ? { ...item, quantity: item.quantity + qty }
+            ? { ...item, quantity: item.quantity + 1 }
             : item
         )
       );
     } else {
       setCartItems(items => [
         ...items,
-        { ...product, quantity: qty }
+        { ...product, quantity: 1 }
       ]);
     }
     toast({ title: 'Added to Cart', description: `${product.name} added to cart.` });

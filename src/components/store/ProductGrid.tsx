@@ -1,25 +1,11 @@
 
 import React from "react";
 import { ProductCard } from "./ProductCard";
-
-interface Vendor {
-  business_name: string;
-}
-
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  discount_percentage: number;
-  quantity: number;
-  image_url?: string;
-  vendor: Vendor;
-}
+import type { DisplayProduct } from "./CampusStorePage";
 
 interface ProductGridProps {
-  products: Product[];
-  onAddToCart: (p: Product) => void;
+  products: DisplayProduct[];
+  onAddToCart: (p: DisplayProduct) => void;
 }
 
 export const ProductGrid: React.FC<ProductGridProps> = ({

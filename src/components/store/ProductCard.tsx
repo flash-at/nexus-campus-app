@@ -3,25 +3,11 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MapPin } from "lucide-react";
-
-interface Vendor {
-  business_name: string;
-}
-
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  discount_percentage: number;
-  quantity: number;
-  image_url?: string;
-  vendor: Vendor;
-}
+import type { DisplayProduct } from "./CampusStorePage";
 
 interface ProductCardProps {
-  product: Product;
-  onAddToCart: (p: Product) => void;
+  product: DisplayProduct;
+  onAddToCart: (p: DisplayProduct) => void;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
