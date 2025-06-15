@@ -34,7 +34,7 @@ export const ProviderLoginForm = () => {
   };
 
   return (
-    <div className="flex justify-center">
+    <div className="flex justify-center p-4">
       <div className="w-full max-w-md">
         <Card className="shadow-2xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
           <CardHeader className="text-center">
