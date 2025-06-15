@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { usePasswordVerification } from '@/hooks/usePasswordVerification';
 import { PasswordVerificationDialog } from '@/components/PasswordVerificationDialog';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CartItem {
   id: string;
@@ -40,6 +40,7 @@ export const Cart: React.FC<CartProps> = ({
   subtotal,
   serviceFee
 }) => {
+  const isMobile = useIsMobile();
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [notes, setNotes] = useState('');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
@@ -218,16 +219,16 @@ export const Cart: React.FC<CartProps> = ({
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-background p-4">
+      <div className="min-h-screen bg-background px-2 sm:px-4 pt-4 pb-16">
         <Button variant="ghost" onClick={onBack} className="mb-6 text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-5 w-5 mr-2" />
           Back to Store
         </Button>
         <div className="text-center py-16">
           <div className="text-8xl mb-6">🛒</div>
-          <h2 className="text-3xl font-bold mb-4 text-foreground">Your Cart is Empty</h2>
-          <p className="text-muted-foreground mb-8 text-lg">Add some delicious items to get started</p>
-          <Button onClick={onBack} className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-full text-lg">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-foreground">Your Cart is Empty</h2>
+          <p className="text-muted-foreground mb-8 text-base sm:text-lg">Add some delicious items to get started</p>
+          <Button onClick={onBack} className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-full text-base sm:text-lg">
             Continue Shopping
           </Button>
         </div>
@@ -236,36 +237,36 @@ export const Cart: React.FC<CartProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
-        <Button variant="ghost" onClick={onBack} className="mb-6 text-muted-foreground hover:text-foreground">
+    <div className="min-h-screen bg-background px-1 sm:px-0">
+      <div className="container mx-auto px-1 sm:px-4 py-3 sm:py-6 max-w-2xl md:max-w-6xl">
+        <Button variant="ghost" onClick={onBack} className="mb-4 sm:mb-6 text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-5 w-5 mr-2" />
           Back to Store
         </Button>
 
-        <div className="flex items-center gap-3 mb-8">
-          <ShoppingBag className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold text-foreground">Your Cart</h1>
-          <Badge className="bg-primary/10 text-primary px-3 py-1 text-sm">
+        <div className="flex items-center gap-2 sm:gap-3 mb-5 sm:mb-8">
+          <ShoppingBag className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Your Cart</h1>
+          <Badge className="bg-primary/10 text-primary px-2 py-1 sm:px-3 sm:py-1 text-xs sm:text-sm">
             {items.reduce((sum, item) => sum + item.quantity, 0)} items
           </Badge>
         </div>
 
         {!user && (
-          <Card className="mb-6 border-amber-200 bg-amber-50/10 backdrop-blur-sm">
-            <CardContent className="p-6">
+          <Card className="mb-4 sm:mb-6 border-amber-200 bg-amber-50/10 backdrop-blur-sm">
+            <CardContent className="p-5 sm:p-6">
               <div className="flex items-center gap-4">
-                <AlertTriangle className="h-6 w-6 text-amber-600 flex-shrink-0" />
+                <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600 flex-shrink-0" />
                 <div className="flex-1">
                   <p className="font-semibold text-amber-800 dark:text-amber-200 mb-1">Authentication Required</p>
-                  <p className="text-sm text-amber-700 dark:text-amber-300">Please log in to place an order.</p>
+                  <p className="text-xs sm:text-sm text-amber-700 dark:text-amber-300">Please log in to place an order.</p>
                 </div>
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={handleRetrySession}
                   disabled={isSessionSyncing}
-                  className="border-amber-300 text-amber-700 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-900"
+                  className="border-amber-300 text-amber-700 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-900 text-xs sm:text-sm"
                 >
                   <RefreshCw className={`h-4 w-4 mr-2 ${isSessionSyncing ? 'animate-spin' : ''}`} />
                   {isSessionSyncing ? 'Syncing...' : 'Sync Session'}
@@ -275,42 +276,42 @@ export const Cart: React.FC<CartProps> = ({
           </Card>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className={`flex flex-col-reverse gap-6 lg:grid lg:grid-cols-3 lg:gap-8`}>
           {/* Cart Items */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             {Object.entries(groupedItems).map(([vendorId, group]) => (
               <Card key={vendorId} className="shadow-xl border-border/50 bg-card/50 backdrop-blur-sm">
-                <CardHeader className="pb-4 bg-gradient-to-r from-primary/10 to-purple-600/10">
-                  <div className="flex items-center gap-3">
-                    <MapPin className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-xl text-foreground">{group.vendor}</CardTitle>
+                <CardHeader className="pb-3 sm:pb-4 bg-gradient-to-r from-primary/10 to-purple-600/10">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                    <CardTitle className="text-lg sm:text-xl text-foreground">{group.vendor}</CardTitle>
                   </div>
                 </CardHeader>
-                <CardContent className="p-6 space-y-4">
+                <CardContent className="p-3 sm:p-6 space-y-3 sm:space-y-4">
                   {group.items.map((item) => {
                     const discountedPrice = item.price * (1 - item.discount_percentage / 100);
                     const itemTotal = discountedPrice * item.quantity;
 
                     return (
-                      <div key={item.id} className="flex items-center justify-between p-4 border border-border/50 rounded-xl bg-card/30 backdrop-blur-sm hover:shadow-md transition-shadow">
+                      <div key={item.id} className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-3 sm:p-4 border border-border/50 rounded-xl bg-card/30 backdrop-blur-sm hover:shadow-md transition-shadow gap-3">
                         <div className="flex-1">
-                          <h4 className="font-semibold text-lg text-foreground">{item.name}</h4>
-                          <div className="flex items-center gap-3 mt-2">
-                            <span className="font-bold text-green-600 dark:text-green-400 text-lg">₹{discountedPrice.toFixed(2)}</span>
+                          <h4 className="font-semibold text-base sm:text-lg text-foreground">{item.name}</h4>
+                          <div className="flex items-center gap-2 sm:gap-3 mt-1 sm:mt-2">
+                            <span className="font-bold text-green-600 dark:text-green-400 text-base sm:text-lg">₹{discountedPrice.toFixed(2)}</span>
                             {item.discount_percentage > 0 && (
                               <>
-                                <span className="text-sm text-muted-foreground line-through">
+                                <span className="text-xs sm:text-sm text-muted-foreground line-through">
                                   ₹{item.price.toFixed(2)}
                                 </span>
-                                <Badge variant="secondary" className="bg-destructive/10 text-destructive text-xs">
+                                <Badge variant="secondary" className="bg-destructive/10 text-destructive text-[10px] sm:text-xs">
                                   {item.discount_percentage}% OFF
                                 </Badge>
                               </>
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-2 bg-muted/50 rounded-full p-1">
+                        <div className="flex items-center gap-3 sm:gap-4">
+                          <div className="flex items-center gap-1 sm:gap-2 bg-muted/50 rounded-full p-1">
                             <Button
                               variant="ghost"
                               size="icon"
@@ -319,7 +320,7 @@ export const Cart: React.FC<CartProps> = ({
                             >
                               <Minus className="h-4 w-4" />
                             </Button>
-                            <span className="w-8 text-center font-semibold">{item.quantity}</span>
+                            <span className="w-7 sm:w-8 text-center font-semibold">{item.quantity}</span>
                             <Button
                               variant="ghost"
                               size="icon"
@@ -329,8 +330,8 @@ export const Cart: React.FC<CartProps> = ({
                               <Plus className="h-4 w-4" />
                             </Button>
                           </div>
-                          <div className="text-right min-w-[80px]">
-                            <p className="font-bold text-lg text-foreground">₹{itemTotal.toFixed(2)}</p>
+                          <div className="text-right min-w-[60px] sm:min-w-[80px]">
+                            <p className="font-bold text-base sm:text-lg text-foreground">₹{itemTotal.toFixed(2)}</p>
                           </div>
                           <Button
                             variant="ghost"
@@ -350,39 +351,39 @@ export const Cart: React.FC<CartProps> = ({
           </div>
 
           {/* Order Summary */}
-          <div className="space-y-6">
-            <Card className="shadow-xl border-border/50 bg-card/50 backdrop-blur-sm sticky top-4">
+          <div className="space-y-4 sm:space-y-6">
+            <Card className="shadow-xl border-border/50 bg-card/50 backdrop-blur-sm sticky top-2 sm:top-4">
               <CardHeader className="bg-gradient-to-r from-green-500/10 to-emerald-500/10">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-green-600 dark:text-green-400" />
-                  <CardTitle className="text-xl text-foreground">Order Summary</CardTitle>
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400" />
+                  <CardTitle className="text-lg sm:text-xl text-foreground">Order Summary</CardTitle>
                 </div>
               </CardHeader>
-              <CardContent className="p-6 space-y-6">
-                <div className="space-y-3">
-                  <div className="flex justify-between text-lg">
+              <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="flex justify-between text-base sm:text-lg">
                     <span className="text-muted-foreground">Subtotal</span>
                     <span className="font-semibold">₹{subtotal.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-lg">
+                  <div className="flex justify-between text-base sm:text-lg">
                     <span className="text-muted-foreground">Service Fee</span>
                     <span className="font-semibold">₹{serviceFee.toFixed(2)}</span>
                   </div>
-                  <div className="border-t pt-3">
-                    <div className="flex justify-between font-bold text-2xl">
+                  <div className="border-t pt-2 sm:pt-3">
+                    <div className="flex justify-between font-bold text-xl sm:text-2xl">
                       <span className="text-foreground">Total</span>
                       <span className="text-green-600 dark:text-green-400">₹{total.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-2 sm:space-y-4">
                   <div>
-                    <label className="text-sm font-semibold mb-3 block text-foreground">
+                    <label className="text-xs sm:text-sm font-semibold mb-2 sm:mb-3 block text-foreground">
                       Payment Method
                     </label>
                     <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                      <SelectTrigger className="w-full border-2 border-border bg-card/50 backdrop-blur-sm rounded-xl p-3">
+                      <SelectTrigger className="w-full border-2 border-border bg-card/50 backdrop-blur-sm rounded-xl p-3 text-xs sm:text-base">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-card border-border">
@@ -395,7 +396,7 @@ export const Cart: React.FC<CartProps> = ({
                   </div>
 
                   <div>
-                    <label className="text-sm font-semibold mb-3 block text-foreground">
+                    <label className="text-xs sm:text-sm font-semibold mb-2 sm:mb-3 block text-foreground">
                       Special Instructions (Optional)
                     </label>
                     <Textarea
@@ -403,13 +404,13 @@ export const Cart: React.FC<CartProps> = ({
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       rows={3}
-                      className="border-2 border-border bg-card/50 backdrop-blur-sm rounded-xl resize-none placeholder:text-muted-foreground"
+                      className="border-2 border-border bg-card/50 backdrop-blur-sm rounded-xl resize-none placeholder:text-muted-foreground text-xs sm:text-base"
                     />
                   </div>
                 </div>
 
                 <Button
-                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-4 rounded-xl text-lg font-semibold shadow-lg transition-all duration-200 transform hover:scale-105"
+                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-3 sm:py-4 rounded-xl text-base sm:text-lg font-semibold shadow-lg transition-all duration-200 transform hover:scale-105"
                   onClick={handlePlaceOrder}
                   disabled={isPlacingOrder || !user}
                 >
@@ -423,7 +424,7 @@ export const Cart: React.FC<CartProps> = ({
                   )}
                 </Button>
 
-                <p className="text-xs text-muted-foreground text-center leading-relaxed">
+                <p className="text-[10px] sm:text-xs text-muted-foreground text-center leading-relaxed">
                   Orders will be split by vendor. You'll receive separate QR codes for each vendor. 
                   Estimated pickup time: 15-30 minutes.
                 </p>
