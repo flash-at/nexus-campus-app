@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Minus, Plus, Trash2, MapPin } from 'lucide-react';
+import { ArrowLeft, Minus, Plus, Trash2, MapPin, AlertTriangle, RefreshCw } from 'lucide-react';
 import { supabase as defaultSupabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -40,7 +41,7 @@ export const Cart: React.FC<CartProps> = ({
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [notes, setNotes] = useState('');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const { user, supabaseSession } = useAuth();
+  const { user, supabaseSession, forceSessionSync } = useAuth();
   const { toast } = useToast();
 
   const total = subtotal + serviceFee;
@@ -58,8 +59,22 @@ export const Cart: React.FC<CartProps> = ({
     return acc;
   }, {} as Record<string, { vendor: string; items: CartItem[] }>);
 
+  const handleRetrySession = async () => {
+    console.log('[Cart] 🔄 Retrying session sync...');
+    await forceSessionSync();
+  };
+
   const handlePlaceOrder = async () => {
+    console.log('[Cart] 🛒 Place order triggered');
+    console.log('[Cart] 📊 Auth state check:', {
+      hasUser: !!user,
+      hasSupabaseSession: !!supabaseSession,
+      supabaseUserId: supabaseSession?.user?.id,
+      timestamp: new Date().toISOString()
+    });
+
     if (!user) {
+      console.log('[Cart] ❌ No Firebase user found');
       toast({
         title: "Authentication Required",
         description: "Please log in to place an order",
@@ -68,9 +83,31 @@ export const Cart: React.FC<CartProps> = ({
       return;
     }
 
+    if (!supabaseSession) {
+      console.log('[Cart] ❌ No Supabase session found');
+      toast({
+        title: "Session Error",
+        description: "Authentication session not ready. Please try syncing your session first.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!supabaseSession.user?.id) {
+      console.log('[Cart] ❌ No Supabase user ID found in session:', supabaseSession);
+      toast({
+        title: "Authentication Error",
+        description: "User ID not found in session. Please try syncing your session.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsPlacingOrder(true);
 
     try {
+      console.log('[Cart] 🚀 Starting order placement process...');
+      
       // Always use authenticated Supabase client
       let supabase = defaultSupabase;
       if (supabaseSession?.access_token) {
@@ -87,23 +124,13 @@ export const Cart: React.FC<CartProps> = ({
         );
       }
 
-      // Debug session contents carefully
-      console.log('[Cart] supabaseSession:', supabaseSession);
-      console.log('[Cart] supabaseSession.user:', supabaseSession?.user);
-
       // Use supabaseSession.user.id (Auth user ID) for RLS!
-      const authUserId = supabaseSession?.user?.id;
-      if (!authUserId) {
-        // Log entire session for error investigation
-        console.error('[Cart] Could not determine authenticated user ID. Full supabaseSession:', supabaseSession);
-        throw new Error(
-          "Could not determine authenticated user ID from session. " +
-          "Please ensure your authentication is set up correctly and try logging in again. " +
-          "Session object: " + JSON.stringify(supabaseSession)
-        );
-      }
+      const authUserId = supabaseSession.user.id;
+      console.log('[Cart] 👤 Using auth user ID:', authUserId);
 
       for (const [vendorId, group] of Object.entries(groupedItems)) {
+        console.log('[Cart] 🏪 Processing vendor:', vendorId);
+        
         const vendorSubtotal = group.items.reduce((sum, item) => {
           const discountedPrice = item.price * (1 - item.discount_percentage / 100);
           return sum + (discountedPrice * item.quantity);
@@ -112,7 +139,15 @@ export const Cart: React.FC<CartProps> = ({
         const vendorServiceFee = serviceFee / Object.keys(groupedItems).length;
         const qrCode = `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-        // Use authUserId as student_id
+        console.log('[Cart] 📝 Creating order:', {
+          student_id: authUserId,
+          vendor_id: vendorId,
+          total_price: vendorSubtotal + vendorServiceFee,
+          service_fee: vendorServiceFee,
+          payment_method: paymentMethod,
+          qr_code: qrCode
+        });
+
         const { data: orderData, error: orderError } = await supabase
           .from('campus_orders')
           .insert({
@@ -129,9 +164,11 @@ export const Cart: React.FC<CartProps> = ({
           .single();
 
         if (orderError) {
-          console.error('[Cart] Error inserting into campus_orders:', orderError, orderData);
+          console.error('[Cart] ❌ Error inserting into campus_orders:', orderError);
           throw orderError;
         }
+
+        console.log('[Cart] ✅ Order created successfully:', orderData);
 
         const orderItems = group.items.map(item => ({
           order_id: orderData.id,
@@ -141,15 +178,21 @@ export const Cart: React.FC<CartProps> = ({
           subtotal: (item.price * (1 - item.discount_percentage / 100)) * item.quantity
         }));
 
+        console.log('[Cart] 📦 Adding order items:', orderItems);
+
         const { error: itemsError } = await supabase
           .from('campus_order_items')
           .insert(orderItems);
 
         if (itemsError) {
-          console.error('[Cart] Error inserting campus_order_items:', itemsError);
+          console.error('[Cart] ❌ Error inserting campus_order_items:', itemsError);
           throw itemsError;
         }
+
+        console.log('[Cart] ✅ Order items added successfully');
       }
+
+      console.log('[Cart] 🎉 All orders placed successfully');
 
       toast({
         title: "Order Placed Successfully!",
@@ -163,7 +206,7 @@ export const Cart: React.FC<CartProps> = ({
       const errorDesc =
         (error?.message || error?.description || "") +
         (error?.details ? ` (${error.details})` : "");
-      console.error('Error placing order:', error);
+      console.error('[Cart] ❌ Error placing order:', error);
       toast({
         title: "Error",
         description: errorDesc || "Failed to place order. Please try again.",
@@ -199,6 +242,25 @@ export const Cart: React.FC<CartProps> = ({
         </Button>
 
         <h1 className="text-2xl font-bold mb-6">Your Cart</h1>
+
+        {/* Session Status Warning */}
+        {!supabaseSession && (
+          <Card className="mb-6 border-orange-200 bg-orange-50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-5 w-5 text-orange-600" />
+                <div className="flex-1">
+                  <p className="font-medium text-orange-800">Authentication Session Not Ready</p>
+                  <p className="text-sm text-orange-700">Please sync your session before placing an order.</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={handleRetrySession}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Sync Session
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Cart Items */}
@@ -345,7 +407,7 @@ export const Cart: React.FC<CartProps> = ({
                   className="w-full"
                   size="lg"
                   onClick={handlePlaceOrder}
-                  disabled={isPlacingOrder}
+                  disabled={isPlacingOrder || !supabaseSession}
                 >
                   {isPlacingOrder ? 'Placing Order...' : 'Place Order'}
                 </Button>
