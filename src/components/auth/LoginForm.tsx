@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Link } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
-import { Turnstile } from '@marsidev/react-turnstile';
 import Logo from "@/components/Logo";
 
 interface LoginFormProps {
@@ -16,10 +15,7 @@ interface LoginFormProps {
     setFormData: React.Dispatch<React.SetStateAction<{ email: string; password: string; }>>;
     showPassword: boolean;
     setShowPassword: (show: boolean) => void;
-    turnstileToken: string | null;
-    setTurnstileToken: (token: string | null) => void;
     isLoading: boolean;
-    theme: string | undefined;
     handleGoogleSignIn: () => Promise<void>;
     setIsForgotPassOpen: (open: boolean) => void;
 }
@@ -30,10 +26,7 @@ const LoginForm = ({
     setFormData,
     showPassword,
     setShowPassword,
-    turnstileToken,
-    setTurnstileToken,
     isLoading,
-    theme,
     handleGoogleSignIn,
     setIsForgotPassOpen
 }: LoginFormProps) => {
@@ -117,21 +110,10 @@ const LoginForm = ({
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Security Check</Label>
-                                <Turnstile
-                                    siteKey="1x00000000000000000000AA"
-                                    onSuccess={setTurnstileToken}
-                                    options={{
-                                        theme: theme === 'dark' ? 'dark' : 'light',
-                                    }}
-                                />
-                            </div>
-
                             <Button 
                                 type="submit" 
                                 className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-                                disabled={isLoading || !turnstileToken}
+                                disabled={isLoading}
                             >
                                 {isLoading ? (
                                     <div className="flex items-center gap-3">

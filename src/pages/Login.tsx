@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
@@ -26,7 +25,6 @@ const Login = () => {
     email: "",
     password: ""
   });
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [isForgotPassOpen, setIsForgotPassOpen] = useState(false);
 
   // Redirect if already logged in. Bypassing email verification for testing.
@@ -38,11 +36,6 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!turnstileToken) {
-      toast.error("Please complete the security check.");
-      return;
-    }
-
     if (!formData.email || !formData.password) {
       toast.error("Please fill in all fields");
       return;
@@ -51,18 +44,6 @@ const Login = () => {
     setIsLoading(true);
     
     try {
-      // Verify Turnstile token with backend
-      const { data: verificationData, error: verificationError } = await supabase.functions.invoke('verify-turnstile', {
-        body: { token: turnstileToken },
-      })
-
-      if (verificationError || !verificationData?.success) {
-        toast.error('CAPTCHA verification failed. Please try again.');
-        console.error('Turnstile verification error:', verificationError, verificationData);
-        setIsLoading(false);
-        return;
-      }
-
       // Clean up any existing auth state before login
       cleanupAuthState();
       
@@ -176,10 +157,7 @@ const Login = () => {
             setFormData={setFormData}
             showPassword={showPassword}
             setShowPassword={setShowPassword}
-            turnstileToken={turnstileToken}
-            setTurnstileToken={setTurnstileToken}
             isLoading={isLoading}
-            theme={theme}
             handleGoogleSignIn={handleGoogleSignIn}
             setIsForgotPassOpen={setIsForgotPassOpen}
           />
