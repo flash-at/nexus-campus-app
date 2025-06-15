@@ -156,9 +156,9 @@ const Register = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     console.log("Starting registration process...");
-    
+
     const isValid = await validateForm();
     if (!isValid) {
       toast.error("Please fix the errors before submitting");
@@ -166,19 +166,18 @@ const Register = () => {
     }
 
     setIsLoading(true);
-    
+
     try {
       console.log("Creating Firebase user...");
-      
+
       // Create Firebase user
       const userCredential = await createUserWithEmailAndPassword(
         auth, 
         formData.email, 
         formData.password
       );
-      
       console.log("Firebase user created successfully:", userCredential.user.uid);
-      
+
       // Send email verification
       try {
         await sendEmailVerification(userCredential.user);
@@ -186,10 +185,11 @@ const Register = () => {
       } catch (verificationError) {
         console.warn("Email verification failed:", verificationError);
         // Continue with registration even if email verification fails
+        toast.warning("Verification email could not be sent, but your account was created.");
       }
-      
+
       // Create user profile in Supabase
-      console.log("Creating user profile...");
+      console.log("Creating user profile in Supabase...");
       const profile = await createUserProfile(userCredential.user, {
         fullName: formData.fullName,
         hallTicket: formData.hallTicket,
@@ -199,11 +199,11 @@ const Register = () => {
       });
 
       if (profile) {
-        console.log("User profile created successfully");
+        console.log("User profile created successfully:", profile.id);
         toast.success("Registration successful! Please check your email to verify your account.", {
           duration: 5000,
         });
-        
+
         // Clear form
         setFormData({
           fullName: "",
@@ -215,19 +215,23 @@ const Register = () => {
           password: "",
           confirmPassword: ""
         });
-        
+
         setTimeout(() => {
           navigate("/login");
         }, 2000);
       } else {
-        throw new Error("Failed to create user profile");
+        throw new Error("Failed to create user profile in Supabase.");
       }
-      
+
     } catch (error: any) {
-      console.error("Registration error:", error);
-      
+      console.error("Registration error at step:", error);
+
       let errorMessage = "Registration failed. Please try again.";
-      
+
+      // Add more debugging:
+      if (typeof error === "string") {
+        errorMessage = error;
+      }
       if (error.code) {
         switch (error.code) {
           case 'auth/email-already-in-use':
@@ -248,8 +252,10 @@ const Register = () => {
           default:
             errorMessage = `Registration failed: ${error.message}`;
         }
+      } else if (error.message) {
+        errorMessage = error.message;
       }
-      
+
       toast.error(errorMessage, {
         duration: 5000,
       });
