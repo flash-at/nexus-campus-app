@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -224,20 +223,8 @@ const checkFirebaseUidExists = async (firebaseUid: string): Promise<boolean> => 
       const firebaseUser = userCredential.user;
       console.log("Firebase user created successfully:", firebaseUser.uid);
 
-      // New Step: Sync Firebase session with Supabase client to allow profile creation
-      console.log("Syncing auth session with database...");
-      const idToken = await firebaseUser.getIdToken();
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token: idToken,
-        refresh_token: firebaseUser.refreshToken,
-      });
-
-      if (sessionError) {
-        console.error("Error setting Supabase session:", sessionError);
-        throw new Error("Failed to create a secure session. Please try again.");
-      }
-      console.log("Auth session synced successfully.");
-
+      // The session sync step has been removed as it was causing issues and is not
+      // required with the current database security policy for user creation.
 
       // Step 3: Send Verification Email (continue on failure)
       try {
