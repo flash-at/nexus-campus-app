@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -229,7 +228,6 @@ const checkFirebaseUidExists = async (firebaseUid: string): Promise<boolean> => 
       const token = await firebaseUser.getIdToken();
       const { error: sessionError } = await supabase.auth.setSession({
         access_token: token,
-        refresh_token: firebaseUser.refreshToken,
       });
 
       if (sessionError) {

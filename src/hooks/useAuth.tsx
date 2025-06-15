@@ -60,7 +60,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const token = await firebaseUser.getIdToken();
         const { error } = await supabase.auth.setSession({
           access_token: token,
-          refresh_token: firebaseUser.refreshToken,
         });
 
         if (error) {
