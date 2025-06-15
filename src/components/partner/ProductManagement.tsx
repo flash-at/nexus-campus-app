@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -63,11 +62,14 @@ export const ProductManagement = () => {
   useEffect(() => {
     if (!authLoading) {
       if (partner) {
+        console.log('Partner found, initializing data for:', partner.id);
         initializeData();
-      } else if (user) {
+      } else if (user && !partner) {
+        console.log('User found but no partner profile');
         setError('Partner account not found. Please contact support.');
         setLoading(false);
       } else {
+        console.log('No user authenticated');
         setError('Please log in to access product management.');
         setLoading(false);
       }
@@ -75,14 +77,29 @@ export const ProductManagement = () => {
   }, [partner, authLoading, user]);
 
   const initializeData = async () => {
-    console.log('Initializing product management data...');
+    console.log('Starting data initialization...');
     setLoading(true);
     setError(null);
     
     try {
-      await Promise.all([fetchCategories(), fetchProducts()]);
+      // Fetch both categories and products
+      const [categoriesResult, productsResult] = await Promise.allSettled([
+        fetchCategories(),
+        fetchProducts()
+      ]);
+
+      if (categoriesResult.status === 'rejected') {
+        console.error('Categories fetch failed:', categoriesResult.reason);
+      }
+      
+      if (productsResult.status === 'rejected') {
+        console.error('Products fetch failed:', productsResult.reason);
+        throw productsResult.reason;
+      }
+
+      console.log('Data initialization completed successfully');
     } catch (error) {
-      console.error('Error initializing data:', error);
+      console.error('Error during initialization:', error);
       setError('Failed to load data. Please try again.');
     } finally {
       setLoading(false);
@@ -90,47 +107,47 @@ export const ProductManagement = () => {
   };
 
   const fetchCategories = async () => {
-    try {
-      console.log('Fetching categories for product management...');
-      const { data, error } = await supabase
-        .from('store_categories')
-        .select('id, name')
-        .eq('active', true)
-        .order('display_order');
+    console.log('Fetching categories...');
+    const { data, error } = await supabase
+      .from('store_categories')
+      .select('id, name')
+      .eq('active', true)
+      .order('display_order');
 
-      if (error) throw error;
-      console.log('Categories fetched:', data);
-      setCategories(data || []);
-    } catch (error) {
+    if (error) {
       console.error('Error fetching categories:', error);
       throw error;
     }
+    
+    console.log('Categories fetched successfully:', data?.length || 0, 'categories');
+    setCategories(data || []);
+    return data;
   };
 
   const fetchProducts = async () => {
     if (!partner) {
-      console.log('No partner found, skipping product fetch');
-      return;
+      console.log('No partner available for product fetch');
+      return [];
     }
     
-    try {
-      console.log('Fetching products for partner:', partner.id);
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          *,
-          store_categories (name)
-        `)
-        .eq('vendor_id', partner.id)
-        .order('created_at', { ascending: false });
+    console.log('Fetching products for partner:', partner.id);
+    const { data, error } = await supabase
+      .from('products')
+      .select(`
+        *,
+        store_categories (name)
+      `)
+      .eq('vendor_id', partner.id)
+      .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      console.log('Products fetched:', data);
-      setProducts(data || []);
-    } catch (error) {
+    if (error) {
       console.error('Error fetching products:', error);
       throw error;
     }
+    
+    console.log('Products fetched successfully:', data?.length || 0, 'products');
+    setProducts(data || []);
+    return data;
   };
 
   const resetForm = () => {
@@ -265,7 +282,7 @@ export const ProductManagement = () => {
     }
   };
 
-  // Loading state
+  // Show loading skeleton while auth is loading or data is loading
   if (authLoading || loading) {
     return (
       <div className="space-y-6">
@@ -293,7 +310,7 @@ export const ProductManagement = () => {
     );
   }
 
-  // Error state
+  // Show error state
   if (error) {
     return (
       <div className="text-center py-12">
@@ -304,19 +321,6 @@ export const ProductManagement = () => {
           <RefreshCw className="h-4 w-4 mr-2" />
           Try Again
         </Button>
-      </div>
-    );
-  }
-
-  // Not authenticated
-  if (!user || !partner) {
-    return (
-      <div className="text-center py-12">
-        <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive" />
-        <h3 className="text-lg font-semibold mb-2">Authentication Required</h3>
-        <p className="text-muted-foreground mb-4">
-          Please log in to access product management
-        </p>
       </div>
     );
   }
@@ -562,7 +566,7 @@ export const ProductManagement = () => {
         })}
       </div>
 
-      {products.length === 0 && (
+      {products.length === 0 && !loading && (
         <div className="text-center py-12">
           <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
           <h3 className="text-lg font-semibold mb-2">No Products Yet</h3>
