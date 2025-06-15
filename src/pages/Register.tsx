@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -223,10 +224,21 @@ const checkFirebaseUidExists = async (firebaseUid: string): Promise<boolean> => 
       const firebaseUser = userCredential.user;
       console.log("Firebase user created successfully:", firebaseUser.uid);
 
-      // The session sync step has been removed as it was causing issues and is not
-      // required with the current database security policy for user creation.
+      // Step 3: Manually set Supabase session with Firebase token
+      console.log("Syncing Firebase auth with Supabase...");
+      const token = await firebaseUser.getIdToken();
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: token,
+        refresh_token: firebaseUser.refreshToken,
+      });
 
-      // Step 3: Send Verification Email (continue on failure)
+      if (sessionError) {
+        console.error("Failed to set Supabase session:", sessionError);
+        throw new Error("Could not authenticate with the database. Please try again.");
+      }
+      console.log("Supabase session synced successfully.");
+
+      // Step 4: Send Verification Email (continue on failure)
       try {
         await sendEmailVerification(firebaseUser);
         console.log("Email verification sent");
@@ -235,7 +247,7 @@ const checkFirebaseUidExists = async (firebaseUid: string): Promise<boolean> => 
         toast.warning("Could not send verification email, but account creation is proceeding.");
       }
       
-      // Step 4: Create Supabase User Profile
+      // Step 5: Create Supabase User Profile
       console.log("Creating user profile in Supabase...");
       const profile = await createUserProfile(firebaseUser, {
         fullName: formData.fullName,
