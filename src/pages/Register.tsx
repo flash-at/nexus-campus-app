@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,9 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, Eye, EyeOff, Mail, User, Phone, GraduationCap, Sparkles, Shield, Users, BookOpen, AlertCircle, CheckCircle } from "lucide-react";
-import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification, deleteUser } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { createUserProfile, checkHallTicketExists } from "@/services/userService";
+import { createUserProfile, checkHallTicketExists, checkEmailExists } from "@/services/userService";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Turnstile } from "@marsidev/react-turnstile";
@@ -116,8 +115,7 @@ const Register = () => {
     setErrors(newErrors);
   };
 
-  // Adjusted validateForm to support allowNonEdu
-  const validateForm = async () => {
+  const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.fullName || formData.fullName.length < 2 || formData.fullName.length > 60) {
@@ -129,7 +127,6 @@ const Register = () => {
       newErrors.hallTicket = "Hall ticket must be exactly 10 characters (numbers and uppercase letters only)";
     }
 
-    // Changed email check for personal emails
     if (!allowNonEdu) {
       if (!formData.email.endsWith('.edu.in')) {
         newErrors.email = "Email must end with .edu.in";
@@ -160,28 +157,7 @@ const Register = () => {
     }
 
     setErrors(newErrors);
-
-    if (Object.keys(newErrors).length > 0) {
-      return false;
-    }
-
-    // Only check hall-ticket collision if NOT a personal account
-    if (!allowNonEdu) {
-      try {
-        const hallTicketExists = await checkHallTicketExists(formData.hallTicket);
-        if (hallTicketExists) {
-          newErrors.hallTicket = "This hall ticket number is already registered";
-          setErrors(newErrors);
-          return false;
-        }
-      } catch (error) {
-        console.error("Error checking hall ticket:", error);
-        toast.error("Unable to verify hall ticket. Please try again.");
-        return false;
-      }
-    }
-
-    return true;
+    return Object.keys(newErrors).length === 0;
   };
 
 const checkFirebaseUidExists = async (firebaseUid: string): Promise<boolean> => {
@@ -212,48 +188,52 @@ const checkFirebaseUidExists = async (firebaseUid: string): Promise<boolean> => 
       return;
     }
 
-    console.log("Starting registration process...");
-
-    const isValid = await validateForm();
-    if (!isValid) {
-      toast.error("Please fix the errors before submitting");
+    if (!validateForm()) {
+      toast.error("Please fix the errors in the form.");
       return;
     }
 
     setIsLoading(true);
+    let userCredential;
 
     try {
-      console.log("Creating Firebase user...");
-
-      // Create Firebase user
-      const userCredential = await createUserWithEmailAndPassword(
-        auth, 
-        formData.email, 
-        formData.password
-      );
-      console.log("Firebase user created successfully:", userCredential.user.uid);
-
-      // Check Supabase for existing user (avoid duplicate profile error)
-      const alreadyExists = await checkFirebaseUidExists(userCredential.user.uid);
-      if (alreadyExists) {
-        toast.error("An account for this user already exists. Please try logging in instead.");
-        setIsLoading(false);
-        return;
+      // Step 1: Async Validations
+      const emailExists = await checkEmailExists(formData.email);
+      if (emailExists) {
+        setErrors(prev => ({ ...prev, email: "This email address is already registered." }));
+        throw new Error("This email is already registered. Please login.");
       }
 
-      // Send email verification
+      if (!allowNonEdu) {
+        const hallTicketExists = await checkHallTicketExists(formData.hallTicket);
+        if (hallTicketExists) {
+          setErrors(prev => ({ ...prev, hallTicket: "This hall ticket number is already registered." }));
+          throw new Error("This hall ticket number is already registered.");
+        }
+      }
+      
+      // Step 2: Create Firebase User
+      console.log("Creating Firebase user...");
+      userCredential = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
+      const firebaseUser = userCredential.user;
+      console.log("Firebase user created successfully:", firebaseUser.uid);
+
+      // Step 3: Send Verification Email (continue on failure)
       try {
-        await sendEmailVerification(userCredential.user);
+        await sendEmailVerification(firebaseUser);
         console.log("Email verification sent");
       } catch (verificationError) {
         console.warn("Email verification failed:", verificationError);
-        // Continue with registration even if email verification fails
-        toast.warning("Verification email could not be sent, but your account was created.");
+        toast.warning("Could not send verification email, but account creation is proceeding.");
       }
-
-      // Create user profile in Supabase
+      
+      // Step 4: Create Supabase User Profile
       console.log("Creating user profile in Supabase...");
-      const profile = await createUserProfile(userCredential.user, {
+      const profile = await createUserProfile(firebaseUser, {
         fullName: formData.fullName,
         hallTicket: formData.hallTicket,
         department: formData.department,
@@ -261,86 +241,38 @@ const checkFirebaseUidExists = async (firebaseUid: string): Promise<boolean> => 
         phoneNumber: formData.phone,
       });
 
-      if (profile) {
-        console.log("User profile created successfully:", profile.id);
-        toast.success("Registration successful! Please check your email to verify your account.", {
-          duration: 5000,
-        });
-
-        // Clear form
-        setFormData({
-          fullName: "",
-          hallTicket: "",
-          email: "",
-          department: "",
-          academicYear: "",
-          phone: "",
-          password: "",
-          confirmPassword: ""
-        });
-
-        setTimeout(() => {
-          navigate("/login");
-        }, 2000);
-      } else {
-        throw new Error("Failed to create user profile in Supabase.");
+      if (!profile) {
+        // This will trigger the catch block and user deletion
+        throw new Error("Failed to create user profile in the database.");
       }
+
+      // Success!
+      console.log("User profile created successfully:", profile.id);
+      toast.success("Registration successful! Please check your email to verify your account.", { duration: 5000 });
+      setFormData({ fullName: "", hallTicket: "", email: "", department: "", academicYear: "", phone: "", password: "", confirmPassword: "" });
+      setTimeout(() => navigate("/login"), 2000);
 
     } catch (error: any) {
-      console.error("Registration error at step:", error);
+      console.error("Registration failed:", error);
 
-      let errorMessage = "Registration failed. Please try again.";
-
-      // Supabase error detail extraction and friendly handling
-      if (error && error.code && error.message) {
-        // Detect duplicate/constraint errors for academic_info_user_id_key, users_pkey, users_hall_ticket_key, etc.
-        if (
-          typeof error.message === "string" &&
-          (
-            error.message.includes("duplicate key") ||
-            (error.details && (error.details.includes("already exists") || error.details.includes("duplicate")))
-          )
-        ) {
-          errorMessage = "A user with this email, hall ticket, or account already exists. Please login instead.";
-        } else {
-          errorMessage = `Supabase error: ${error.message}`;
-        }
-        if (error.details) errorMessage += ` (${error.details})`;
-      } else if (error && error.error) {
-        errorMessage = error.error;
-      } else if (typeof error === "string") {
-        errorMessage = error;
-      } else if (error.message) {
-        errorMessage = error.message;
+      // Cleanup: If Firebase user was created, but something else failed, delete the user.
+      if (userCredential?.user) {
+        console.log("Attempting to clean up failed registration by deleting Firebase user...");
+        await deleteUser(userCredential.user).catch(deleteError => {
+          console.error("CRITICAL: Failed to delete Firebase user after registration error:", deleteError);
+          toast.error("A critical error occurred during cleanup. Please contact support.", {
+            description: `Your account may be partially created. Error: ${deleteError.code}`
+          });
+        });
       }
-
-      // Additional Firebase error parsing unchanged
-      if (error.code) {
-        switch (error.code) {
-          case 'auth/email-already-in-use':
-            errorMessage = "An account with this email already exists. Please try logging in instead.";
-            break;
-          case 'auth/weak-password':
-            errorMessage = "Password is too weak. Please choose a stronger password.";
-            break;
-          case 'auth/invalid-email':
-            errorMessage = "Please enter a valid email address.";
-            break;
-          case 'auth/configuration-not-found':
-            errorMessage = "Authentication service is temporarily unavailable. Please try again later.";
-            break;
-          case 'auth/network-request-failed':
-            errorMessage = "Network error. Please check your connection and try again.";
-            break;
-          default:
-            // Supabase codes are usually different, so prefer message
-            break;
-        }
+      
+      // Provide user-friendly error message
+      let errorMessage = error.message || "An unknown error occurred.";
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = "This email address is already in use.";
+        setErrors(prev => ({ ...prev, email: errorMessage }));
       }
-
-      toast.error(errorMessage, {
-        duration: 6000,
-      });
+      toast.error("Registration Failed", { description: errorMessage });
     } finally {
       setIsLoading(false);
     }

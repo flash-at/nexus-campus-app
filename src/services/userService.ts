@@ -84,6 +84,27 @@ export const checkHallTicketExists = async (hallTicket: string): Promise<boolean
   }
 };
 
+export const checkEmailExists = async (email: string): Promise<boolean> => {
+  try {
+    console.log("Checking email:", email);
+    const { data, error } = await supabase
+      .from("users")
+      .select("email")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error checking email:", error);
+      return false;
+    }
+
+    return data !== null;
+  } catch (error) {
+    console.error("Error checking email:", error);
+    return false;
+  }
+};
+
 export const createUserProfile = async (
   firebaseUser: User,
   additionalData: {
