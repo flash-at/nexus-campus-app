@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, Eye, EyeOff, Mail, Lock, Shield, Users, Zap } from "lucide-react";
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendEmailVerification } from "firebase/auth";
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendEmailVerification, sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { getUserProfile, createUserProfile } from "@/services/userService";
@@ -17,6 +17,7 @@ import { cleanupAuthState } from "@/utils/authCleanup";
 import { Turnstile } from '@marsidev/react-turnstile';
 import { useTheme } from 'next-themes';
 import { supabase } from "@/integrations/supabase/client";
+import { ForgotPasswordDialog } from "@/components/auth/ForgotPasswordDialog";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ const Login = () => {
     password: ""
   });
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [isForgotPassOpen, setIsForgotPassOpen] = useState(false);
 
   // Redirect if already logged in
   if (user && user.emailVerified) {
@@ -97,6 +99,29 @@ const Login = () => {
         toast.error("Invalid email address.");
       } else {
         toast.error("Login failed. Please check your credentials.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (email: string) => {
+    if (!email) {
+      toast.error("Please enter your email address.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast.success("Password reset link sent! Check your inbox.");
+      setIsForgotPassOpen(false);
+    } catch (error: any) {
+      console.error("Forgot password error:", error);
+      if (error.code === 'auth/user-not-found') {
+        toast.error("No account found with this email.");
+      } else {
+        toast.error("Failed to send reset email. Please try again.");
       }
     } finally {
       setIsLoading(false);
@@ -232,9 +257,14 @@ const Login = () => {
                           <Lock className="h-4 w-4" />
                           Password
                         </Label>
-                        <Link to="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium">
+                        <Button
+                          type="button"
+                          variant="link"
+                          onClick={() => setIsForgotPassOpen(true)}
+                          className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium h-auto p-0"
+                        >
                           Forgot password?
-                        </Link>
+                        </Button>
                       </div>
                       <div className="relative">
                         <Input
@@ -338,6 +368,13 @@ const Login = () => {
           </div>
         </div>
       </div>
+      <ForgotPasswordDialog 
+        isOpen={isForgotPassOpen}
+        onClose={() => setIsForgotPassOpen(false)}
+        onPasswordReset={handleForgotPassword}
+        isLoading={isLoading}
+        defaultEmail={formData.email}
+      />
     </div>
   );
 };

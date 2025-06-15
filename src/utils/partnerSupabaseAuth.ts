@@ -1,120 +1,43 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-
-export interface PartnerProfile {
-  id: string;
-  firebase_uid: string;
-  business_name: string;
-  category: string;
-  description: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  approved_at: string | null;
-  rejected_at: string | null;
-  rejection_reason: string | null;
-}
+import { AuthError } from "@supabase/supabase-js";
 
 export const signInPartner = async (email: string, password: string) => {
-  try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: email,
+    password: password,
+  });
 
-    if (error) throw error;
-
-    // Check if user has vendor record
-    if (data.user) {
-      const { data: vendor, error: vendorError } = await supabase
-        .from('vendors')
-        .select('*')
-        .eq('firebase_uid', data.user.id)
-        .single();
-
-      if (vendorError || !vendor) {
-        throw new Error("No partner account found");
-      }
-
-      if (vendor.status !== 'approved') {
-        throw new Error("Partner account pending approval");
-      }
-
-      return { user: data.user, vendor };
-    }
-
-    throw new Error("Authentication failed");
-  } catch (error: any) {
-    console.error("Partner sign in error:", error);
+  if (error) {
     throw error;
   }
+
+  return data;
 };
 
-export const signUpPartner = async (email: string, password: string, partnerData: {
-  businessName: string;
-  category: string;
-  description: string;
-}) => {
-  try {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/partner-dashboard`
-      }
-    });
-
-    if (error) throw error;
-
-    if (data.user) {
-      // Create vendor record
-      const { error: vendorError } = await supabase
-        .from('vendors')
-        .insert({
-          firebase_uid: data.user.id,
-          business_name: partnerData.businessName,
-          category: partnerData.category,
-          description: partnerData.description,
-          status: 'pending'
-        });
-
-      if (vendorError) {
-        console.error("Vendor creation error:", vendorError);
-        throw new Error("Failed to create partner account");
-      }
-
-      return data.user;
-    }
-
-    throw new Error("Sign up failed");
-  } catch (error: any) {
-    console.error("Partner sign up error:", error);
-    throw error;
-  }
-};
-
-export const signOutPartner = async () => {
-  try {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-  } catch (error) {
-    console.error("Partner sign out error:", error);
-    throw error;
-  }
-};
-
-export const getPartnerAuthErrorMessage = (error: any) => {
+export const getPartnerAuthErrorMessage = (error: AuthError): string => {
   switch (error.message) {
-    case 'Invalid login credentials':
-      return "Incorrect email or password";
-    case 'Email not confirmed':
-      return "Please verify your email address";
-    case 'No partner account found':
-      return "No partner account found with this email";
-    case 'Partner account pending approval':
-      return "Your partner account is pending approval";
+    case "Invalid login credentials":
+      return "Invalid email or password. Please double-check your credentials.";
+    case "Email not confirmed":
+      return "Please confirm your email address before logging in.";
     default:
-      return error.message || "Sign in failed. Please try again.";
+      return "An unexpected error occurred during sign-in. Please try again.";
+  }
+};
+
+export const sendPartnerPasswordResetEmail = async (email: string) => {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/provider-login`,
+  });
+
+  if (error) {
+    if (error.message.includes("For security purposes, you can only request this once every")) {
+      throw new Error("Password reset email already sent. Please wait a minute before trying again.");
+    }
+    if (error.message.includes("User not found")) {
+      throw new Error("No partner account found with this email address.");
+    }
+    console.error("Error sending password reset email:", error);
+    throw new Error("Failed to send password reset email. Please try again later.");
   }
 };
