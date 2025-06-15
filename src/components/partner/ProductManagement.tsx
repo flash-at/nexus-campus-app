@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { usePartnerAuth } from '@/hooks/usePartnerAuth';
@@ -40,6 +41,7 @@ export const ProductManagement = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const { toast } = useToast();
@@ -59,14 +61,37 @@ export const ProductManagement = () => {
   });
 
   useEffect(() => {
-    if (!authLoading && partner) {
-      fetchCategories();
-      fetchProducts();
+    if (!authLoading) {
+      if (partner) {
+        initializeData();
+      } else if (user) {
+        setError('Partner account not found. Please contact support.');
+        setLoading(false);
+      } else {
+        setError('Please log in to access product management.');
+        setLoading(false);
+      }
     }
-  }, [partner, authLoading]);
+  }, [partner, authLoading, user]);
+
+  const initializeData = async () => {
+    console.log('Initializing product management data...');
+    setLoading(true);
+    setError(null);
+    
+    try {
+      await Promise.all([fetchCategories(), fetchProducts()]);
+    } catch (error) {
+      console.error('Error initializing data:', error);
+      setError('Failed to load data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchCategories = async () => {
     try {
+      console.log('Fetching categories for product management...');
       const { data, error } = await supabase
         .from('store_categories')
         .select('id, name')
@@ -74,17 +99,22 @@ export const ProductManagement = () => {
         .order('display_order');
 
       if (error) throw error;
+      console.log('Categories fetched:', data);
       setCategories(data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
+      throw error;
     }
   };
 
   const fetchProducts = async () => {
-    if (!partner) return;
+    if (!partner) {
+      console.log('No partner found, skipping product fetch');
+      return;
+    }
     
     try {
-      setLoading(true);
+      console.log('Fetching products for partner:', partner.id);
       const { data, error } = await supabase
         .from('products')
         .select(`
@@ -95,16 +125,11 @@ export const ProductManagement = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      console.log('Products fetched:', data);
       setProducts(data || []);
     } catch (error) {
       console.error('Error fetching products:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load products",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
+      throw error;
     }
   };
 
@@ -240,17 +265,50 @@ export const ProductManagement = () => {
     }
   };
 
+  // Loading state
   if (authLoading || loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <Package className="h-8 w-8 mx-auto mb-2 animate-spin text-muted-foreground" />
-          <p className="text-muted-foreground">Loading products...</p>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i}>
+              <Skeleton className="h-48 w-full rounded-t-lg" />
+              <CardContent className="p-4 space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-3 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     );
   }
 
+  // Error state
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive" />
+        <h3 className="text-lg font-semibold mb-2">Something went wrong</h3>
+        <p className="text-muted-foreground mb-4">{error}</p>
+        <Button onClick={initializeData} variant="outline">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
+  // Not authenticated
   if (!user || !partner) {
     return (
       <div className="text-center py-12">
