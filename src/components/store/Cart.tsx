@@ -105,13 +105,27 @@ export const Cart: React.FC<CartProps> = ({
       const idToken = await user.getIdToken();
       console.log('[Cart] ✅ Got Firebase ID token');
 
-      // Set the Firebase JWT token as auth header
-      console.log('[Cart] 🔐 Setting auth header with Firebase token...');
+      // Create a temporary session with the Firebase token
+      console.log('[Cart] 🔐 Setting up authentication with Firebase token...');
+      
+      // Create a temporary Supabase client with the Firebase JWT token
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabaseWithAuth = createClient(
+        'https://rqhgakhmtbimsroydtnj.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxaGdha2htdGJpbXNyb3lkdG5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkyNjIzMTYsImV4cCI6MjA2NDgzODMxNn0.WFD3LLQx4iVuhrb7qct-TKF72NjskF5vWSqch_cfO30',
+        {
+          global: {
+            headers: {
+              Authorization: `Bearer ${idToken}`,
+            },
+          },
+        }
+      );
       
       // First, get the user's UUID from the users table using their Firebase UID
       console.log('[Cart] 🔍 Looking up user UUID for Firebase UID:', user.uid);
       
-      const { data: userData, error: userError } = await supabase
+      const { data: userData, error: userError } = await supabaseWithAuth
         .from('users')
         .select('id')
         .eq('firebase_uid', user.uid)
@@ -150,10 +164,7 @@ export const Cart: React.FC<CartProps> = ({
           qr_code: qrCode
         });
 
-        // Create a new Supabase client instance with the Firebase JWT token
-        const supabaseWithAuth = supabase.auth.admin || supabase;
-        
-        const { data: orderData, error: orderError } = await supabase
+        const { data: orderData, error: orderError } = await supabaseWithAuth
           .from('campus_orders')
           .insert({
             student_id: userUuid,
@@ -185,7 +196,7 @@ export const Cart: React.FC<CartProps> = ({
 
         console.log('[Cart] 📦 Adding order items:', orderItems);
 
-        const { error: itemsError } = await supabase
+        const { error: itemsError } = await supabaseWithAuth
           .from('campus_order_items')
           .insert(orderItems);
 
