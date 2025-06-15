@@ -71,7 +71,7 @@ export const Cart: React.FC<CartProps> = ({
     setIsPlacingOrder(true);
 
     try {
-      // Use authenticated Supabase client if possible
+      // Always use authenticated Supabase client
       let supabase = defaultSupabase;
       if (supabaseSession?.access_token) {
         const { createClient } = await import('@supabase/supabase-js');
@@ -82,14 +82,12 @@ export const Cart: React.FC<CartProps> = ({
             global: {
               headers: { Authorization: `Bearer ${supabaseSession.access_token}` }
             },
-            auth: {
-              persistSession: false
-            }
+            auth: { persistSession: false }
           }
         );
       } 
 
-      // Get current user ID from the users table using this supabase client
+      // Fetch current user ID using authenticated client
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('id')
@@ -97,7 +95,8 @@ export const Cart: React.FC<CartProps> = ({
         .single();
 
       if (userError || !userData) {
-        throw new Error('User not found');
+        console.error('[Cart] User fetch error:', userError, userData);
+        throw new Error('User not found: ' + (userError?.message || 'No userData'));
       }
 
       for (const [vendorId, group] of Object.entries(groupedItems)) {
@@ -106,10 +105,9 @@ export const Cart: React.FC<CartProps> = ({
           return sum + (discountedPrice * item.quantity);
         }, 0);
 
-        const vendorServiceFee = serviceFee / Object.keys(groupedItems).length; // Split service fee
+        const vendorServiceFee = serviceFee / Object.keys(groupedItems).length;
         const qrCode = `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-        // Use supabase client with session auth
         const { data: orderData, error: orderError } = await supabase
           .from('campus_orders')
           .insert({
@@ -120,12 +118,15 @@ export const Cart: React.FC<CartProps> = ({
             payment_method: paymentMethod,
             qr_code: qrCode,
             notes: notes || null,
-            pickup_deadline: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 minutes from now
+            pickup_deadline: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
           })
           .select()
           .single();
 
-        if (orderError) throw orderError;
+        if (orderError) {
+          console.error('[Cart] Error inserting into campus_orders:', orderError, orderData);
+          throw orderError;
+        }
 
         const orderItems = group.items.map(item => ({
           order_id: orderData.id,
@@ -139,7 +140,10 @@ export const Cart: React.FC<CartProps> = ({
           .from('campus_order_items')
           .insert(orderItems);
 
-        if (itemsError) throw itemsError;
+        if (itemsError) {
+          console.error('[Cart] Error inserting campus_order_items:', itemsError);
+          throw itemsError;
+        }
       }
 
       toast({
@@ -150,11 +154,15 @@ export const Cart: React.FC<CartProps> = ({
       items.forEach(item => onUpdateQuantity(item.id, 0));
       onBack();
 
-    } catch (error) {
+    } catch (error: any) {
+      // Show error message if possible
+      const errorDesc =
+        (error?.message || error?.description || "") +
+        (error?.details ? ` (${error.details})` : "");
       console.error('Error placing order:', error);
       toast({
         title: "Error",
-        description: "Failed to place order. Please try again.",
+        description: errorDesc || "Failed to place order. Please try again.",
         variant: "destructive"
       });
     } finally {
