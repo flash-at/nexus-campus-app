@@ -179,6 +179,25 @@ const Register = () => {
     return true;
   };
 
+const checkFirebaseUidExists = async (firebaseUid: string): Promise<boolean> => {
+  try {
+    // Check if user with this Firebase UID exists in Supabase
+    const { data, error } = await import("@/integrations/supabase/client").then(m => m.supabase)
+      .from("users")
+      .select("id")
+      .eq("firebase_uid", firebaseUid)
+      .maybeSingle();
+    if (error) {
+      console.warn("Error checking Firebase UID in users table:", error);
+      return false;
+    }
+    return !!data;
+  } catch (e) {
+    console.error("Exception while checking firebase_uid:", e);
+    return false;
+  }
+};
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -202,6 +221,14 @@ const Register = () => {
         formData.password
       );
       console.log("Firebase user created successfully:", userCredential.user.uid);
+
+      // Check Supabase for existing user (avoid duplicate profile error)
+      const alreadyExists = await checkFirebaseUidExists(userCredential.user.uid);
+      if (alreadyExists) {
+        toast.error("An account for this user already exists. Please try logging in instead.");
+        setIsLoading(false);
+        return;
+      }
 
       // Send email verification
       try {
@@ -251,15 +278,24 @@ const Register = () => {
     } catch (error: any) {
       console.error("Registration error at step:", error);
 
-      // Inspect any error from Supabase deeper
       let errorMessage = "Registration failed. Please try again.";
 
-      // If error is from Supabase, extract the error object
+      // Supabase error detail extraction and friendly handling
       if (error && error.code && error.message) {
-        errorMessage = `Supabase error: ${error.message}`;
+        // Detect duplicate/constraint errors for academic_info_user_id_key, users_pkey, users_hall_ticket_key, etc.
+        if (
+          typeof error.message === "string" &&
+          (
+            error.message.includes("duplicate key") ||
+            (error.details && (error.details.includes("already exists") || error.details.includes("duplicate")))
+          )
+        ) {
+          errorMessage = "A user with this email, hall ticket, or account already exists. Please login instead.";
+        } else {
+          errorMessage = `Supabase error: ${error.message}`;
+        }
         if (error.details) errorMessage += ` (${error.details})`;
       } else if (error && error.error) {
-        // Some APIs return { error: ... }
         errorMessage = error.error;
       } else if (typeof error === "string") {
         errorMessage = error;
