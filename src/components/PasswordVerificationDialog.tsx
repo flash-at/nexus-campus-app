@@ -4,19 +4,23 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Lock, AlertCircle } from 'lucide-react';
+import { Lock, AlertCircle, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface PasswordVerificationDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onVerify: (password: string) => boolean;
+  getPasswordFormat?: () => string;
+  hasProfile?: boolean;
 }
 
 export const PasswordVerificationDialog: React.FC<PasswordVerificationDialogProps> = ({
   isOpen,
   onClose,
-  onVerify
+  onVerify,
+  getPasswordFormat,
+  hasProfile = false
 }) => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -38,16 +42,18 @@ export const PasswordVerificationDialog: React.FC<PasswordVerificationDialogProp
       setPassword('');
       onClose();
     } else {
-      setError('Incorrect password. Please try again.');
+      setError('Incorrect password. Please check the format below.');
       toast({
         title: "Incorrect Password",
-        description: "Please enter the correct CampusConnect password.",
+        description: "Please enter the correct password using the format shown below.",
         variant: "destructive"
       });
     }
     
     setIsLoading(false);
   };
+
+  const passwordFormat = getPasswordFormat ? getPasswordFormat() : '@{yourname}{last4digits}';
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -58,7 +64,7 @@ export const PasswordVerificationDialog: React.FC<PasswordVerificationDialogProp
             CampusConnect Verification
           </DialogTitle>
           <DialogDescription>
-            Please enter the CampusConnect password to place orders on the platform.
+            Enter your personal verification password to place orders on the platform.
           </DialogDescription>
         </DialogHeader>
         
@@ -68,7 +74,7 @@ export const PasswordVerificationDialog: React.FC<PasswordVerificationDialogProp
             <Input
               id="verification-password"
               type="password"
-              placeholder="Enter CampusConnect password"
+              placeholder={`Enter password (${passwordFormat})`}
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
@@ -84,6 +90,23 @@ export const PasswordVerificationDialog: React.FC<PasswordVerificationDialogProp
               </div>
             )}
           </div>
+
+          {hasProfile && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <Info className="h-4 w-4 text-blue-600 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium text-blue-800">Password Format:</p>
+                  <p className="text-blue-700">
+                    <code className="bg-blue-100 px-1 rounded">{passwordFormat}</code>
+                  </p>
+                  <p className="text-blue-600 text-xs mt-1">
+                    @ + your first name + last 4 digits of hall ticket (all lowercase)
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
           
           <div className="flex gap-2 justify-end">
             <Button
@@ -96,7 +119,7 @@ export const PasswordVerificationDialog: React.FC<PasswordVerificationDialogProp
             </Button>
             <Button
               type="submit"
-              disabled={isLoading || !password.trim()}
+              disabled={isLoading || !password.trim() || !hasProfile}
             >
               {isLoading ? 'Verifying...' : 'Verify'}
             </Button>

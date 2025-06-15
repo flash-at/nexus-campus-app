@@ -45,13 +45,15 @@ export const Cart: React.FC<CartProps> = ({
   const { user, forceSessionSync, isSessionSyncing } = useAuth();
   const { toast } = useToast();
   
-  // Add password verification
+  // Add password verification with new dynamic password support
   const {
     isVerified,
     showPasswordDialog,
     setShowPasswordDialog,
     verifyPassword,
-    requestVerification
+    requestVerification,
+    getPasswordFormat,
+    hasProfile
   } = usePasswordVerification();
 
   const total = subtotal + serviceFee;
@@ -465,6 +467,8 @@ export const Cart: React.FC<CartProps> = ({
         isOpen={showPasswordDialog}
         onClose={() => setShowPasswordDialog(false)}
         onVerify={verifyPassword}
+        getPasswordFormat={getPasswordFormat}
+        hasProfile={hasProfile}
       />
     </div>
   );
