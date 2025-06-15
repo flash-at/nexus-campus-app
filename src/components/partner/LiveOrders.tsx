@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,15 +44,15 @@ export const LiveOrders = () => {
   const { user, partner, loading: authLoading } = usePartnerAuth();
 
   useEffect(() => {
-    console.log('LiveOrders - Auth state:', { authLoading, user: !!user, partner: !!partner, partnerId: partner?.id });
+    console.log('LiveOrders - Auth loading:', authLoading, 'User:', !!user, 'Partner:', !!partner);
     
     if (!authLoading) {
       if (user && partner) {
-        console.log('Loading orders for authenticated partner...');
+        console.log('Partner authenticated, loading orders...');
         loadOrders();
         setupRealtimeSubscription();
       } else {
-        console.log('No authenticated partner found');
+        console.log('No partner authenticated');
         setError('Please log in to view orders.');
         setLoading(false);
       }
@@ -60,9 +61,7 @@ export const LiveOrders = () => {
 
   const loadOrders = async () => {
     if (!partner?.id) {
-      console.error('Partner ID not available');
-      setError('Partner information not available');
-      setLoading(false);
+      console.log('No partner ID available');
       return;
     }
 
@@ -87,16 +86,13 @@ export const LiveOrders = () => {
         .in('status', ['placed', 'accepted', 'ready'])
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Orders fetch error:', error);
-        throw error;
-      }
+      if (error) throw error;
       
-      console.log('Orders fetched successfully:', data?.length || 0);
+      console.log('Orders fetched:', data?.length || 0);
       setOrders(data || []);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching orders:', error);
-      setError(error.message || 'Failed to load orders');
+      setError('Failed to load orders. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -141,11 +137,11 @@ export const LiveOrders = () => {
       });
       
       await loadOrders();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating order:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to update order",
+        description: "Failed to update order",
         variant: "destructive"
       });
     }
