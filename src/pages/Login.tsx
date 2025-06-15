@@ -71,12 +71,16 @@ const Login = () => {
       
       const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
       
+      // Temporarily bypass email verification check for easier testing.
+      // This should be re-enabled for production.
+      /*
       if (!userCredential.user.emailVerified) {
         toast.error("Your email is not verified. Please check your inbox or spam folder.");
         await sendEmailVerification(userCredential.user);
         toast.info("A new verification email has been sent.");
         return;
       }
+      */
 
       // Check if user profile exists in Supabase
       const profile = await getUserProfile(userCredential.user.uid);

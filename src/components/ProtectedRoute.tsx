@@ -23,9 +23,13 @@ const ProtectedRoute = ({ children, requireEmailVerified = true }: ProtectedRout
     return <Navigate to="/login" replace />;
   }
 
+  // Temporarily bypassing email verification to ease testing.
+  // Re-enable for production.
+  /*
   if (requireEmailVerified && !user.emailVerified) {
     return <Navigate to="/login" replace />;
   }
+  */
 
   return <>{children}</>;
 };
