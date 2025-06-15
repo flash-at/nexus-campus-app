@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,7 +43,6 @@ interface Product {
 export const CampusStorePage = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [vendors, setVendors] = useState<Record<string, Vendor>>({});
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [cartItems, setCartItems] = useState<any[]>([]);
@@ -67,7 +67,8 @@ export const CampusStorePage = () => {
     setError(null);
     
     try {
-      await Promise.all([fetchCategories(), fetchVendors(), fetchProducts()]);
+      console.log('Starting data initialization...');
+      await Promise.all([fetchCategories(), fetchProducts()]);
     } catch (error) {
       console.error('Error initializing data:', error);
       setError('Failed to load store data. Please try again.');
@@ -78,6 +79,7 @@ export const CampusStorePage = () => {
 
   const fetchCategories = async () => {
     try {
+      console.log('Fetching categories...');
       const { data, error } = await supabase
         .from('store_categories')
         .select('*')
@@ -85,103 +87,97 @@ export const CampusStorePage = () => {
         .order('display_order');
 
       if (error) {
-        console.error('Error fetching categories:', error);
+        console.error('Categories error:', error);
         throw error;
       }
       
+      console.log('Categories fetched:', data);
       setCategories(data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load categories",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const fetchVendors = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('vendors')
-        .select('id, business_name, status');
-
-      if (error) {
-        console.error('Error fetching vendors:', error);
-        throw error;
-      }
-      
-      // Create a map of vendor_id -> vendor data for easy lookup
-      const vendorMap: Record<string, Vendor> = {};
-      data?.forEach(vendor => {
-        vendorMap[vendor.id] = vendor;
-      });
-      
-      console.log('Vendors fetched:', vendorMap);
-      setVendors(vendorMap);
-    } catch (error) {
-      console.error('Error fetching vendors:', error);
-      // Don't show toast for vendors as it's not critical
     }
   };
 
   const fetchProducts = async () => {
-    if (!user) return;
-    
     try {
-      // Simple query for products only
-      let query = supabase
+      console.log('Fetching products...');
+      
+      // First, let's try to fetch products without any filters to see what we get
+      const { data: allProducts, error: productsError } = await supabase
         .from('products')
-        .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
+        .select('*');
 
-      // Apply filters only if they exist
-      if (selectedCategory) {
-        query = query.eq('category_id', selectedCategory);
+      console.log('All products query result:', { allProducts, productsError });
+
+      if (productsError) {
+        console.error('Products error:', productsError);
+        throw productsError;
       }
 
-      if (searchQuery && searchQuery.trim() !== '') {
-        query = query.or(`name.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Supabase error fetching products:', error);
-        throw error;
-      }
-      
-      console.log('Raw products data:', data);
-      
-      if (!data || data.length === 0) {
+      if (!allProducts || allProducts.length === 0) {
+        console.log('No products found in database');
         setProducts([]);
-        setError('No products are currently available in the store.');
+        setError('No products found in the database.');
         return;
       }
 
-      // Combine products with vendor data
-      const productsWithVendors = data.map(product => ({
-        ...product,
-        vendor: product.vendor_id ? vendors[product.vendor_id] : undefined
-      }));
+      // Now let's fetch vendors
+      const { data: allVendors, error: vendorsError } = await supabase
+        .from('vendors')
+        .select('*');
 
-      // Filter out products from non-approved vendors (but keep products without vendors)
-      const filteredProducts = productsWithVendors.filter(product => {
-        // If there's no vendor info, include the product
-        if (!product.vendor) return true;
-        // If there is vendor info, only include if status is approved
-        return product.vendor.status === 'approved';
+      console.log('All vendors query result:', { allVendors, vendorsError });
+
+      if (vendorsError) {
+        console.error('Vendors error:', vendorsError);
+        // Don't throw here, vendors might not be required
+      }
+
+      // Create vendor map
+      const vendorMap: Record<string, Vendor> = {};
+      if (allVendors) {
+        allVendors.forEach(vendor => {
+          vendorMap[vendor.id] = vendor;
+        });
+      }
+
+      // Filter active products and apply search/category filters
+      let filteredProducts = allProducts.filter(product => product.is_active === true);
+      
+      console.log('Active products:', filteredProducts.length);
+
+      if (selectedCategory) {
+        filteredProducts = filteredProducts.filter(product => product.category_id === selectedCategory);
+        console.log('After category filter:', filteredProducts.length);
+      }
+
+      if (searchQuery && searchQuery.trim() !== '') {
+        const query = searchQuery.toLowerCase();
+        filteredProducts = filteredProducts.filter(product => 
+          product.name.toLowerCase().includes(query) || 
+          (product.description && product.description.toLowerCase().includes(query))
+        );
+        console.log('After search filter:', filteredProducts.length);
+      }
+
+      // Add vendor information and filter by vendor status
+      const productsWithVendors = filteredProducts.map(product => ({
+        ...product,
+        vendor: product.vendor_id ? vendorMap[product.vendor_id] : undefined
+      })).filter(product => {
+        // Include products without vendors OR products with approved vendors
+        return !product.vendor || product.vendor.status === 'approved';
       });
+
+      console.log('Final filtered products:', productsWithVendors.length);
+      console.log('Sample product:', productsWithVendors[0]);
       
-      console.log('Filtered products:', filteredProducts);
-      setProducts(filteredProducts);
+      setProducts(productsWithVendors);
       
-      // Clear error if we successfully got data
-      if (filteredProducts.length > 0) {
-        setError(null);
+      if (productsWithVendors.length === 0) {
+        setError('No products are available at the moment.');
       } else {
-        setError('No products are available from approved vendors at the moment.');
+        setError(null);
       }
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -195,10 +191,10 @@ export const CampusStorePage = () => {
   };
 
   useEffect(() => {
-    if (user && Object.keys(vendors).length > 0) {
+    if (user) {
       fetchProducts();
     }
-  }, [selectedCategory, searchQuery, user, vendors]);
+  }, [selectedCategory, searchQuery, user]);
 
   // Set up real-time subscription for new products
   useEffect(() => {
@@ -215,7 +211,7 @@ export const CampusStorePage = () => {
         },
         (payload) => {
           console.log('Product change detected:', payload);
-          fetchProducts(); // Refresh products when changes occur
+          fetchProducts();
         }
       )
       .subscribe();
@@ -223,7 +219,7 @@ export const CampusStorePage = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, vendors]);
+  }, [user]);
 
   const addToCart = (product: Product, quantity: number = 1) => {
     const existingItem = cartItems.find(item => item.id === product.id);
@@ -366,6 +362,13 @@ export const CampusStorePage = () => {
             ))}
           </div>
         </div>
+
+        {/* Debug Information */}
+        {loading && (
+          <div className="text-center py-4">
+            <p className="text-muted-foreground">Loading products...</p>
+          </div>
+        )}
 
         {/* Error State */}
         {error && !loading && (
