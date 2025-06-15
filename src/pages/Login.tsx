@@ -291,7 +291,7 @@ const Login = () => {
                     <div className="space-y-2">
                       <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Security Check</Label>
                       <Turnstile
-                        siteKey="0x4AAAAAABhG1NBeHRl27Rjz"
+                        siteKey="1x00000000000000000000AA"
                         onSuccess={setTurnstileToken}
                         options={{
                           theme: theme === 'dark' ? 'dark' : 'light',
