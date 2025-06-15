@@ -1154,7 +1154,6 @@ export type Database = {
           is_active: boolean | null
           phone_number: string
           profile_picture_url: string | null
-          role: string
           updated_at: string | null
         }
         Insert: {
@@ -1170,7 +1169,6 @@ export type Database = {
           is_active?: boolean | null
           phone_number: string
           profile_picture_url?: string | null
-          role?: string
           updated_at?: string | null
         }
         Update: {
@@ -1186,7 +1184,6 @@ export type Database = {
           is_active?: boolean | null
           phone_number?: string
           profile_picture_url?: string | null
-          role?: string
           updated_at?: string | null
         }
         Relationships: []
@@ -1255,10 +1252,6 @@ export type Database = {
         Returns: {
           rank: number
         }[]
-      }
-      get_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
       }
       user_has_permission: {
         Args: { p_user_id: string; p_permission_name: string }
