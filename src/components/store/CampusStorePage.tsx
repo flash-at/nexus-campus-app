@@ -32,6 +32,7 @@ interface Product {
   category_id: string;
   vendors: {
     business_name: string;
+    status: string;
   };
 }
 
@@ -99,14 +100,18 @@ export const CampusStorePage = () => {
     try {
       console.log('Fetching products for campus store...');
       
-      // First, let's try a simpler query to see if we can get products at all
+      // Fetch products with vendor information, filtering for approved vendors only
       let query = supabase
         .from('products')
         .select(`
           *,
-          vendors (business_name)
+          vendors!inner (
+            business_name,
+            status
+          )
         `)
         .eq('is_active', true)
+        .eq('vendors.status', 'approved')
         .order('created_at', { ascending: false });
 
       // Apply filters only if they exist
@@ -125,16 +130,13 @@ export const CampusStorePage = () => {
         throw error;
       }
       
-      console.log('Raw products data from Supabase:', data);
+      console.log('Products fetched from approved vendors:', data);
+      setProducts(data || []);
       
-      // Filter products that have vendors (approved vendors should have business_name)
-      const validProducts = data?.filter(product => product.vendors?.business_name) || [];
-      
-      console.log('Valid products with vendors:', validProducts);
-      setProducts(validProducts);
-      
-      if (validProducts.length === 0 && !selectedCategory && !searchQuery) {
-        setError('No products are currently available in the store.');
+      if (!data || data.length === 0) {
+        if (!selectedCategory && !searchQuery) {
+          setError('No products are currently available in the store.');
+        }
       } else {
         setError(null);
       }
