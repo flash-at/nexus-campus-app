@@ -8,8 +8,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-function errorResponse(message: string, status = 401) {
-  return new Response(JSON.stringify({ error: message }), {
+function errorResponse(message: string, status = 401, extra?: Record<string, unknown>) {
+  const body = { error: message, ...extra };
+  console.error(`[sync-firebase-auth] Error:`, message, extra || "");
+  return new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
@@ -23,10 +25,19 @@ serve(async (req) => {
   try {
     const { firebaseIdToken } = await req.json();
 
+    if (!firebaseIdToken) {
+      return errorResponse("Missing firebaseIdToken in body", 400);
+    }
+
     // Get Firebase Admin credentials from Supabase secret
     const firebaseSA = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
     if (!firebaseSA) return errorResponse("Missing Firebase service account secret.", 500);
-    const serviceAccount = JSON.parse(firebaseSA);
+    let serviceAccount;
+    try {
+      serviceAccount = JSON.parse(firebaseSA);
+    } catch (err) {
+      return errorResponse("Invalid Firebase service account JSON", 500, {err});
+    }
 
     // Dynamically import the Firebase Admin SDK
     const { initializeApp, cert, getApps } = await import("npm:firebase-admin/app");
@@ -41,9 +52,9 @@ serve(async (req) => {
     const auth = getAuth();
     let decoded;
     try {
-      decoded = await auth.verifyIdToken(firebaseIdToken);
+      decoded = await auth.verifyIdToken(firebaseIdToken, true);
     } catch (e) {
-      return errorResponse("Invalid Firebase ID token", 401);
+      return errorResponse("Invalid Firebase ID token, could not verify or expired", 401, { firebaseIdTokenError: e.message });
     }
 
     // Generate a Supabase session (using service key)
@@ -53,11 +64,9 @@ serve(async (req) => {
       return errorResponse("Missing Supabase service role key", 500);
     }
 
-    // Do a sign in/up to Supabase with email (use passwordless or a shared fallback password)
-    // The preferred way is to call the Admin API for sign in, but since browserless, use the REST API.
     const signInBody = {
       email: decoded.email,
-      password: decoded.uid + "___fallback_pw", // Fallback password per user
+      password: decoded.uid + "___fallback_pw",
     };
 
     // Try sign in first
@@ -90,7 +99,7 @@ serve(async (req) => {
         const err = await userRes.json();
         return errorResponse(
           "Failed to create Supabase user: " + (err?.msg ?? JSON.stringify(err)),
-          500
+          500, { userCreateError: err }
         );
       }
       // Try sign in again
@@ -106,7 +115,7 @@ serve(async (req) => {
         const err = await sessionRes.json();
         return errorResponse(
           "Failed to sign in to Supabase after user creation: " + (err?.msg ?? JSON.stringify(err)),
-          500
+          500, { signInError: err }
         );
       }
     }
@@ -117,7 +126,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error(e);
-    return errorResponse("Unknown error: " + e?.message || e, 500);
+    console.error(`[sync-firebase-auth] Unknown error:`, e);
+    return errorResponse("Unknown error: " + (e?.message || e), 500, { raw: String(e) });
   }
 });
