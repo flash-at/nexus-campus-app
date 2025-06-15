@@ -30,13 +30,13 @@ export const useUserProfile = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user?.uid]);
 
   useEffect(() => {
     if (!authLoading) {
       fetchProfile();
     }
-  }, [user, authLoading, fetchProfile]);
+  }, [authLoading, fetchProfile]);
 
   return { 
     profile, 
