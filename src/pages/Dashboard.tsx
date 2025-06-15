@@ -25,7 +25,7 @@ const Dashboard = () => {
   const [activeSection, setActiveSection] = useState("overview");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { profile } = useUserProfile();
-  const { user, signOut, cleanupAndReload, forceSessionSync, supabaseSession } = useAuth();
+  const { user, signOut, cleanupAndReload, supabaseSession } = useAuth();
   const navigate = useNavigate();
   const { currentUserRank, currentUserData } = useLeaderboard();
 
@@ -40,15 +40,6 @@ const Dashboard = () => {
 
   const handleProfileClick = () => {
     setActiveSection("profile");
-  };
-
-  const handleForceSessionSync = async () => {
-    try {
-      await forceSessionSync();
-      console.log('[Dashboard] Force session sync completed');
-    } catch (error) {
-      console.error('[Dashboard] Force session sync failed:', error);
-    }
   };
 
   const dashboardSections = [
@@ -170,10 +161,6 @@ const Dashboard = () => {
                 <DropdownMenuItem onClick={handleProfileClick}>
                   <User className="mr-2 h-4 w-4" />
                   <span>My Profile</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleForceSessionSync}>
-                  <Zap className="mr-2 h-4 w-4" />
-                  <span>Force Session Sync</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={cleanupAndReload}>
                   <RotateCcw className="mr-2 h-4 w-4" />

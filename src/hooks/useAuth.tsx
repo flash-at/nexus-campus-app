@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, onAuthStateChanged, signOut as firebaseSignOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -82,7 +81,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     });
     
     // Also listen to Supabase auth changes, e.g. for token refresh.
-    const { data: { subscription } } = supabase.auth.onAuthStateChanged((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log(`[Auth] Supabase auth state changed: ${event}`);
       if (session !== supabaseSession) {
         setSupabaseSession(session);
