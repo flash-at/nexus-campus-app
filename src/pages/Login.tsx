@@ -16,6 +16,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { cleanupAuthState } from "@/utils/authCleanup";
 import { Turnstile } from '@marsidev/react-turnstile';
 import { useTheme } from 'next-themes';
+import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -51,6 +52,18 @@ const Login = () => {
     setIsLoading(true);
     
     try {
+      // Verify Turnstile token with backend
+      const { data: verificationData, error: verificationError } = await supabase.functions.invoke('verify-turnstile', {
+        body: { token: turnstileToken },
+      })
+
+      if (verificationError || !verificationData?.success) {
+        toast.error('CAPTCHA verification failed. Please try again.');
+        console.error('Turnstile verification error:', verificationError, verificationData);
+        setIsLoading(false);
+        return;
+      }
+
       // Clean up any existing auth state before login
       cleanupAuthState();
       
