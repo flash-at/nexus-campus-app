@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +18,12 @@ interface Category {
   display_order: number;
 }
 
+interface Vendor {
+  id: string;
+  business_name: string;
+  status: string;
+}
+
 interface Product {
   id: string;
   name: string;
@@ -31,15 +36,13 @@ interface Product {
   available_until: string;
   vendor_id: string;
   category_id: string;
-  vendors?: {
-    business_name: string;
-    status: string;
-  };
+  vendor?: Vendor;
 }
 
 export const CampusStorePage = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [vendors, setVendors] = useState<Record<string, Vendor>>({});
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [cartItems, setCartItems] = useState<any[]>([]);
@@ -64,7 +67,7 @@ export const CampusStorePage = () => {
     setError(null);
     
     try {
-      await Promise.all([fetchCategories(), fetchProducts()]);
+      await Promise.all([fetchCategories(), fetchVendors(), fetchProducts()]);
     } catch (error) {
       console.error('Error initializing data:', error);
       setError('Failed to load store data. Please try again.');
@@ -97,20 +100,39 @@ export const CampusStorePage = () => {
     }
   };
 
+  const fetchVendors = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('vendors')
+        .select('id, business_name, status');
+
+      if (error) {
+        console.error('Error fetching vendors:', error);
+        throw error;
+      }
+      
+      // Create a map of vendor_id -> vendor data for easy lookup
+      const vendorMap: Record<string, Vendor> = {};
+      data?.forEach(vendor => {
+        vendorMap[vendor.id] = vendor;
+      });
+      
+      console.log('Vendors fetched:', vendorMap);
+      setVendors(vendorMap);
+    } catch (error) {
+      console.error('Error fetching vendors:', error);
+      // Don't show toast for vendors as it's not critical
+    }
+  };
+
   const fetchProducts = async () => {
     if (!user) return;
     
     try {
-      // First, let's try a simpler query to see if we have any products at all
+      // Simple query for products only
       let query = supabase
         .from('products')
-        .select(`
-          *,
-          vendors (
-            business_name,
-            status
-          )
-        `)
+        .select('*')
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
@@ -132,13 +154,25 @@ export const CampusStorePage = () => {
       
       console.log('Raw products data:', data);
       
-      // Filter products to only show those with approved vendors or no vendor info available
-      const filteredProducts = data?.filter(product => {
+      if (!data || data.length === 0) {
+        setProducts([]);
+        setError('No products are currently available in the store.');
+        return;
+      }
+
+      // Combine products with vendor data
+      const productsWithVendors = data.map(product => ({
+        ...product,
+        vendor: product.vendor_id ? vendors[product.vendor_id] : undefined
+      }));
+
+      // Filter out products from non-approved vendors (but keep products without vendors)
+      const filteredProducts = productsWithVendors.filter(product => {
         // If there's no vendor info, include the product
-        if (!product.vendors) return true;
+        if (!product.vendor) return true;
         // If there is vendor info, only include if status is approved
-        return product.vendors.status === 'approved';
-      }) || [];
+        return product.vendor.status === 'approved';
+      });
       
       console.log('Filtered products:', filteredProducts);
       setProducts(filteredProducts);
@@ -147,12 +181,7 @@ export const CampusStorePage = () => {
       if (filteredProducts.length > 0) {
         setError(null);
       } else {
-        // Check if we have any products at all (for debugging)
-        if (data && data.length > 0) {
-          setError('No products are available from approved vendors at the moment.');
-        } else if (!selectedCategory && !searchQuery) {
-          setError('No products are currently available in the store.');
-        }
+        setError('No products are available from approved vendors at the moment.');
       }
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -166,10 +195,10 @@ export const CampusStorePage = () => {
   };
 
   useEffect(() => {
-    if (user) {
+    if (user && Object.keys(vendors).length > 0) {
       fetchProducts();
     }
-  }, [selectedCategory, searchQuery, user]);
+  }, [selectedCategory, searchQuery, user, vendors]);
 
   // Set up real-time subscription for new products
   useEffect(() => {
@@ -194,7 +223,7 @@ export const CampusStorePage = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, vendors]);
 
   const addToCart = (product: Product, quantity: number = 1) => {
     const existingItem = cartItems.find(item => item.id === product.id);
@@ -407,7 +436,7 @@ export const CampusStorePage = () => {
                     </p>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                       <MapPin className="h-3 w-3" />
-                      <span>{product.vendors?.business_name || 'Campus Store'}</span>
+                      <span>{product.vendor?.business_name || 'Campus Store'}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
