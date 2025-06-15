@@ -1,5 +1,38 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { AuthError } from "@supabase/supabase-js";
+
+export interface PartnerProfile {
+  id: string;
+  firebase_uid: string;
+  business_name: string;
+  category: string;
+  description: string;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  updated_at: string;
+}
+
+export const signUpPartner = async (email: string, password: string, metadata: { businessName: string, category: string, description: string }) => {
+    const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+            data: {
+                business_name: metadata.businessName,
+                category: metadata.category,
+                description: metadata.description,
+            },
+            emailRedirectTo: `${window.location.origin}/provider-login`,
+        },
+    });
+
+    if (error) {
+        throw error;
+    }
+
+    return data;
+};
 
 export const signInPartner = async (email: string, password: string) => {
   const { data, error } = await supabase.auth.signInWithPassword({
