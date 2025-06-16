@@ -133,7 +133,7 @@ export const createUserProfile = async (
 
     console.log("Inserting data:", insertData);
 
-    // Insert the user profile using the permissive RLS policy
+    // Insert the user profile
     const { data, error } = await supabase
       .from("users")
       .insert(insertData)
@@ -153,9 +153,16 @@ export const createUserProfile = async (
 
     console.log("User profile created successfully:", data);
 
-    // After creating the user profile, the database trigger will create related data.
-    // We can now fetch the complete profile.
+    // Wait a moment for the trigger to complete
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Fetch the complete profile with all relations
     const completeProfile = await getUserProfile(firebaseUser.uid);
+    
+    if (!completeProfile) {
+      console.error("Failed to fetch complete profile after creation");
+      return null;
+    }
     
     return completeProfile;
   } catch (error) {
@@ -189,9 +196,6 @@ export const getUserProfile = async (firebaseUid: string): Promise<UserProfile |
       console.log("No user profile found for UID:", firebaseUid);
       return null;
     }
-
-    // The database trigger should handle creating related data.
-    // Manual checks and fallbacks are no longer needed.
 
     console.log("User profile fetched successfully:", data);
     return data as UserProfile;
