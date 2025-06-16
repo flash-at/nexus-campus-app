@@ -50,6 +50,7 @@ export interface UserProfile {
   department: string;
   academic_year: string;
   phone_number: string;
+  role: string;
   email_verified: boolean;
   created_at: string;
   updated_at: string;
@@ -64,36 +65,42 @@ export interface UserProfile {
 
 export const checkHallTicketExists = async (hallTicket: string): Promise<boolean> => {
   try {
-    console.log("Checking hall ticket via RPC:", hallTicket);
-    const { data, error } = await supabase.rpc('check_hall_ticket_exists', { p_hall_ticket: hallTicket });
+    console.log("Checking hall ticket:", hallTicket);
+    const { data, error } = await supabase
+      .from("users")
+      .select("hall_ticket")
+      .eq("hall_ticket", hallTicket)
+      .maybeSingle();
 
     if (error) {
-      console.error("Error checking hall ticket via RPC:", error);
-      // Default to false to allow registration attempt, the backend will have the final say.
+      console.error("Error checking hall ticket:", error);
       return false;
     }
-    
-    return data;
+
+    return data !== null;
   } catch (error) {
-    console.error("Exception checking hall ticket:", error);
+    console.error("Error checking hall ticket:", error);
     return false;
   }
 };
 
 export const checkEmailExists = async (email: string): Promise<boolean> => {
   try {
-    console.log("Checking email via RPC:", email);
-    const { data, error } = await supabase.rpc('check_email_exists', { p_email: email });
+    console.log("Checking email:", email);
+    const { data, error } = await supabase
+      .from("users")
+      .select("email")
+      .eq("email", email)
+      .maybeSingle();
 
     if (error) {
-      console.error("Error checking email via RPC:", error);
-      // Default to false to allow registration attempt, the backend will have the final say.
+      console.error("Error checking email:", error);
       return false;
     }
-    
-    return data;
+
+    return data !== null;
   } catch (error) {
-    console.error("Exception checking email:", error);
+    console.error("Error checking email:", error);
     return false;
   }
 };
@@ -183,6 +190,9 @@ export const getUserProfile = async (firebaseUid: string): Promise<UserProfile |
       return null;
     }
 
+    // The database trigger should handle creating related data.
+    // Manual checks and fallbacks are no longer needed.
+
     console.log("User profile fetched successfully:", data);
     return data as UserProfile;
   } catch (error) {
@@ -204,12 +214,14 @@ export const getAllUsers = async (): Promise<UserProfile[]> => {
         department,
         academic_year,
         phone_number,
+        role,
         email_verified,
         created_at,
         updated_at,
         profile_picture_url,
         is_active
       `)
+      .eq('role', 'student')
       .order('full_name', { ascending: true });
 
     if (error) {
