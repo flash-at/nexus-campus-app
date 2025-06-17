@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -87,7 +86,8 @@ const ClubAdminLogin = () => {
         clubId: selectedClub,
         clubName: clubData.name,
         userRole: roleData[0].role,
-        userId: profile?.id
+        userId: profile?.id,
+        firebaseUid: profile?.firebase_uid
       }));
 
       navigate('/club-admin');
