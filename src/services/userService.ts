@@ -175,30 +175,97 @@ export const getUserProfile = async (firebaseUid: string): Promise<UserProfile |
   try {
     console.log("Fetching user profile for UID:", firebaseUid);
     
-    const { data, error } = await supabase
+    // First, try to get the user with basic info
+    const { data: userData, error: userError } = await supabase
       .from("users")
-      .select(`
-        *,
-        academic_info(*),
-        engagement(*),
-        documents(*),
-        preferences(*)
-      `)
+      .select("*")
       .eq("firebase_uid", firebaseUid)
       .maybeSingle();
 
-    if (error) {
-      console.error("Error fetching user profile:", error);
+    if (userError) {
+      console.error("Error fetching user profile:", userError);
       return null;
     }
 
-    if (!data) {
+    if (!userData) {
       console.log("No user profile found for UID:", firebaseUid);
       return null;
     }
 
-    console.log("User profile fetched successfully:", data);
-    return data as UserProfile;
+    console.log("Basic user profile found:", userData);
+
+    // Now fetch related data separately to handle potential missing records
+    const [academicResult, engagementResult, documentsResult, preferencesResult] = await Promise.allSettled([
+      supabase.from("academic_info").select("*").eq("user_id", userData.id).maybeSingle(),
+      supabase.from("engagement").select("*").eq("user_id", userData.id).maybeSingle(),
+      supabase.from("documents").select("*").eq("user_id", userData.id),
+      supabase.from("preferences").select("*").eq("user_id", userData.id).maybeSingle()
+    ]);
+
+    // Extract data from settled promises, handling errors gracefully
+    const academicInfo = academicResult.status === 'fulfilled' && !academicResult.value.error 
+      ? academicResult.value.data 
+      : null;
+
+    const engagement = engagementResult.status === 'fulfilled' && !engagementResult.value.error 
+      ? engagementResult.value.data 
+      : null;
+
+    const documents = documentsResult.status === 'fulfilled' && !documentsResult.value.error 
+      ? documentsResult.value.data || [] 
+      : [];
+
+    const preferences = preferencesResult.status === 'fulfilled' && !preferencesResult.value.error 
+      ? preferencesResult.value.data 
+      : null;
+
+    // If any critical related data is missing, try to create it
+    if (!engagement) {
+      console.log("Creating missing engagement record for user:", userData.id);
+      await supabase.from("engagement").insert({
+        user_id: userData.id,
+        activity_points: 0,
+        badges: [],
+        events_attended: [],
+        feedback_count: 0,
+        last_login: new Date().toISOString()
+      });
+    }
+
+    if (!academicInfo) {
+      console.log("Creating missing academic_info record for user:", userData.id);
+      await supabase.from("academic_info").insert({
+        user_i: userData.id
+      });
+    }
+
+    if (!preferences) {
+      console.log("Creating missing preferences record for user:", userData.id);
+      await supabase.from("preferences").insert({
+        user_id: userData.id,
+        theme: 'System',
+        notifications_enabled: true
+      });
+    }
+
+    // Construct the complete profile
+    const completeProfile: UserProfile = {
+      ...userData,
+      academic_info: academicInfo,
+      engagement: engagement,
+      documents: documents,
+      preferences: preferences
+    };
+
+    console.log("Complete user profile constructed:", {
+      id: completeProfile.id,
+      hasAcademicInfo: !!completeProfile.academic_info,
+      hasEngagement: !!completeProfile.engagement,
+      documentsCount: completeProfile.documents.length,
+      hasPreferences: !!completeProfile.preferences
+    });
+
+    return completeProfile;
   } catch (error) {
     console.error("Error fetching user profile:", error);
     return null;

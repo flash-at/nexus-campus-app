@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { UserProfile, getUserProfile } from '@/services/userService';
@@ -22,6 +21,14 @@ export const useUserProfile = () => {
       console.log("Fetching profile for user:", user.uid);
       
       const userProfile = await getUserProfile(user.uid);
+      
+      if (!userProfile) {
+        console.warn("No profile found for user:", user.uid);
+        setError("User profile not found. Please contact support.");
+      } else {
+        console.log("Profile fetched successfully:", userProfile.id);
+      }
+      
       setProfile(userProfile);
     } catch (err) {
       console.error("Failed to fetch profile:", err);

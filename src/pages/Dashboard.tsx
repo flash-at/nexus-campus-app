@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,8 @@ import { useNavigate } from "react-router-dom";
 import { 
   User, ShoppingBag, Calendar, CreditCard, FileText, Store, MessageSquare, Users,
   TrendingUp, BookOpen, Target, Newspaper, MessageCircle, Bot, Briefcase, Shield,
-  Settings, LogOut, Bell, Clock, Zap, Menu, X, Package, Trophy, UserCog, IdCard, RotateCcw
+  Settings, LogOut, Bell, Clock, Zap, Menu, X, Package, Trophy, UserCog, IdCard, RotateCcw,
+  AlertCircle
 } from "lucide-react";
 import { SidebarNav } from "@/components/dashboard/SidebarNav";
 import { NewProfilePage } from "@/components/profile/NewProfilePage";
@@ -20,11 +21,12 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
 import { LeaderboardPage } from "@/components/dashboard/LeaderboardPage";
 import { CampusStorePage } from "@/components/store/CampusStorePage";
+import { CreateProfileForm } from "@/components/profile/CreateProfileForm";
 
 const Dashboard = () => {
   const [activeSection, setActiveSection] = useState("overview");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { profile } = useUserProfile();
+  const { profile, loading: profileLoading, error: profileError, refetch } = useUserProfile();
   const { user, signOut, cleanupAndReload, forceSessionSync, supabaseSession } = useAuth();
   const navigate = useNavigate();
   const { currentUserRank, currentUserData } = useLeaderboard();
@@ -110,6 +112,46 @@ const Dashboard = () => {
 
   // Get current date and format it as "Month DD, YYYY"
   const todayStr = format(new Date(), "MMMM d, yyyy");
+
+  // If profile is loading, show loading state
+  if (profileLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-950 dark:to-blue-950">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If profile error and no profile, show error with option to create profile
+  if (profileError && !profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-950 dark:to-blue-950">
+        <div className="max-w-md w-full p-6">
+          <div className="text-center mb-8">
+            <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Profile Not Found</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              We couldn't find your profile in our system. Let's create one now to get you started.
+            </p>
+            <div className="flex flex-col gap-3">
+              <Button onClick={refetch} variant="outline">
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Try Again
+              </Button>
+              <Button onClick={cleanupAndReload}>
+                Fix Auth Issues
+              </Button>
+            </div>
+          </div>
+          
+          <CreateProfileForm onSuccess={refetch} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
